@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" datatype="plaintext" original="EXT:derspe_site_insights/Resources/Private/Language/locallang_js.xlf" product-name="derspe_site_insights">
+		<header/>
+		<body>
+			<trans-unit id="app.title" resname="app.title">
+				<source>Site Insights</source>
+			</trans-unit>
+			<trans-unit id="app.area.gsc" resname="app.area.gsc">
+				<source>Search Console</source>
+			</trans-unit>
+			<trans-unit id="app.area.matomo" resname="app.area.matomo">
+				<source>Matomo</source>
+			</trans-unit>
+			<trans-unit id="app.site" resname="app.site">
+				<source>Site</source>
+			</trans-unit>
+			<trans-unit id="app.noSites" resname="app.noSites">
+				<source>No site configuration found.</source>
+			</trans-unit>
+			<trans-unit id="tab.settings" resname="tab.settings">
+				<source>Settings</source>
+			</trans-unit>
+			<trans-unit id="action.openSettings" resname="action.openSettings">
+				<source>Open settings</source>
+			</trans-unit>
+			<trans-unit id="error.notConfigured" resname="error.notConfigured">
+				<source>Not configured yet</source>
+			</trans-unit>
+			<trans-unit id="empty.noData" resname="empty.noData">
+				<source>No data for the selected period</source>
+			</trans-unit>
+			<trans-unit id="state.loading" resname="state.loading">
+				<source>Loading…</source>
+			</trans-unit>
+			<trans-unit id="table.showAll" resname="table.showAll">
+				<source>Show all {count}</source>
+			</trans-unit>
+			<trans-unit id="table.showLess" resname="table.showLess">
+				<source>Show less</source>
+			</trans-unit>
+			<trans-unit id="time.today" resname="time.today">
+				<source>today</source>
+			</trans-unit>
+			<trans-unit id="time.yesterday" resname="time.yesterday">
+				<source>yesterday</source>
+			</trans-unit>
+			<trans-unit id="time.daysAgo" resname="time.daysAgo">
+				<source>{days} days ago</source>
+			</trans-unit>
+			<trans-unit id="compare.short" resname="compare.short">
+				<source>Prev.</source>
+			</trans-unit>
+			<trans-unit id="gsc.matomoVisitsShort" resname="gsc.matomoVisitsShort">
+				<source>Matomo</source>
+			</trans-unit>
+			<trans-unit id="compare.enable" resname="compare.enable">
+				<source>Compare</source>
+			</trans-unit>
+			<trans-unit id="compare.previousPeriod" resname="compare.previousPeriod">
+				<source>Previous period</source>
+			</trans-unit>
+			<trans-unit id="compare.previousYear" resname="compare.previousYear">
+				<source>Previous year</source>
+			</trans-unit>
+			<trans-unit id="preset.latest" resname="preset.latest">
+				<source>Latest</source>
+			</trans-unit>
+			<trans-unit id="preset.previousDay" resname="preset.previousDay">
+				<source>Day before</source>
+			</trans-unit>
+			<trans-unit id="preset.today" resname="preset.today">
+				<source>Today</source>
+			</trans-unit>
+			<trans-unit id="preset.yesterday" resname="preset.yesterday">
+				<source>Yesterday</source>
+			</trans-unit>
+			<trans-unit id="preset.7d" resname="preset.7d">
+				<source>7D</source>
+			</trans-unit>
+			<trans-unit id="preset.28d" resname="preset.28d">
+				<source>28D</source>
+			</trans-unit>
+			<trans-unit id="preset.30d" resname="preset.30d">
+				<source>30D</source>
+			</trans-unit>
+			<trans-unit id="preset.90d" resname="preset.90d">
+				<source>90D</source>
+			</trans-unit>
+			<trans-unit id="preset.1y" resname="preset.1y">
+				<source>1Y</source>
+			</trans-unit>
+			<trans-unit id="settings.save" resname="settings.save">
+				<source>Save</source>
+			</trans-unit>
+			<trans-unit id="settings.saved" resname="settings.saved">
+				<source>Saved</source>
+			</trans-unit>
+			<trans-unit id="settings.secretSet" resname="settings.secretSet">
+				<source>•••••••• (stored – leave empty to keep)</source>
+			</trans-unit>
+			<trans-unit id="settings.adminOnly" resname="settings.adminOnly">
+				<source>Only administrators can change these settings.</source>
+			</trans-unit>
+			<trans-unit id="settings.commaSeparated" resname="settings.commaSeparated">
+				<source>comma separated</source>
+			</trans-unit>
+			<trans-unit id="metric.clicks" resname="metric.clicks">
+				<source>Clicks</source>
+			</trans-unit>
+			<trans-unit id="metric.impressions" resname="metric.impressions">
+				<source>Impressions</source>
+			</trans-unit>
+			<trans-unit id="metric.impressionsShort" resname="metric.impressionsShort">
+				<source>Impr.</source>
+			</trans-unit>
+			<trans-unit id="metric.ctr" resname="metric.ctr">
+				<source>CTR</source>
+			</trans-unit>
+			<trans-unit id="metric.position" resname="metric.position">
+				<source>Position</source>
+			</trans-unit>
+			<trans-unit id="metric.positionShort" resname="metric.positionShort">
+				<source>Pos.</source>
+			</trans-unit>
+			<trans-unit id="metric.avgPosition" resname="metric.avgPosition">
+				<source>Avg. position</source>
+			</trans-unit>
+			<trans-unit id="metric.query" resname="metric.query">
+				<source>Query</source>
+			</trans-unit>
+			<trans-unit id="metric.page" resname="metric.page">
+				<source>Page</source>
+			</trans-unit>
+			<trans-unit id="gsc.tab.performance" resname="gsc.tab.performance">
+				<source>Performance</source>
+			</trans-unit>
+			<trans-unit id="gsc.tab.drilldown" resname="gsc.tab.drilldown">
+				<source>Drilldown</source>
+			</trans-unit>
+			<trans-unit id="gsc.tab.tracker" resname="gsc.tab.tracker">
+				<source>Tracker</source>
+			</trans-unit>
+			<trans-unit id="gsc.tab.index" resname="gsc.tab.index">
+				<source>Indexing</source>
+			</trans-unit>
+			<trans-unit id="gsc.searchType" resname="gsc.searchType">
+				<source>Search type</source>
+			</trans-unit>
+			<trans-unit id="gsc.searchType.web" resname="gsc.searchType.web">
+				<source>Web</source>
+			</trans-unit>
+			<trans-unit id="gsc.searchType.discover" resname="gsc.searchType.discover">
+				<source>Discover</source>
+			</trans-unit>
+			<trans-unit id="gsc.searchType.news" resname="gsc.searchType.news">
+				<source>News</source>
+			</trans-unit>
+			<trans-unit id="gsc.searchType.image" resname="gsc.searchType.image">
+				<source>Image</source>
+			</trans-unit>
+			<trans-unit id="gsc.searchType.video" resname="gsc.searchType.video">
+				<source>Video</source>
+			</trans-unit>
+			<trans-unit id="gsc.dataDate" resname="gsc.dataDate">
+				<source>Data as of {date}</source>
+			</trans-unit>
+			<trans-unit id="gsc.dataDate.hint" resname="gsc.dataDate.hint">
+				<source>Latest day with Search Console data. All periods are anchored here (Search Console latency is about two days).</source>
+			</trans-unit>
+			<trans-unit id="gsc.kpis" resname="gsc.kpis">
+				<source>Key figures</source>
+			</trans-unit>
+			<trans-unit id="gsc.chart.title" resname="gsc.chart.title">
+				<source>Clicks &amp; impressions</source>
+			</trans-unit>
+			<trans-unit id="gsc.topQueries" resname="gsc.topQueries">
+				<source>Top queries</source>
+			</trans-unit>
+			<trans-unit id="gsc.topPages" resname="gsc.topPages">
+				<source>Top pages</source>
+			</trans-unit>
+			<trans-unit id="gsc.matomoVisits" resname="gsc.matomoVisits">
+				<source>Matomo views</source>
+			</trans-unit>
+			<trans-unit id="gsc.allCountries" resname="gsc.allCountries">
+				<source>All countries</source>
+			</trans-unit>
+			<trans-unit id="gsc.allDevices" resname="gsc.allDevices">
+				<source>All devices</source>
+			</trans-unit>
+			<trans-unit id="gsc.drilldown.search" resname="gsc.drilldown.search">
+				<source>Search query or page…</source>
+			</trans-unit>
+			<trans-unit id="gsc.appearance.title" resname="gsc.appearance.title">
+				<source>Search appearance</source>
+			</trans-unit>
+			<trans-unit id="gsc.appearance.hint" resname="gsc.appearance.hint">
+				<source>Clicks and impressions per search appearance (structured data type) in the selected period, web search only.</source>
+			</trans-unit>
+			<trans-unit id="gsc.appearance.empty" resname="gsc.appearance.empty">
+				<source>No rich result appearance in this period (web search only).</source>
+			</trans-unit>
+			<trans-unit id="gsc.appearance.line" resname="gsc.appearance.line">
+				<source>{impressions} impr. · pos. {position}</source>
+			</trans-unit>
+			<trans-unit id="gsc.visibility.title" resname="gsc.visibility.title">
+				<source>Visibility index</source>
+			</trans-unit>
+			<trans-unit id="gsc.visibility.series" resname="gsc.visibility.series">
+				<source>Visibility</source>
+			</trans-unit>
+			<trans-unit id="gsc.visibility.since" resname="gsc.visibility.since">
+				<source>{change} % since {date}</source>
+			</trans-unit>
+			<trans-unit id="gsc.visibility.empty" resname="gsc.visibility.empty">
+				<source>No data yet – the daily snapshot or a backfill is required.</source>
+			</trans-unit>
+			<trans-unit id="gsc.visibility.formula" resname="gsc.visibility.formula">
+				<source>Own visibility · Σ impressions × CTR weight(position) · daily top queries</source>
+			</trans-unit>
+			<trans-unit id="gsc.visibility.hint" resname="gsc.visibility.hint">
+				<source>Based on the daily Search Console snapshots: sum of impressions weighted by the typical CTR of the position. Not comparable with absolute values of third-party tools.</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.title" resname="gsc.cannibalization.title">
+				<source>Cannibalization</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.hint" resname="gsc.cannibalization.hint">
+				<source>Queries for which two or more pages rank (at least {min} impressions per page)</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.empty" resname="gsc.cannibalization.empty">
+				<source>No cannibalization found</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.query" resname="gsc.cannibalization.query">
+				<source>Query</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.clicks" resname="gsc.cannibalization.clicks">
+				<source>{n} clicks</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.impressions" resname="gsc.cannibalization.impressions">
+				<source>{n} impr.</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.ctr" resname="gsc.cannibalization.ctr">
+				<source>{n} CTR</source>
+			</trans-unit>
+			<trans-unit id="gsc.cannibalization.position" resname="gsc.cannibalization.position">
+				<source>Pos. {n}</source>
+			</trans-unit>
+			<trans-unit id="gsc.brand.title" resname="gsc.brand.title">
+				<source>Brand vs. non-brand</source>
+			</trans-unit>
+			<trans-unit id="gsc.brand.brand" resname="gsc.brand.brand">
+				<source>Brand</source>
+			</trans-unit>
+			<trans-unit id="gsc.brand.nonBrand" resname="gsc.brand.nonBrand">
+				<source>Non-brand</source>
+			</trans-unit>
+			<trans-unit id="gsc.brand.share" resname="gsc.brand.share">
+				<source>{pct}% of clicks</source>
+			</trans-unit>
+			<trans-unit id="gsc.brand.notConfigured" resname="gsc.brand.notConfigured">
+				<source>No brand terms configured – all clicks count as non-brand.</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.queries" resname="gsc.tracker.queries">
+				<source>Queries</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.pages" resname="gsc.tracker.pages">
+				<source>Pages</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.top" resname="gsc.tracker.top">
+				<source>Top {n} {label}</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.window" resname="gsc.tracker.window">
+				<source>{from} – {to} · {days} days aggregated</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.hint" resname="gsc.tracker.hint">
+				<source>Aggregated over the period: clicks and impressions summed, CTR recalculated, position weighted by impressions. Click a row for the daily history.</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.empty" resname="gsc.tracker.empty">
+				<source>No snapshots yet – run a backfill in the settings</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.selectQuery" resname="gsc.tracker.selectQuery">
+				<source>Select a query from the list</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.selectPage" resname="gsc.tracker.selectPage">
+				<source>Select a page from the list</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.rank" resname="gsc.tracker.rank">
+				<source>Currently #{rank}</source>
+			</trans-unit>
+			<trans-unit id="gsc.tracker.noSeries" resname="gsc.tracker.noSeries">
+				<source>No snapshots for this entry</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.single" resname="gsc.index.single">
+				<source>Inspect a single URL</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.check" resname="gsc.index.check">
+				<source>Inspect</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.recheck" resname="gsc.index.recheck">
+				<source>Inspect again</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.lastCheck" resname="gsc.index.lastCheck">
+				<source>Last inspection: {ago}</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.fromCache" resname="gsc.index.fromCache">
+				<source>(cache)</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.structuredData" resname="gsc.index.structuredData">
+				<source>Structured data</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.none" resname="gsc.index.none">
+				<source>none</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.crawledAs" resname="gsc.index.crawledAs">
+				<source>Crawled as</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.pageFetch" resname="gsc.index.pageFetch">
+				<source>Page fetch</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.robots" resname="gsc.index.robots">
+				<source>robots.txt</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.lastCrawl" resname="gsc.index.lastCrawl">
+				<source>Last crawl</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.referring" resname="gsc.index.referring">
+				<source>Referring URLs</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.all" resname="gsc.index.all">
+				<source>All pages (sitemap)</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.counter" resname="gsc.index.counter">
+				<source>{inspected}/{total} inspected</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.cacheHint" resname="gsc.index.cacheHint">
+				<source>URL Inspection per URL (7 day cache, max. 1,800 per day)</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.scanStart" resname="gsc.index.scanStart">
+				<source>Start scan</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.scanRunning" resname="gsc.index.scanRunning">
+				<source>Scan running…</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.empty" resname="gsc.index.empty">
+				<source>No pages for this filter.</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.filter.all" resname="gsc.index.filter.all">
+				<source>All</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.filter.indexed" resname="gsc.index.filter.indexed">
+				<source>Indexed</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.filter.notIndexed" resname="gsc.index.filter.notIndexed">
+				<source>Not indexed</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.filter.uninspected" resname="gsc.index.filter.uninspected">
+				<source>Not inspected yet</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.filter.sdFail" resname="gsc.index.filter.sdFail">
+				<source>Structured data: errors/partial</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.col.page" resname="gsc.index.col.page">
+				<source>Page</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.col.index" resname="gsc.index.col.index">
+				<source>Index</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.col.coverage" resname="gsc.index.col.coverage">
+				<source>Coverage</source>
+			</trans-unit>
+			<trans-unit id="gsc.index.col.checked" resname="gsc.index.col.checked">
+				<source>Inspected</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.title" resname="gsc.settings.title">
+				<source>Search Console settings</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.clientId" resname="gsc.settings.clientId">
+				<source>OAuth client ID</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.clientSecret" resname="gsc.settings.clientSecret">
+				<source>OAuth client secret</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.clientSecret.placeholder" resname="gsc.settings.clientSecret.placeholder">
+				<source>Enter client secret</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.redirectUri" resname="gsc.settings.redirectUri">
+				<source>Authorized redirect URI</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.redirectUri.description" resname="gsc.settings.redirectUri.description">
+				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.property" resname="gsc.settings.property">
+				<source>Search Console property</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.property.description" resname="gsc.settings.property.description">
+				<source>Domain property (sc-domain:example.com) or URL prefix (https://www.example.com/)</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.brandTerms" resname="gsc.settings.brandTerms">
+				<source>Brand terms</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.brandTerms.description" resname="gsc.settings.brandTerms.description">
+				<source>Queries containing one of these terms count as brand queries.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.snapshotTopN" resname="gsc.settings.snapshotTopN">
+				<source>Snapshot top N</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.snapshotTopN.description" resname="gsc.settings.snapshotTopN.description">
+				<source>Number of queries/pages stored per daily snapshot</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.topN" resname="gsc.settings.topN">
+				<source>Display top N</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.topN.description" resname="gsc.settings.topN.description">
+				<source>Rows in performance tables, cannibalization and tracker (tracker max. = snapshot top N)</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.sitemap" resname="gsc.settings.sitemap">
+				<source>Sitemap URL (index check)</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.sitemap.description" resname="gsc.settings.sitemap.description">
+				<source>Leave empty to use the sitemap.xml of the site base.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.extraSources" resname="gsc.settings.extraSources">
+				<source>Additional source pages (index check)</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.extraSources.description" resname="gsc.settings.extraSources.description">
+				<source>Internal links of these pages are monitored as well – for pages that are not in the sitemap. Comma separated.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.extraInclude" resname="gsc.settings.extraInclude">
+				<source>Link filter for source pages</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.extraInclude.description" resname="gsc.settings.extraInclude.description">
+				<source>Only harvested links whose path contains this text.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.connection" resname="gsc.settings.connection">
+				<source>Google connection</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.connected" resname="gsc.settings.connected">
+				<source>connected</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.notConnected" resname="gsc.settings.notConnected">
+				<source>not connected</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.connect" resname="gsc.settings.connect">
+				<source>Connect with Google</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.disconnect" resname="gsc.settings.disconnect">
+				<source>Disconnect</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.configureFirst" resname="gsc.settings.configureFirst">
+				<source>Save client ID and secret first, then connect.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.properties" resname="gsc.settings.properties">
+				<source>Accessible properties:</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.backfill" resname="gsc.settings.backfill">
+				<source>Snapshot backfill</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.backfill.description" resname="gsc.settings.backfill.description">
+				<source>Fetches missing daily snapshots backwards (max. 90 days). Complete days are skipped without API usage.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.backfill.days" resname="gsc.settings.backfill.days">
+				<source>Days</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.backfill.start" resname="gsc.settings.backfill.start">
+				<source>Start backfill</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.scheduler" resname="gsc.settings.scheduler">
+				<source>Daily snapshots: add the scheduler task "site-insights:gsc-snapshot" (e.g. daily) and "site-insights:run-jobs" (every few minutes) so started jobs also finish in the background.</source>
+			</trans-unit>
+			<trans-unit id="gsc.oauth.ok" resname="gsc.oauth.ok">
+				<source>Google Search Console is connected.</source>
+			</trans-unit>
+			<trans-unit id="gsc.oauth.denied" resname="gsc.oauth.denied">
+				<source>The Google consent was cancelled.</source>
+			</trans-unit>
+			<trans-unit id="gsc.oauth.invalid" resname="gsc.oauth.invalid">
+				<source>The connection request was invalid or expired. Please try again.</source>
+			</trans-unit>
+			<trans-unit id="gsc.oauth.failed" resname="gsc.oauth.failed">
+				<source>The token exchange with Google failed.</source>
+			</trans-unit>
+			<trans-unit id="gsc.oauth.no-refresh-token" resname="gsc.oauth.no-refresh-token">
+				<source>Google did not return a refresh token. Remove the app access at myaccount.google.com/permissions and connect again.</source>
+			</trans-unit>
+			<trans-unit id="country.deu" resname="country.deu">
+				<source>Germany</source>
+			</trans-unit>
+			<trans-unit id="country.aut" resname="country.aut">
+				<source>Austria</source>
+			</trans-unit>
+			<trans-unit id="country.che" resname="country.che">
+				<source>Switzerland</source>
+			</trans-unit>
+			<trans-unit id="country.usa" resname="country.usa">
+				<source>United States</source>
+			</trans-unit>
+			<trans-unit id="country.gbr" resname="country.gbr">
+				<source>United Kingdom</source>
+			</trans-unit>
+			<trans-unit id="country.fra" resname="country.fra">
+				<source>France</source>
+			</trans-unit>
+			<trans-unit id="country.ita" resname="country.ita">
+				<source>Italy</source>
+			</trans-unit>
+			<trans-unit id="country.esp" resname="country.esp">
+				<source>Spain</source>
+			</trans-unit>
+			<trans-unit id="country.nld" resname="country.nld">
+				<source>Netherlands</source>
+			</trans-unit>
+			<trans-unit id="device.desktop" resname="device.desktop">
+				<source>Desktop</source>
+			</trans-unit>
+			<trans-unit id="device.mobile" resname="device.mobile">
+				<source>Mobile</source>
+			</trans-unit>
+			<trans-unit id="device.tablet" resname="device.tablet">
+				<source>Tablet</source>
+			</trans-unit>
+			<trans-unit id="job.pending" resname="job.pending">
+				<source>Waiting to start…</source>
+			</trans-unit>
+			<trans-unit id="job.scan.inspecting" resname="job.scan.inspecting">
+				<source>Inspecting {n}/{total}: {url}</source>
+			</trans-unit>
+			<trans-unit id="job.scan.cap" resname="job.scan.cap">
+				<source>Daily limit ({cap}) reached – the rest follows with the next scan</source>
+			</trans-unit>
+			<trans-unit id="job.scan.quota" resname="job.scan.quota">
+				<source>Search Console quota exhausted – scan stopped</source>
+			</trans-unit>
+			<trans-unit id="job.scan.done" resname="job.scan.done">
+				<source>Done: {inspected} inspected, {skipped} from cache, {errors} errors</source>
+			</trans-unit>
+			<trans-unit id="job.backfill.running" resname="job.backfill.running">
+				<source>Snapshot {n}/{total}: {date}</source>
+			</trans-unit>
+			<trans-unit id="job.backfill.done" resname="job.backfill.done">
+				<source>Done: {fetched} days fetched, {skipped} skipped, {errors} failed</source>
+			</trans-unit>
+			<trans-unit id="job.backfill.aborted" resname="job.backfill.aborted">
+				<source>Backfill stopped:</source>
+			</trans-unit>
+			<trans-unit id="matomo.tab.dashboard" resname="matomo.tab.dashboard">
+				<source>Dashboard</source>
+			</trans-unit>
+			<trans-unit id="matomo.visits" resname="matomo.visits">
+				<source>Visits</source>
+			</trans-unit>
+			<trans-unit id="matomo.pageviews" resname="matomo.pageviews">
+				<source>Pageviews</source>
+			</trans-unit>
+			<trans-unit id="matomo.bounceRate" resname="matomo.bounceRate">
+				<source>Bounce rate</source>
+			</trans-unit>
+			<trans-unit id="matomo.avgTime" resname="matomo.avgTime">
+				<source>Avg. visit duration</source>
+			</trans-unit>
+			<trans-unit id="matomo.allVisitors" resname="matomo.allVisitors">
+				<source>All visitors</source>
+			</trans-unit>
+			<trans-unit id="matomo.segment" resname="matomo.segment">
+				<source>Segment</source>
+			</trans-unit>
+			<trans-unit id="matomo.goalsTotal" resname="matomo.goalsTotal">
+				<source>Goals total</source>
+			</trans-unit>
+			<trans-unit id="matomo.visitorChart" resname="matomo.visitorChart">
+				<source>Visits over time</source>
+			</trans-unit>
+			<trans-unit id="matomo.goalChart" resname="matomo.goalChart">
+				<source>Goal conversions</source>
+			</trans-unit>
+			<trans-unit id="matomo.noGoals" resname="matomo.noGoals">
+				<source>No goals selected. Choose them in the settings.</source>
+			</trans-unit>
+			<trans-unit id="matomo.topPages" resname="matomo.topPages">
+				<source>Most viewed pages</source>
+			</trans-unit>
+			<trans-unit id="matomo.url" resname="matomo.url">
+				<source>URL</source>
+			</trans-unit>
+			<trans-unit id="matomo.sources" resname="matomo.sources">
+				<source>Traffic sources</source>
+			</trans-unit>
+			<trans-unit id="matomo.source" resname="matomo.source">
+				<source>Source</source>
+			</trans-unit>
+			<trans-unit id="matomo.share" resname="matomo.share">
+				<source>Share</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.title" resname="matomo.settings.title">
+				<source>Matomo settings</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.url" resname="matomo.settings.url">
+				<source>Matomo URL</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.token" resname="matomo.settings.token">
+				<source>API token</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.token.description" resname="matomo.settings.token.description">
+				<source>Matomo → Administration → Personal → Security → Auth tokens. Read access is sufficient.</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.token.placeholder" resname="matomo.settings.token.placeholder">
+				<source>32 character token</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.siteId" resname="matomo.settings.siteId">
+				<source>Site ID</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.goals" resname="matomo.settings.goals">
+				<source>Goals</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.goals.description" resname="matomo.settings.goals.description">
+				<source>Which Matomo goals are shown in the dashboard</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.goals.empty" resname="matomo.settings.goals.empty">
+				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
+			</trans-unit>
+			<trans-unit id="widget.last28" resname="widget.last28">
+				<source>Last 28 days</source>
+			</trans-unit>
+			<trans-unit id="widget.last30" resname="widget.last30">
+				<source>Last 30 days</source>
+			</trans-unit>
+			<trans-unit id="widget.vsPrevious" resname="widget.vsPrevious">
+				<source>vs. previous period</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

@@ -1,0 +1,119 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Derspe\SiteInsights\:
+    resource: '../Classes/*'
+    exclude:
+      - '../Classes/Http/ApiException.php'
+      - '../Classes/Service/Gsc/GscNormalizer.php'
+      - '../Classes/Service/Matomo/MatomoNormalizer.php'
+      - '../Classes/Widgets/InsightsWidget.php'
+
+  cache.derspe_site_insights:
+    class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+    factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
+    arguments: ['derspe_site_insights']
+
+  Derspe\SiteInsights\Service\ApiCache:
+    arguments:
+      $cache: '@cache.derspe_site_insights'
+
+  Derspe\SiteInsights\Controller\Backend\ApiController:
+    public: true
+
+  Derspe\SiteInsights\Controller\Backend\OAuthCallbackController:
+    public: true
+
+  # Dashboard widgets: one class, the "view" option selects what the web component shows
+  dashboard.widget.siteInsightsGscKpis:
+    class: Derspe\SiteInsights\Widgets\InsightsWidget
+    arguments:
+      $options:
+        view: gsc-kpis
+    tags:
+      - name: dashboard.widget
+        identifier: 'siteInsightsGscKpis'
+        groupNames: 'siteInsights'
+        title: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.gscKpis.title'
+        description: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.gscKpis.description'
+        iconIdentifier: 'content-widget-site-insights'
+        height: 'small'
+        width: 'medium'
+
+  dashboard.widget.siteInsightsGscChart:
+    class: Derspe\SiteInsights\Widgets\InsightsWidget
+    arguments:
+      $options:
+        view: gsc-chart
+    tags:
+      - name: dashboard.widget
+        identifier: 'siteInsightsGscChart'
+        groupNames: 'siteInsights'
+        title: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.gscChart.title'
+        description: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.gscChart.description'
+        iconIdentifier: 'content-widget-site-insights'
+        height: 'medium'
+        width: 'medium'
+
+  dashboard.widget.siteInsightsGscQueries:
+    class: Derspe\SiteInsights\Widgets\InsightsWidget
+    arguments:
+      $options:
+        view: gsc-queries
+    tags:
+      - name: dashboard.widget
+        identifier: 'siteInsightsGscQueries'
+        groupNames: 'siteInsights'
+        title: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.gscQueries.title'
+        description: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.gscQueries.description'
+        iconIdentifier: 'content-widget-site-insights'
+        height: 'large'
+        width: 'medium'
+
+  dashboard.widget.siteInsightsVisibility:
+    class: Derspe\SiteInsights\Widgets\InsightsWidget
+    arguments:
+      $options:
+        view: gsc-visibility
+    tags:
+      - name: dashboard.widget
+        identifier: 'siteInsightsVisibility'
+        groupNames: 'siteInsights'
+        title: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.visibility.title'
+        description: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.visibility.description'
+        iconIdentifier: 'content-widget-site-insights'
+        height: 'medium'
+        width: 'medium'
+
+  dashboard.widget.siteInsightsMatomoKpis:
+    class: Derspe\SiteInsights\Widgets\InsightsWidget
+    arguments:
+      $options:
+        view: matomo-kpis
+    tags:
+      - name: dashboard.widget
+        identifier: 'siteInsightsMatomoKpis'
+        groupNames: 'siteInsights'
+        title: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.matomoKpis.title'
+        description: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.matomoKpis.description'
+        iconIdentifier: 'content-widget-site-insights'
+        height: 'small'
+        width: 'medium'
+
+  dashboard.widget.siteInsightsMatomoVisitors:
+    class: Derspe\SiteInsights\Widgets\InsightsWidget
+    arguments:
+      $options:
+        view: matomo-visitors
+    tags:
+      - name: dashboard.widget
+        identifier: 'siteInsightsMatomoVisitors'
+        groupNames: 'siteInsights'
+        title: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.matomoVisitors.title'
+        description: 'LLL:EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf:widget.matomoVisitors.description'
+        iconIdentifier: 'content-widget-site-insights'
+        height: 'medium'
+        width: 'medium'

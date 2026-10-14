@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" target-language="de" datatype="plaintext" original="EXT:derspe_site_insights/Resources/Private/Language/locallang.xlf" product-name="derspe_site_insights">
+		<header/>
+		<body>
+			<trans-unit id="widget.group" resname="widget.group">
+				<source>Site Insights</source>
+				<target>Site Insights</target>
+			</trans-unit>
+			<trans-unit id="widget.settings.site" resname="widget.settings.site">
+				<source>Site</source>
+				<target>Site</target>
+			</trans-unit>
+			<trans-unit id="widget.gscKpis.title" resname="widget.gscKpis.title">
+				<source>Search Console: key figures</source>
+				<target>Search Console: Kennzahlen</target>
+			</trans-unit>
+			<trans-unit id="widget.gscKpis.description" resname="widget.gscKpis.description">
+				<source>Clicks, impressions, CTR and position of the last 28 days compared with the previous period.</source>
+				<target>Klicks, Impressionen, CTR und Position der letzten 28 Tage im Vergleich zur Vorperiode.</target>
+			</trans-unit>
+			<trans-unit id="widget.gscChart.title" resname="widget.gscChart.title">
+				<source>Search Console: clicks &amp; impressions</source>
+				<target>Search Console: Klicks &amp; Impressionen</target>
+			</trans-unit>
+			<trans-unit id="widget.gscChart.description" resname="widget.gscChart.description">
+				<source>Daily clicks and impressions of the last 28 days.</source>
+				<target>Tägliche Klicks und Impressionen der letzten 28 Tage.</target>
+			</trans-unit>
+			<trans-unit id="widget.gscQueries.title" resname="widget.gscQueries.title">
+				<source>Search Console: top queries</source>
+				<target>Search Console: Top-Suchanfragen</target>
+			</trans-unit>
+			<trans-unit id="widget.gscQueries.description" resname="widget.gscQueries.description">
+				<source>Top queries of the last 28 days with change against the previous period.</source>
+				<target>Top-Suchanfragen der letzten 28 Tage mit Veränderung zur Vorperiode.</target>
+			</trans-unit>
+			<trans-unit id="widget.visibility.title" resname="widget.visibility.title">
+				<source>Search Console: visibility index</source>
+				<target>Search Console: Sichtbarkeitsindex</target>
+			</trans-unit>
+			<trans-unit id="widget.visibility.description" resname="widget.visibility.description">
+				<source>Own visibility index of the last 90 days, calculated from the daily snapshots.</source>
+				<target>Eigener Sichtbarkeitsindex der letzten 90 Tage, berechnet aus den täglichen Snapshots.</target>
+			</trans-unit>
+			<trans-unit id="widget.matomoKpis.title" resname="widget.matomoKpis.title">
+				<source>Matomo: key figures</source>
+				<target>Matomo: Kennzahlen</target>
+			</trans-unit>
+			<trans-unit id="widget.matomoKpis.description" resname="widget.matomoKpis.description">
+				<source>Visits, pageviews, bounce rate and visit duration of the last 30 days.</source>
+				<target>Besuche, Seitenaufrufe, Absprungrate und Besuchsdauer der letzten 30 Tage.</target>
+			</trans-unit>
+			<trans-unit id="widget.matomoVisitors.title" resname="widget.matomoVisitors.title">
+				<source>Matomo: visits over time</source>
+				<target>Matomo: Besuchsentwicklung</target>
+			</trans-unit>
+			<trans-unit id="widget.matomoVisitors.description" resname="widget.matomoVisitors.description">
+				<source>Daily visits of the last 30 days.</source>
+				<target>Tägliche Besuche der letzten 30 Tage.</target>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

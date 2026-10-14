@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+	<file source-language="en" target-language="de" datatype="plaintext" original="EXT:derspe_site_insights/Resources/Private/Language/module.xlf" product-name="derspe_site_insights">
+		<header/>
+		<body>
+			<trans-unit id="title" resname="title">
+				<source>Site Insights</source>
+				<target>Site Insights</target>
+			</trans-unit>
+			<trans-unit id="short_description" resname="short_description">
+				<source>Search Console and Matomo</source>
+				<target>Search Console und Matomo</target>
+			</trans-unit>
+			<trans-unit id="description" resname="description">
+				<source>Google Search Console and Matomo reports: key figures, rankings tracker, visibility index, cannibalization and index coverage.</source>
+				<target>Berichte aus Google Search Console und Matomo: Kennzahlen, Ranking-Tracker, Sichtbarkeitsindex, Kannibalisierung und Indexabdeckung.</target>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

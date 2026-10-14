@@ -1,0 +1,48 @@
+{
+    "name": "derspe/site-insights",
+    "type": "typo3-cms-extension",
+    "description": "Matomo and Google Search Console insights for the TYPO3 backend: KPIs, comparisons, ranking tracker, visibility index, cannibalization, index coverage and dashboard widgets.",
+    "keywords": [
+        "TYPO3",
+        "extension",
+        "dashboard",
+        "matomo",
+        "google search console",
+        "seo",
+        "analytics"
+    ],
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Frank Specht",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "typo3/cms-backend": "^14.3",
+        "typo3/cms-core": "^14.3",
+        "typo3/cms-dashboard": "^14.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "suggest": {
+        "typo3/cms-scheduler": "Runs the daily Search Console snapshot and background jobs automatically"
+    },
+    "autoload": {
+        "psr-4": {
+            "Derspe\\SiteInsights\\": "Classes/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Derspe\\SiteInsights\\Tests\\": "Tests/"
+        }
+    },
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "derspe_site_insights"
+        }
+    }
+}
