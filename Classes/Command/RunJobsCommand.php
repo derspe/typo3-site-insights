@@ -21,6 +21,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class RunJobsCommand extends Command
 {
+    private const STEP_SECONDS = 20.0;
+
     public function __construct(
         private readonly JobService $jobs,
     ) {
@@ -36,16 +38,19 @@ final class RunJobsCommand extends Command
     {
         $deadline = microtime(true) + max(5, (int)$input->getOption('time-limit'));
         foreach ($this->jobs->findAllActive() as $job) {
-            $remaining = $deadline - microtime(true);
-            if ($remaining < 2) {
-                break;
+            // Short steps, so the progress is saved regularly and visible in the module
+            while (($remaining = $deadline - microtime(true)) > 2) {
+                $result = $this->jobs->step((string)$job['site'], (int)$job['uid'], min(self::STEP_SECONDS, $remaining));
+                if ($result === null) {
+                    $output->writeln(sprintf('Job %d is processed by another process', $job['uid']));
+                    break;
+                }
+                $output->writeln(sprintf('Job %d (%s): %s, %d/%d', $result['uid'], $result['type'], $result['status'], $result['done'], $result['total']), OutputInterface::VERBOSITY_VERBOSE);
+                if (!in_array($result['status'], ['pending', 'running'], true)) {
+                    $output->writeln(sprintf('Job %d (%s): %s', $result['uid'], $result['type'], $result['status']));
+                    break;
+                }
             }
-            $result = $this->jobs->step((string)$job['site'], (int)$job['uid'], $remaining);
-            if ($result === null) {
-                $output->writeln(sprintf('Job %d is processed by another process', $job['uid']));
-                continue;
-            }
-            $output->writeln(sprintf('Job %d (%s): %s, %d/%d', $result['uid'], $result['type'], $result['status'], $result['done'], $result['total']));
         }
         return Command::SUCCESS;
     }
