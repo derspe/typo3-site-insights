@@ -17,6 +17,7 @@ final readonly class InspectService
         private InspectRepository $inspects,
         private UrlCollector $urlCollector,
         private ApiCache $cache,
+        private InspectQuota $quota,
     ) {}
 
     /**
@@ -30,6 +31,7 @@ final readonly class InspectService
                 return ['row' => $cached, 'cacheHit' => true];
             }
         }
+        $this->quota->consume($site);
         return ['row' => $this->inspects->save($site, $url, $this->client->inspectUrl($site, $url)), 'cacheHit' => false];
     }
 

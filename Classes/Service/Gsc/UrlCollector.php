@@ -17,6 +17,9 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 final readonly class UrlCollector
 {
     private const USER_AGENT = 'Mozilla/5.0 (compatible; TYPO3-SiteInsights/1.0)';
+    public const MAX_CHILD_SITEMAPS = 50;
+    public const MAX_URLS = 20000;
+    public const MAX_BYTES = 20 * 1024 * 1024;
 
     public function __construct(
         private SiteSettings $settings,
@@ -52,36 +55,63 @@ final readonly class UrlCollector
         $include = $this->settings->getString($site, 'gsc_extra_include');
         foreach ($this->settings->getList($site, 'gsc_extra_source_urls') as $source) {
             try {
-                array_push($urls, ...$this->pageLinks($source, $include));
+                array_push($urls, ...array_slice($this->pageLinks($source, $include), 0, self::MAX_URLS));
             } catch (\Throwable $e) {
                 $this->logger->warning('Link harvest failed for {url}: {message}', ['url' => $source, 'message' => $e->getMessage()]);
             }
         }
-        return array_values(array_unique($urls));
+        return array_slice(array_values(array_unique($urls)), 0, self::MAX_URLS);
+    }
+
+    /**
+     * Page URLs of a sitemap or sitemap index. Child sitemaps are only followed on the
+     * host of the sitemap itself (the XML comes from outside and must not make this
+     * server request arbitrary, e.g. internal, hosts).
+     *
+     * @return list<string>
+     */
+    public function sitemapUrls(string $sitemapUrl): array
+    {
+        $host = strtolower((string)parse_url($sitemapUrl, PHP_URL_HOST));
+        return array_slice($this->readSitemap($sitemapUrl, $host, 0), 0, self::MAX_URLS);
     }
 
     /**
      * @return list<string>
      */
-    public function sitemapUrls(string $sitemapUrl, int $depth = 0): array
+    private function readSitemap(string $sitemapUrl, string $host, int $depth): array
     {
-        $xml = $this->fetch($sitemapUrl, 15);
-        $document = $this->parseXml($xml);
+        $document = $this->parseXml($this->fetch($sitemapUrl, 15));
         if ($document === null) {
             return [];
         }
         $document->registerXPathNamespace('sm', 'http://www.sitemaps.org/schemas/sitemap/0.9');
         $pages = self::texts($document->xpath('//sm:url/sm:loc') ?: $document->xpath('//url/loc') ?: []);
-        if ($pages !== [] || $depth > 2) {
-            return $pages;
+        if ($pages !== [] || $depth >= 2) {
+            return array_values(array_unique($pages));
         }
-        $children = self::texts($document->xpath('//sm:sitemap/sm:loc') ?: $document->xpath('//sitemap/loc') ?: []);
+        $children = self::sameHost(self::texts($document->xpath('//sm:sitemap/sm:loc') ?: $document->xpath('//sitemap/loc') ?: []), $host);
         $urls = [];
-        foreach ($children as $child) {
-            array_push($urls, ...$this->sitemapUrls($child, $depth + 1));
+        foreach (array_slice($children, 0, self::MAX_CHILD_SITEMAPS) as $child) {
+            array_push($urls, ...$this->readSitemap($child, $host, $depth + 1));
+            if (count($urls) >= self::MAX_URLS) {
+                break;
+            }
         }
         // Sub-sitemaps can contain the same URL (e.g. news and google news)
         return array_values(array_unique($urls));
+    }
+
+    /**
+     * @param list<string> $urls
+     * @return list<string>
+     */
+    public static function sameHost(array $urls, string $host): array
+    {
+        return array_values(array_filter($urls, static function (string $url) use ($host): bool {
+            return in_array(strtolower((string)parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)
+                && strtolower((string)parse_url($url, PHP_URL_HOST)) === $host;
+        }));
     }
 
     /**
@@ -142,14 +172,24 @@ final readonly class UrlCollector
                 'headers' => ['User-Agent' => self::USER_AGENT],
                 'timeout' => $timeout,
                 'http_errors' => false,
+                'allow_redirects' => ['max' => 3, 'protocols' => ['http', 'https']],
+                'stream' => true,
             ]);
         } catch (\Throwable $e) {
-            throw new ApiException('Could not fetch ' . $url . ': ' . $e->getMessage(), 502, $e);
+            throw new ApiException('Could not fetch ' . $url, 502, $e);
         }
         if ($response->getStatusCode() >= 400) {
             throw new ApiException('Could not fetch ' . $url . ' (HTTP ' . $response->getStatusCode() . ')', 502);
         }
-        return (string)$response->getBody();
+        $body = $response->getBody();
+        $content = '';
+        while (!$body->eof()) {
+            $content .= $body->read(65536);
+            if (strlen($content) > self::MAX_BYTES) {
+                throw new ApiException('Response of ' . $url . ' is too large', 502);
+            }
+        }
+        return $content;
     }
 
     private function parseXml(string $xml): ?\SimpleXMLElement

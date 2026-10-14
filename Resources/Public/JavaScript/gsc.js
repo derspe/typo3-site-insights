@@ -10,6 +10,8 @@ import { JobRunner, jobProgressText } from '@derspe/site-insights/jobs.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
 
+const OAUTH_STORAGE_KEY = 'derspe-site-insights-oauth';
+
 export const GSC_DEFAULT_RANGE = { period: 'range', date: 'last28', searchType: 'web', compare: '' };
 
 const PRESETS = [
@@ -642,7 +644,7 @@ class SiGscIndex extends SiElement {
           <div class="group-xs">${badge(d.indexStatus ?? '–', statusColor(d.indexStatus))}<span class="sm dimmed">${d.coverageState ?? '–'}</span></div>
           <div class="group-xs">
             <span class="xs dimmed">${t('gsc.index.lastCheck', { ago: fmt.timeAgo(d.inspectedAt) })} ${d.cacheHit ? t('gsc.index.fromCache') : ''}</span>
-            ${spinnerButton(t('gsc.index.recheck'), { size: 'xs', variant: 'subtle', iconName: 'refresh', loading: this.singleLoading, onClick: () => this.check(true) })}
+            ${getMeta().isAdmin ? spinnerButton(t('gsc.index.recheck'), { size: 'xs', variant: 'subtle', iconName: 'refresh', loading: this.singleLoading, onClick: () => this.check(true) }) : nothing}
           </div>
         </div>
         <div class="stack-xs">
@@ -732,34 +734,66 @@ class SiGscSettings extends SiElement {
     this.job = null;
     this.backfillDays = 90;
     this.notice = null;
+    this.noticeText = '';
     this.runner = null;
-    this.onMessage = (event) => {
-      if (event.origin !== window.location.origin || event.data?.source !== 'derspe-site-insights') {
-        return;
+    this.waitingForGoogle = false;
+    this.onStorage = (event) => {
+      if (event.type === 'focus' || (event.key === OAUTH_STORAGE_KEY && event.newValue)) {
+        this.pickUpOAuthResult();
       }
-      this.notice = event.data.status;
-      this.loadStatus();
     };
   }
 
   connectedCallback() {
     super.connectedCallback();
-    window.addEventListener('message', this.onMessage);
+    window.addEventListener('storage', this.onStorage);
+    window.addEventListener('focus', this.onStorage);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener('message', this.onMessage);
+    window.removeEventListener('storage', this.onStorage);
+    window.removeEventListener('focus', this.onStorage);
     this.runner?.stop();
   }
 
   willUpdate(changed) {
-    if (changed.has('site') && this.site) {
+    if (changed.has('site') && this.site && getMeta().isAdmin) {
       this.load();
       this.runner?.stop();
       this.runner = new JobRunner(this.site, (job) => { this.job = job; });
       this.runner.resume('backfill').catch(() => {});
     }
+  }
+
+  /**
+   * Reads (and immediately removes) the result the callback page left in localStorage.
+   * Only accepted while this window waits for Google; the server validates state, site and user.
+   */
+  pickUpOAuthResult() {
+    let result = null;
+    try {
+      result = JSON.parse(window.localStorage.getItem(OAUTH_STORAGE_KEY) ?? 'null');
+      window.localStorage.removeItem(OAUTH_STORAGE_KEY);
+    } catch {
+      return;
+    }
+    if (!this.waitingForGoogle || !result || Date.now() - (result.time ?? 0) > 10 * 60 * 1000) {
+      return;
+    }
+    this.waitingForGoogle = false;
+    this.completeConnection(result);
+  }
+
+  async completeConnection({ code, state, error }) {
+    try {
+      await this.api('gsc/auth/complete', { method: 'POST', body: { code, state, error } });
+      this.notice = 'ok';
+    } catch (e) {
+      this.notice = 'failed';
+      this.noticeText = e.message;
+    }
+    this.loadStatus();
   }
 
   async load() {
@@ -807,17 +841,20 @@ class SiGscSettings extends SiElement {
 
   async connect() {
     this.notice = null;
+    this.noticeText = '';
     // Open the window synchronously (popup blockers), then navigate it to Google
     const popup = window.open('', 'derspe-site-insights-oauth', 'width=520,height=680');
+    if (!popup) {
+      this.error = new Error(t('gsc.oauth.popupBlocked'));
+      return;
+    }
     try {
+      window.localStorage.removeItem(OAUTH_STORAGE_KEY);
       const { url } = await this.api('gsc/auth/start', { method: 'POST' });
-      if (popup) {
-        popup.location.href = url;
-      } else {
-        window.location.href = url;
-      }
+      this.waitingForGoogle = true;
+      popup.location.href = url;
     } catch (e) {
-      popup?.close();
+      popup.close();
       this.error = e;
     }
   }
@@ -838,17 +875,19 @@ class SiGscSettings extends SiElement {
   }
 
   render() {
+    if (!getMeta().isAdmin) {
+      return html`<div class="paper" style="max-width:860px">${alertBox(t('settings.adminOnly'), { color: 'yellow' })}</div>`;
+    }
     if (!this.form) {
       return this.error ? errorState(this.error) : skeleton(400);
     }
-    const isAdmin = getMeta().isAdmin;
+    const isAdmin = true;
     const status = this.status;
     const running = this.job && (this.job.status === 'running' || this.job.status === 'pending');
     const noticeColor = this.notice === 'ok' ? 'green' : 'red';
     return html`<div class="paper" style="max-width:860px">
       <h3 class="title mb">${t('gsc.settings.title')}</h3>
       <div class="stack-sm">
-        ${!isAdmin ? alertBox(t('settings.adminOnly'), { color: 'yellow' }) : nothing}
         ${this.error ? alertBox(this.error.message) : nothing}
         ${this.field('gsc_oauth_client_id', t('gsc.settings.clientId'), { placeholder: '….apps.googleusercontent.com' })}
         ${this.field('gsc_oauth_client_secret', t('gsc.settings.clientSecret'), {
@@ -876,7 +915,7 @@ class SiGscSettings extends SiElement {
             <span class="fw6">${t('gsc.settings.connection')}</span>
             ${status ? badge(status.connected ? t('gsc.settings.connected') : t('gsc.settings.notConnected'), status.connected ? 'green' : 'red') : nothing}
           </div>
-          ${this.notice ? html`<div class="mb-sm">${alertBox(t(`gsc.oauth.${this.notice}`), { color: noticeColor })}</div>` : nothing}
+          ${this.notice ? html`<div class="mb-sm">${alertBox(this.noticeText || t(`gsc.oauth.${this.notice}`), { color: noticeColor })}</div>` : nothing}
           ${status?.error ? html`<div class="mb-sm">${alertBox(status.error, { color: 'yellow' })}</div>` : nothing}
           ${status && !status.connected ? html`
             ${isAdmin ? html`<button type="button" class="btn" ?disabled=${!status.configured} @click=${() => this.connect()}>${icon('google', 16)}${t('gsc.settings.connect')}</button>` : nothing}

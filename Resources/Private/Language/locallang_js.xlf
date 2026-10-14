@@ -388,7 +388,7 @@
 				<source>Authorized redirect URI</source>
 			</trans-unit>
 			<trans-unit id="gsc.settings.redirectUri.description" resname="gsc.settings.redirectUri.description">
-				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console.</source>
+				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console. It points to a static page of the extension that hands the result back to this window.</source>
 			</trans-unit>
 			<trans-unit id="gsc.settings.property" resname="gsc.settings.property">
 				<source>Search Console property</source>
@@ -468,6 +468,9 @@
 			<trans-unit id="gsc.settings.scheduler" resname="gsc.settings.scheduler">
 				<source>Daily snapshots: add the scheduler task "site-insights:gsc-snapshot" (e.g. daily) and "site-insights:run-jobs" (every few minutes) so started jobs also finish in the background.</source>
 			</trans-unit>
+			<trans-unit id="gsc.oauth.popupBlocked" resname="gsc.oauth.popupBlocked">
+				<source>The browser blocked the popup window. Please allow popups for the TYPO3 backend and try again.</source>
+			</trans-unit>
 			<trans-unit id="gsc.oauth.ok" resname="gsc.oauth.ok">
 				<source>Google Search Console is connected.</source>
 			</trans-unit>
@@ -525,11 +528,8 @@
 			<trans-unit id="job.scan.inspecting" resname="job.scan.inspecting">
 				<source>Inspecting {n}/{total}: {url}</source>
 			</trans-unit>
-			<trans-unit id="job.scan.cap" resname="job.scan.cap">
-				<source>Daily limit ({cap}) reached – the rest follows with the next scan</source>
-			</trans-unit>
 			<trans-unit id="job.scan.quota" resname="job.scan.quota">
-				<source>Search Console quota exhausted – scan stopped</source>
+				<source>Daily inspection limit reached or Search Console quota exhausted – the rest follows with the next scan</source>
 			</trans-unit>
 			<trans-unit id="job.scan.done" resname="job.scan.done">
 				<source>Done: {inspected} inspected, {skipped} from cache, {errors} errors</source>
@@ -596,6 +596,9 @@
 			</trans-unit>
 			<trans-unit id="matomo.settings.url" resname="matomo.settings.url">
 				<source>Matomo URL</source>
+			</trans-unit>
+			<trans-unit id="matomo.settings.url.description" resname="matomo.settings.url.description">
+				<source>Changing the host removes the stored token – it is only ever sent to the Matomo it was entered for.</source>
 			</trans-unit>
 			<trans-unit id="matomo.settings.token" resname="matomo.settings.token">
 				<source>API token</source>

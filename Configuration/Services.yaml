@@ -11,6 +11,7 @@ services:
       - '../Classes/Service/Gsc/GscNormalizer.php'
       - '../Classes/Service/Matomo/MatomoNormalizer.php'
       - '../Classes/Widgets/InsightsWidget.php'
+      - '../Classes/Security/AccessPolicy.php'
 
   cache.derspe_site_insights:
     class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
@@ -22,9 +23,6 @@ services:
       $cache: '@cache.derspe_site_insights'
 
   Derspe\SiteInsights\Controller\Backend\ApiController:
-    public: true
-
-  Derspe\SiteInsights\Controller\Backend\OAuthCallbackController:
     public: true
 
   # Dashboard widgets: one class, the "view" option selects what the web component shows

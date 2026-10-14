@@ -50,9 +50,21 @@ vendor/bin/typo3 extension:setup
 ```
 
 Open **Sites → Site Insights**. Each site configuration has its own settings.
-Only administrators can change settings; secrets (Matomo token, OAuth client
-secret, refresh token) are stored encrypted with a key derived from the
-instance `encryptionKey` and are never sent to the browser.
+
+## Security
+
+- Only administrators can see and change settings, connect Google, run snapshots and
+  backfills or force re-inspections. Other users need access to the module and only see
+  sites whose root page is inside their DB mounts.
+- Secrets (Matomo token, OAuth client secret, refresh token, cached access tokens) are
+  encrypted with a key derived from the instance `encryptionKey` and never sent to the
+  browser. Changing the Matomo host removes the stored token.
+- There is no public endpoint: the OAuth result is completed through the CSRF protected
+  backend API; the state is single use, expires after 10 minutes and is bound to the
+  site and the administrator who started the connection.
+- URL Inspection calls are limited to 1,800 per site and day (Google allows 2,000).
+- Child sitemaps are only fetched on the host of the configured sitemap; responses are
+  limited in size and number.
 
 ### Matomo
 
@@ -64,9 +76,11 @@ so Matomo's option "only accept POST requests with token_auth" can stay enabled.
 
 1. In the Google Cloud Console create an OAuth client of type **Web application**
    and enable the *Google Search Console API*.
-2. Add the redirect URI shown in the settings
-   (`https://<your-backend>/typo3/derspe-site-insights/oauth/callback`) as
-   authorized redirect URI.
+2. Add the redirect URI shown in the settings as authorized redirect URI. It points
+   to a static page of the extension (`/_assets/<hash>/OAuth/callback.html`), which
+   hands the result to the settings window; the connection is then completed through
+   the authenticated backend API. The path depends on the installation path of the
+   extension, so register the URI shown by each environment.
 3. Enter client ID and secret, save, then click **Connect with Google**.
 4. Enter the property: `sc-domain:example.com` (domain property) or the URL
    prefix (`https://www.example.com/`).

@@ -137,6 +137,19 @@ final class SiteSettings
         return $this->runtimeCache[$site] = $values;
     }
 
+    /**
+     * Encrypts a value for storage outside the settings table (e.g. cached access tokens).
+     */
+    public function encryptValue(string $plain, string $context): string
+    {
+        return $this->encrypt($plain, 'value', $context);
+    }
+
+    public function decryptValue(string $encrypted, string $context): ?string
+    {
+        return $this->decrypt($encrypted, 'value', $context);
+    }
+
     private function encrypt(string $plain, string $site, string $name): string
     {
         $key = $this->keyFactory->deriveSharedKeyFromEncryptionKey(self::class);

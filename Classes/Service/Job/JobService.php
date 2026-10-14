@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Locking\Exception\LockAcquireWouldBlockException;
 use TYPO3\CMS\Core\Locking\LockFactory;
 use TYPO3\CMS\Core\Locking\LockingStrategyInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Long running work (index scan, snapshot backfill) as database jobs, processed in
@@ -25,8 +26,7 @@ final readonly class JobService
     public const TYPE_INDEX_SCAN = 'index_scan';
     public const TYPE_BACKFILL = 'backfill';
 
-    /** URL Inspection API: 2000/day and 600/minute per property */
-    private const INSPECT_DAILY_CAP = 1800;
+    /** URL Inspection API: 600/minute per property (the daily budget is kept by InspectQuota) */
     private const INSPECT_INTERVAL = 1.1;
     private const BACKFILL_INTERVAL = 0.5;
 
@@ -36,6 +36,7 @@ final readonly class JobService
         private InspectService $inspectService,
         private InspectRepository $inspects,
         private SnapshotService $snapshotService,
+        private LoggerInterface $logger,
     ) {}
 
     /**
@@ -44,6 +45,24 @@ final readonly class JobService
      * @param array<string, mixed> $options
      */
     public function create(string $site, string $type, array $options = []): int
+    {
+        if (!in_array($type, [self::TYPE_INDEX_SCAN, self::TYPE_BACKFILL], true)) {
+            throw new ApiException('Unknown job type', 400);
+        }
+        // Serialize creation, otherwise parallel requests could start the same job twice
+        $locker = $this->lockFactory->createLocker('derspe_site_insights_create_' . sha1($site . $type));
+        $locker->acquire();
+        try {
+            return $this->createUnlocked($site, $type, $options);
+        } finally {
+            $locker->release();
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function createUnlocked(string $site, string $type, array $options): int
     {
         $this->expireAbandoned();
         $active = $this->findActive($site, $type);
@@ -146,9 +165,15 @@ final readonly class JobService
                     self::TYPE_BACKFILL => $this->stepBackfill($job, $state, $deadline),
                     default => ['status' => 'error', 'error' => 'Unknown job type'] + $job,
                 };
-            } catch (\Throwable $e) {
+            } catch (ApiException $e) {
                 $job['status'] = 'error';
                 $job['error'] = $e->getMessage();
+            } catch (\Throwable $e) {
+                // Details only in the log, the UI gets a reference
+                $reference = bin2hex(random_bytes(4));
+                $this->logger->error('Site Insights job {uid} failed ({reference}): {message}', ['uid' => $uid, 'reference' => $reference, 'message' => $e->getMessage(), 'exception' => $e]);
+                $job['status'] = 'error';
+                $job['error'] = sprintf('Internal error (reference %s, see the TYPO3 log)', $reference);
             }
             $this->save($job);
             return $job;
@@ -183,9 +208,6 @@ final readonly class JobService
                 $job['skipped']++;
                 $cursor++;
                 continue;
-            }
-            if ((int)$job['inspected'] >= self::INSPECT_DAILY_CAP) {
-                return $this->finish($job, $state, $cursor, ['key' => 'job.scan.cap', 'args' => ['cap' => self::INSPECT_DAILY_CAP]]);
             }
             $wait = self::INSPECT_INTERVAL - (microtime(true) - $lastCall);
             if ($wait > 0 && $lastCall > 0) {

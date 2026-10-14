@@ -8,6 +8,9 @@ use Derspe\SiteInsights\Domain\Repository\InspectRepository;
 use Derspe\SiteInsights\Domain\Repository\SnapshotRepository;
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Settings\SiteSettings;
+use TYPO3\CMS\Core\Locking\Exception\LockAcquireWouldBlockException;
+use TYPO3\CMS\Core\Locking\LockFactory;
+use TYPO3\CMS\Core\Locking\LockingStrategyInterface;
 
 /**
  * Stores the daily top queries/pages of a site and keeps the visibility index up to date.
@@ -23,6 +26,7 @@ final readonly class SnapshotService
         private SnapshotRepository $snapshots,
         private InspectRepository $inspects,
         private SiteSettings $settings,
+        private LockFactory $lockFactory,
     ) {}
 
     public static function defaultSnapshotDate(?\DateTimeImmutable $now = null): string
@@ -61,6 +65,27 @@ final readonly class SnapshotService
      * @return array{skipped: bool, snapshotDate: string, queries?: int, pages?: int, reason?: string}
      */
     public function run(string $site, ?string $date = null, bool $force = false): array
+    {
+        $mode = LockingStrategyInterface::LOCK_CAPABILITY_EXCLUSIVE | LockingStrategyInterface::LOCK_CAPABILITY_NOBLOCK;
+        $locker = $this->lockFactory->createLocker('derspe_site_insights_snapshot_' . sha1($site), $mode);
+        try {
+            if (!$locker->acquire($mode)) {
+                throw new ApiException('Snapshot is already running', 409);
+            }
+        } catch (LockAcquireWouldBlockException) {
+            throw new ApiException('Snapshot is already running', 409);
+        }
+        try {
+            return $this->runLocked($site, $date, $force);
+        } finally {
+            $locker->release();
+        }
+    }
+
+    /**
+     * @return array{skipped: bool, snapshotDate: string, queries?: int, pages?: int, reason?: string}
+     */
+    private function runLocked(string $site, ?string $date, bool $force): array
     {
         if ($this->snapshots->hasActiveRun($site)) {
             throw new ApiException('Snapshot is already running', 409);

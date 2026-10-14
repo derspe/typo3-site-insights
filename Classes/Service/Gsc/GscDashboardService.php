@@ -371,6 +371,22 @@ final readonly class GscDashboardService
     }
 
     /**
+     * ISO 3166-1 alpha-3 country code in lower case, otherwise '' (= all countries).
+     * Strict, because every distinct value is a separate cache entry and API call.
+     */
+    public static function country(mixed $value): string
+    {
+        $value = strtolower(trim(is_scalar($value) ? (string)$value : ''));
+        return preg_match('/^[a-z]{3}$/', $value) === 1 ? $value : '';
+    }
+
+    public static function device(mixed $value): string
+    {
+        $value = strtoupper(trim(is_scalar($value) ? (string)$value : ''));
+        return in_array($value, ['DESKTOP', 'MOBILE', 'TABLET'], true) ? $value : '';
+    }
+
+    /**
      * @param array<string, mixed> $q
      * @return array{0: string, 1: string, 2: string, 3: string, 4: string}
      */
@@ -388,8 +404,6 @@ final readonly class GscDashboardService
         if (!in_array($searchType, ['web', 'image', 'video', 'news', 'discover', 'googleNews'], true)) {
             $searchType = 'web';
         }
-        $country = preg_replace('/[^a-z]/', '', strtolower((string)($q['country'] ?? ''))) ?? '';
-        $device = preg_replace('/[^A-Z]/', '', strtoupper((string)($q['device'] ?? ''))) ?? '';
-        return [$period, $date, $searchType, $country, $device];
+        return [$period, $date, $searchType, self::country($q['country'] ?? ''), self::device($q['device'] ?? '')];
     }
 }

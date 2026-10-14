@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Derspe\SiteInsights\Service\Matomo;
 
 use Derspe\SiteInsights\Http\ApiException;
+use Derspe\SiteInsights\Service\ApiCache;
 use Derspe\SiteInsights\Settings\SiteSettings;
 
 /**
@@ -17,6 +18,7 @@ final readonly class MatomoDashboardService
     public function __construct(
         private MatomoClient $client,
         private SiteSettings $settings,
+        private ApiCache $cache,
     ) {}
 
     /**
@@ -25,7 +27,7 @@ final readonly class MatomoDashboardService
     public function segments(string $site): array
     {
         try {
-            $data = $this->client->call($site, 'SegmentEditor.getAll');
+            $data = $this->cache->remember([$site, 'matomo', 'segments'], fn(): mixed => $this->client->call($site, 'SegmentEditor.getAll'));
         } catch (ApiException $e) {
             if ($e->status === 503) {
                 throw $e;
@@ -68,11 +70,26 @@ final readonly class MatomoDashboardService
             ? (in_array($date, ['today', 'yesterday'], true) ? $date : 'today')
             : (isset(self::RANGE_DAYS[$date]) ? $date : 'last30');
         $compare = in_array($compare, ['previous', 'year'], true) ? $compare : '';
+        // Only segments defined in Matomo: free-form segments could trigger expensive archiving
+        if ($segment !== '' && !in_array($segment, array_column($this->segments($site), 'definition'), true)) {
+            throw new ApiException('Unknown segment', 400);
+        }
+        $goalIds = $this->goalIds($site);
+        return $this->cache->remember(
+            [$site, 'matomo', 'dashboard', $period, $date, $segment, $compare, $goalIds, date('Y-m-d')],
+            fn(): array => $this->buildDashboard($site, $period, $date, $segment, $compare, $goalIds)
+        );
+    }
 
+    /**
+     * @param list<string> $goalIds
+     * @return array<string, mixed>
+     */
+    private function buildDashboard(string $site, string $period, string $date, string $segment, string $compare, array $goalIds): array
+    {
         $segmentParam = $segment !== '' ? ['segment' => $segment] : [];
         $explicitDate = $this->explicitDate($period, $date);
         $compareRange = $compare !== '' ? $this->compareRange($period, $date, $compare) : null;
-        $goalIds = $this->goalIds($site);
 
         $calls = [
             ['VisitsSummary.get', ['period' => $period, 'date' => $explicitDate] + $segmentParam],

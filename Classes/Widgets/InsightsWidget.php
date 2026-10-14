@@ -6,7 +6,8 @@ namespace Derspe\SiteInsights\Widgets;
 
 use TYPO3\CMS\Core\Page\JavaScriptModuleInstruction;
 use TYPO3\CMS\Core\Settings\SettingDefinition;
-use TYPO3\CMS\Core\Site\SiteFinder;
+use Derspe\SiteInsights\Security\SiteAccess;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Dashboard\Widgets\JavaScriptInterface;
 use TYPO3\CMS\Dashboard\Widgets\WidgetConfigurationInterface;
 use TYPO3\CMS\Dashboard\Widgets\WidgetContext;
@@ -24,14 +25,19 @@ final readonly class InsightsWidget implements WidgetRendererInterface, JavaScri
      */
     public function __construct(
         private WidgetConfigurationInterface $configuration,
-        private SiteFinder $siteFinder,
+        private SiteAccess $siteAccess,
         private array $options = [],
     ) {}
 
     public function getSettingsDefinitions(): array
     {
+        $user = $GLOBALS['BE_USER'] ?? null;
+        if (!$user instanceof BackendUserAuthentication) {
+            return [];
+        }
         $sites = [];
-        foreach ($this->siteFinder->getAllSites() as $site) {
+        // Only sites the user may see
+        foreach ($this->siteAccess->allowedSites($user) as $site) {
             $sites[$site->getIdentifier()] = (string)($site->getConfiguration()['websiteTitle'] ?? '') ?: $site->getIdentifier();
         }
         if (count($sites) < 2) {

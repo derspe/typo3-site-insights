@@ -516,8 +516,8 @@
 				<target>Autorisierte Weiterleitungs-URI</target>
 			</trans-unit>
 			<trans-unit id="gsc.settings.redirectUri.description" resname="gsc.settings.redirectUri.description">
-				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console.</source>
-				<target>Diese URI im OAuth-Client (Typ „Webanwendung“) in der Google Cloud Console eintragen.</target>
+				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console. It points to a static page of the extension that hands the result back to this window.</source>
+				<target>Diese URI im OAuth-Client (Typ „Webanwendung“) in der Google Cloud Console eintragen. Sie zeigt auf eine statische Seite der Extension, die das Ergebnis an dieses Fenster zurückgibt.</target>
 			</trans-unit>
 			<trans-unit id="gsc.settings.property" resname="gsc.settings.property">
 				<source>Search Console property</source>
@@ -623,6 +623,10 @@
 				<source>Daily snapshots: add the scheduler task "site-insights:gsc-snapshot" (e.g. daily) and "site-insights:run-jobs" (every few minutes) so started jobs also finish in the background.</source>
 				<target>Tägliche Snapshots: Scheduler-Task „site-insights:gsc-snapshot“ (z. B. täglich) und „site-insights:run-jobs“ (alle paar Minuten) anlegen, damit gestartete Jobs auch im Hintergrund fertig werden.</target>
 			</trans-unit>
+			<trans-unit id="gsc.oauth.popupBlocked" resname="gsc.oauth.popupBlocked">
+				<source>The browser blocked the popup window. Please allow popups for the TYPO3 backend and try again.</source>
+				<target>Der Browser hat das Popup-Fenster blockiert. Bitte Popups für das TYPO3-Backend erlauben und erneut versuchen.</target>
+			</trans-unit>
 			<trans-unit id="gsc.oauth.ok" resname="gsc.oauth.ok">
 				<source>Google Search Console is connected.</source>
 				<target>Google Search Console ist verbunden.</target>
@@ -699,13 +703,9 @@
 				<source>Inspecting {n}/{total}: {url}</source>
 				<target>Prüfe {n}/{total}: {url}</target>
 			</trans-unit>
-			<trans-unit id="job.scan.cap" resname="job.scan.cap">
-				<source>Daily limit ({cap}) reached – the rest follows with the next scan</source>
-				<target>Tageslimit ({cap}) erreicht – der Rest folgt beim nächsten Scan</target>
-			</trans-unit>
 			<trans-unit id="job.scan.quota" resname="job.scan.quota">
-				<source>Search Console quota exhausted – scan stopped</source>
-				<target>Search-Console-Kontingent erschöpft – Scan abgebrochen</target>
+				<source>Daily inspection limit reached or Search Console quota exhausted – the rest follows with the next scan</source>
+				<target>Tageslimit für URL-Prüfungen erreicht oder Search-Console-Kontingent erschöpft – der Rest folgt beim nächsten Scan</target>
 			</trans-unit>
 			<trans-unit id="job.scan.done" resname="job.scan.done">
 				<source>Done: {inspected} inspected, {skipped} from cache, {errors} errors</source>
@@ -794,6 +794,10 @@
 			<trans-unit id="matomo.settings.url" resname="matomo.settings.url">
 				<source>Matomo URL</source>
 				<target>Matomo-URL</target>
+			</trans-unit>
+			<trans-unit id="matomo.settings.url.description" resname="matomo.settings.url.description">
+				<source>Changing the host removes the stored token – it is only ever sent to the Matomo it was entered for.</source>
+				<target>Ein Wechsel des Hosts löscht das gespeicherte Token – es wird nur an das Matomo gesendet, für das es eingegeben wurde.</target>
 			</trans-unit>
 			<trans-unit id="matomo.settings.token" resname="matomo.settings.token">
 				<source>API token</source>

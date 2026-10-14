@@ -7,29 +7,35 @@ namespace Derspe\SiteInsights\Service\Gsc;
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
 use Derspe\SiteInsights\Settings\SiteSettings;
-use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\Client\GuzzleClientFactory;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 
 /**
  * OAuth 2.0 web server flow for the Search Console API (read-only scope).
  *
- * The refresh token is stored encrypted per site; short-lived access tokens are cached.
+ * Google redirects to a static page of this extension, which hands code and state to the
+ * backend module that opened it (postMessage). The module completes the flow through the
+ * authenticated AJAX API, so no public endpoint exists and the state can be bound to the
+ * administrator who started the connection.
+ *
+ * The refresh token is stored encrypted per site; access tokens are cached encrypted.
  */
-final readonly class GoogleOAuth
+class GoogleOAuth
 {
     public const SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+    public const STATE_TABLE = 'tx_derspesiteinsights_oauth_state';
+    public const STATE_TTL = 600;
     private const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
     private const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-    private const STATE_TABLE = 'tx_derspesiteinsights_oauth_state';
-    private const STATE_TTL = 600;
+    private const CALLBACK_RESOURCE = 'EXT:derspe_site_insights/Resources/Public/OAuth/callback.html';
 
     public function __construct(
-        private SiteSettings $settings,
-        private GuzzleClientFactory $clientFactory,
-        private ConnectionPool $connectionPool,
-        private UriBuilder $uriBuilder,
-        private ApiCache $cache,
+        private readonly SiteSettings $settings,
+        private readonly GuzzleClientFactory $clientFactory,
+        private readonly ConnectionPool $connectionPool,
+        private readonly ApiCache $cache,
     ) {}
 
     public function isConfigured(string $site): bool
@@ -44,7 +50,7 @@ final readonly class GoogleOAuth
 
     public function redirectUri(): string
     {
-        return (string)$this->uriBuilder->buildUriFromRoute('derspe_site_insights_oauth_callback', [], UriBuilder::ABSOLUTE_URL);
+        return GeneralUtility::getIndpEnv('TYPO3_REQUEST_HOST') . PathUtility::getPublicResourceWebPath(self::CALLBACK_RESOURCE);
     }
 
     public function buildAuthUrl(string $site, int $backendUserId): string
@@ -73,36 +79,37 @@ final readonly class GoogleOAuth
     }
 
     /**
-     * Validates and removes the state. Returns the site identifier, or null if invalid/expired.
+     * Completes the connection with the code Google handed to the callback page.
      */
-    public function consumeState(string $state): ?string
+    public function complete(string $site, int $backendUserId, string $state, string $code): void
     {
-        if ($state === '') {
-            return null;
+        if ($code === '' || !$this->consumeState($state, $site, $backendUserId)) {
+            throw new ApiException('The connection request is invalid or expired. Please connect again.', 400);
         }
-        $connection = $this->connectionPool->getConnectionForTable(self::STATE_TABLE);
-        $row = $connection->select(['site', 'created_at'], self::STATE_TABLE, ['state' => $state])->fetchAssociative();
-        $connection->delete(self::STATE_TABLE, ['state' => $state]);
-        if ($row === false || (int)$row['created_at'] < time() - self::STATE_TTL) {
-            return null;
-        }
-        return (string)$row['site'];
+        $this->exchangeCode($site, $code);
     }
 
-    public function exchangeCode(string $site, string $code): void
+    /**
+     * Single use: the state is deleted atomically, only the request that deleted it may
+     * continue. It must belong to the same site and administrator and must not be expired.
+     */
+    public function consumeState(string $state, string $site, int $backendUserId): bool
     {
-        $tokens = $this->tokenRequest($site, [
-            'grant_type' => 'authorization_code',
-            'code' => $code,
-            'redirect_uri' => $this->redirectUri(),
-        ]);
-        $refreshToken = (string)($tokens['refresh_token'] ?? '');
-        if ($refreshToken === '') {
-            throw new ApiException('No refresh token received. Remove the app access at myaccount.google.com/permissions and connect again.', 400);
+        if (preg_match('/^[a-f0-9]{32}$/', $state) !== 1) {
+            return false;
         }
-        $this->settings->set($site, 'gsc_refresh_token', $refreshToken);
-        $this->settings->set($site, 'gsc_token_obtained_at', gmdate('c'));
-        $this->cacheAccessToken($site, $tokens);
+        $connection = $this->connectionPool->getConnectionForTable(self::STATE_TABLE);
+        $row = $connection->select(['uid', 'site', 'be_user', 'created_at'], self::STATE_TABLE, ['state' => $state])->fetchAssociative();
+        if ($row === false) {
+            return false;
+        }
+        if ($connection->delete(self::STATE_TABLE, ['uid' => (int)$row['uid']]) !== 1) {
+            // Somebody else consumed it in the meantime
+            return false;
+        }
+        return (string)$row['site'] === $site
+            && (int)$row['be_user'] === $backendUserId
+            && (int)$row['created_at'] >= time() - self::STATE_TTL;
     }
 
     public function disconnect(string $site): void
@@ -122,13 +129,32 @@ final readonly class GoogleOAuth
         }
         $cached = $this->cache->get($this->accessTokenIdentifier($site));
         if (is_string($cached) && $cached !== '') {
-            return $cached;
+            $token = $this->settings->decryptValue($cached, $this->accessTokenIdentifier($site));
+            if ($token !== null && $token !== '') {
+                return $token;
+            }
         }
         $tokens = $this->tokenRequest($site, [
             'grant_type' => 'refresh_token',
             'refresh_token' => $this->settings->getString($site, 'gsc_refresh_token'),
         ]);
         return $this->cacheAccessToken($site, $tokens);
+    }
+
+    private function exchangeCode(string $site, string $code): void
+    {
+        $tokens = $this->tokenRequest($site, [
+            'grant_type' => 'authorization_code',
+            'code' => $code,
+            'redirect_uri' => $this->redirectUri(),
+        ]);
+        $refreshToken = (string)($tokens['refresh_token'] ?? '');
+        if ($refreshToken === '') {
+            throw new ApiException('No refresh token received. Remove the app access at myaccount.google.com/permissions and connect again.', 400);
+        }
+        $this->settings->set($site, 'gsc_refresh_token', $refreshToken);
+        $this->settings->set($site, 'gsc_token_obtained_at', gmdate('c'));
+        $this->cacheAccessToken($site, $tokens);
     }
 
     /**
@@ -139,7 +165,8 @@ final readonly class GoogleOAuth
         $accessToken = (string)($tokens['access_token'] ?? '');
         $lifetime = max(60, (int)($tokens['expires_in'] ?? 3600) - 120);
         if ($accessToken !== '') {
-            $this->cache->set($this->accessTokenIdentifier($site), $accessToken, $lifetime);
+            $identifier = $this->accessTokenIdentifier($site);
+            $this->cache->set($identifier, $this->settings->encryptValue($accessToken, $identifier), $lifetime);
         }
         return $accessToken;
     }
@@ -165,7 +192,7 @@ final readonly class GoogleOAuth
                 'http_errors' => false,
             ]);
         } catch (\Throwable $e) {
-            throw new ApiException('Google token endpoint not reachable: ' . $e->getMessage(), 502, $e);
+            throw new ApiException('Google token endpoint not reachable', 502, $e);
         }
         $data = json_decode((string)$response->getBody(), true) ?: [];
         if ($response->getStatusCode() >= 400) {
@@ -174,7 +201,7 @@ final readonly class GoogleOAuth
             if ($error === 'invalid_grant') {
                 throw new ApiException('Google connection expired or revoked. Please connect again.', 503);
             }
-            throw new ApiException('OAuth token request failed: ' . $error . (isset($data['error_description']) ? ' (' . $data['error_description'] . ')' : ''), 502);
+            throw new ApiException('OAuth token request failed: ' . $error, 502);
         }
         return $data;
     }

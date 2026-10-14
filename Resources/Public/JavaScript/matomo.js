@@ -245,7 +245,7 @@ class SiMatomoSettings extends SiElement {
   }
 
   willUpdate(changed) {
-    if (changed.has('site') && this.site) {
+    if (changed.has('site') && this.site && getMeta().isAdmin) {
       this.load();
     }
   }
@@ -296,10 +296,13 @@ class SiMatomoSettings extends SiElement {
   }
 
   render() {
+    if (!getMeta().isAdmin) {
+      return html`<div class="paper" style="max-width:860px">${alertBox(t('settings.adminOnly'), { color: 'yellow' })}</div>`;
+    }
     if (!this.form) {
       return this.error ? errorState(this.error) : skeleton(300);
     }
-    const isAdmin = getMeta().isAdmin;
+    const isAdmin = true;
     const input = (key, label, { type = 'text', placeholder = '', description = '' } = {}) => html`<div class="field">
       <label for="m-${key}">${label}</label>
       ${description ? html`<span class="description">${description}</span>` : nothing}
@@ -309,9 +312,8 @@ class SiMatomoSettings extends SiElement {
     return html`<div class="paper" style="max-width:860px">
       <h3 class="title mb">${t('matomo.settings.title')}</h3>
       <div class="stack-sm">
-        ${!isAdmin ? alertBox(t('settings.adminOnly'), { color: 'yellow' }) : nothing}
         ${this.error ? alertBox(this.error.message) : nothing}
-        ${input('matomo_url', t('matomo.settings.url'), { placeholder: 'https://matomo.example.com' })}
+        ${input('matomo_url', t('matomo.settings.url'), { placeholder: 'https://matomo.example.com', description: t('matomo.settings.url.description') })}
         ${input('matomo_token', t('matomo.settings.token'), {
           type: 'password',
           description: t('matomo.settings.token.description'),
