@@ -44,8 +44,21 @@ English and German.
 
 ## Installation
 
+The package is not on Packagist yet. Add the GitHub repository to the `repositories`
+section of your project `composer.json`:
+
+```json
+{
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/derspe/typo3-site-insights" }
+    ]
+}
+```
+
+Then install it:
+
 ```bash
-composer require derspe/site-insights
+composer require derspe/site-insights:dev-main
 vendor/bin/typo3 extension:setup
 ```
 
@@ -53,8 +66,8 @@ Open **Sites → Site Insights**. Each site configuration has its own settings.
 
 ## Security
 
-- Only administrators can see and change settings, connect Google, run snapshots and
-  backfills or force re-inspections. Other users need access to the module and only see
+- Only administrators can see and change settings, store the service account key, run
+  snapshots and backfills or force re-inspections. Other users need access to the module and only see
   sites whose root page is inside their DB mounts.
 - Secrets (Matomo token, Google service account key, cached access tokens) are
   encrypted with a key derived from the instance `encryptionKey` and never sent to the
