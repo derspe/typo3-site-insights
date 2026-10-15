@@ -18,7 +18,7 @@ final readonly class SearchConsoleClient
     private const BASE = 'https://searchconsole.googleapis.com';
 
     public function __construct(
-        private GoogleOAuth $oauth,
+        private GoogleServiceAccount $serviceAccount,
         private SiteSettings $settings,
         private GuzzleClientFactory $clientFactory,
     ) {}
@@ -103,6 +103,8 @@ final readonly class SearchConsoleClient
     {
         try {
             return $this->clientFactory->getClient()->request($method, $url, $this->options($site) + $options);
+        } catch (ApiException $e) {
+            throw $e;
         } catch (\Throwable $e) {
             throw new ApiException('Search Console not reachable: ' . $e->getMessage(), 502, $e);
         }
@@ -114,7 +116,7 @@ final readonly class SearchConsoleClient
     private function options(string $site): array
     {
         return [
-            'headers' => ['Authorization' => 'Bearer ' . $this->oauth->accessToken($site)],
+            'headers' => ['Authorization' => 'Bearer ' . $this->serviceAccount->accessToken($site)],
             'timeout' => 60,
             'http_errors' => false,
         ];
@@ -131,7 +133,15 @@ final readonly class SearchConsoleClient
             throw new ApiException('Search Console API quota exhausted', 429);
         }
         if ($status === 401) {
-            throw new ApiException('Google connection expired or revoked. Please connect again.', 503);
+            throw new ApiException('Google rejected the access token of the service account', 503);
+        }
+        if ($status === 403) {
+            // Configuration problems: reported as 503, so jobs stop and the UI points to the settings
+            $reasons = array_column((array)($data['error']['details'] ?? []), 'reason');
+            if (in_array('SERVICE_DISABLED', $reasons, true) || in_array('accessNotConfigured', array_column((array)($data['error']['errors'] ?? []), 'reason'), true)) {
+                throw new ApiException('The Search Console API is not enabled in the Google Cloud project of the service account.', 503);
+            }
+            throw new ApiException('The service account has no access to this property. Add its e-mail address as a user of the property in Search Console.', 503);
         }
         if ($status >= 400) {
             throw new ApiException((string)($data['error']['message'] ?? ('Search Console API error (HTTP ' . $status . ')')), 502);

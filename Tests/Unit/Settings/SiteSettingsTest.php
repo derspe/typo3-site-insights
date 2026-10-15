@@ -45,19 +45,19 @@ final class SiteSettingsTest extends UnitTestCase
         $ciphertext = $this->db->tables[self::TABLE][0]['value'];
         // Copy the ciphertext to another site and another secret key
         $this->db->tables[self::TABLE][] = ['site' => 'beta', 'name' => 'matomo_token', 'value' => $ciphertext];
-        $this->db->tables[self::TABLE][] = ['site' => 'alpha', 'name' => 'gsc_oauth_client_secret', 'value' => $ciphertext];
+        $this->db->tables[self::TABLE][] = ['site' => 'alpha', 'name' => 'gsc_service_account_key', 'value' => $ciphertext];
         $settings = $this->settings();
         self::assertSame('', $settings->getString('beta', 'matomo_token'));
-        self::assertSame('', $settings->getString('alpha', 'gsc_oauth_client_secret'));
+        self::assertFalse($settings->isSet('alpha', 'gsc_service_account_key'));
         self::assertFalse($settings->isSet('beta', 'matomo_token'));
     }
 
     #[Test]
     public function changedEncryptionKeyMakesSecretsUnreadableInsteadOfFailing(): void
     {
-        $this->settings()->set('alpha', 'gsc_refresh_token', 'refresh');
+        $this->settings()->set('alpha', 'gsc_service_account_key', ['client_email' => 'a@b.example', 'private_key' => 'pem']);
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] = str_repeat('x', 96);
-        self::assertFalse($this->settings()->isSet('alpha', 'gsc_refresh_token'));
+        self::assertFalse($this->settings()->isSet('alpha', 'gsc_service_account_key'));
     }
 
     #[Test]

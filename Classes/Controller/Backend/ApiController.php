@@ -9,7 +9,7 @@ use Derspe\SiteInsights\Domain\Repository\SnapshotRepository;
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Security\AccessPolicy;
 use Derspe\SiteInsights\Security\SiteAccess;
-use Derspe\SiteInsights\Service\Gsc\GoogleOAuth;
+use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\InspectService;
 use Derspe\SiteInsights\Service\Gsc\SearchConsoleClient;
@@ -46,7 +46,7 @@ final readonly class ApiController
         private MatomoDashboardService $matomo,
         private GscDashboardService $gsc,
         private SearchConsoleClient $searchConsole,
-        private GoogleOAuth $oauth,
+        private GoogleServiceAccount $serviceAccount,
         private SnapshotService $snapshots,
         private SnapshotRepository $snapshotRepository,
         private InspectService $inspect,
@@ -128,9 +128,7 @@ final readonly class ApiController
             $endpoint === 'gsc/inspect' => $this->inspectNow($site, (string)($body['url'] ?? ''), (bool)($body['force'] ?? false)),
             $endpoint === 'gsc/index/pages' => $this->inspect->pages($site),
             $endpoint === 'gsc/auth/status' => $this->authStatus($site, $user->isAdmin()),
-            $endpoint === 'gsc/auth/start' => ['url' => $this->oauth->buildAuthUrl($site, $this->userId($user))],
-            $endpoint === 'gsc/auth/complete' => $this->authComplete($site, $user, $body),
-            $endpoint === 'gsc/auth/disconnect' => $this->authDisconnect($site),
+            $endpoint === 'gsc/auth/remove' => $this->authRemove($site),
 
             $endpoint === 'job/start' => $this->startJob($site, $body),
             $endpoint === 'job/active' => ['job' => JobService::toDto($this->jobs->findActive($site, (string)($query['type'] ?? '')))],
@@ -166,14 +164,14 @@ final readonly class ApiController
     {
         $values = [];
         foreach (SettingsValidator::KEYS as $key => $type) {
-            if ($type === SettingsValidator::TYPE_SECRET) {
+            if ($type === SettingsValidator::TYPE_SECRET || $type === SettingsValidator::TYPE_SERVICE_ACCOUNT_KEY) {
                 $values[$key . '_set'] = $this->settings->isSet($site, $key);
                 continue;
             }
             $values[$key] = $this->settings->get($site, $key);
         }
         $values['gsc_sitemap_url_default'] = $this->urlCollector->sitemapUrl($site);
-        $values['oauth_redirect_uri'] = $this->oauth->redirectUri();
+        $values['gsc_service_account_email'] = $this->serviceAccount->clientEmail($site);
         return $values;
     }
 
@@ -238,55 +236,50 @@ final readonly class ApiController
     }
 
     /**
+     * Whether the service account works: the properties it can see and whether the configured
+     * property is one of them.
+     *
      * @return array<string, mixed>
      */
     private function authStatus(string $site, bool $isAdmin): array
     {
+        $configured = $this->serviceAccount->isConfigured($site);
+        $property = $this->settings->getString($site, 'gsc_site_url');
         $status = [
-            'configured' => $this->oauth->isConfigured($site),
-            'connected' => $this->oauth->isConnected($site),
-            'obtainedAt' => $this->settings->getString($site, 'gsc_token_obtained_at') ?: null,
+            'configured' => $configured,
+            'connected' => false,
+            // Only administrators need the address (to add it in Search Console)
+            'clientEmail' => $isAdmin ? $this->serviceAccount->clientEmail($site) : '',
+            'property' => $property,
+            'propertyAccessible' => false,
             'sites' => [],
             'error' => null,
         ];
-        if ($status['connected']) {
-            try {
-                $properties = $this->searchConsole->listSites($site);
-                // Editors only see the configured property, not every property of the Google account
-                if (!$isAdmin) {
-                    $configured = $this->settings->getString($site, 'gsc_site_url');
-                    $properties = array_values(array_filter($properties, static fn(array $p): bool => $p['siteUrl'] === $configured));
-                }
-                $status['sites'] = $properties;
-            } catch (ApiException $e) {
-                // Revoked token etc.: report as disconnected, not as server error
-                $status['connected'] = $e->status !== 503;
-                $status['error'] = $e->getMessage();
+        if (!$configured) {
+            return $status;
+        }
+        try {
+            $properties = $this->searchConsole->listSites($site);
+            $status['connected'] = true;
+            $status['propertyAccessible'] = in_array($property, array_column($properties, 'siteUrl'), true);
+            // Editors only see the configured property, not every property of the service account
+            if (!$isAdmin) {
+                $properties = array_values(array_filter($properties, static fn(array $p): bool => $p['siteUrl'] === $property));
             }
+            $status['sites'] = $properties;
+        } catch (ApiException $e) {
+            $status['error'] = $e->getMessage();
         }
         return $status;
     }
 
     /**
-     * @param array<string, mixed> $body
-     * @return array{connected: bool}
+     * @return array{configured: false}
      */
-    private function authComplete(string $site, BackendUserAuthentication $user, array $body): array
+    private function authRemove(string $site): array
     {
-        if (($body['error'] ?? '') !== '') {
-            throw new ApiException('The Google consent was cancelled', 400);
-        }
-        $this->oauth->complete($site, $this->userId($user), (string)($body['state'] ?? ''), (string)($body['code'] ?? ''));
-        return ['connected' => true];
-    }
-
-    /**
-     * @return array{connected: false}
-     */
-    private function authDisconnect(string $site): array
-    {
-        $this->oauth->disconnect($site);
-        return ['connected' => false];
+        $this->serviceAccount->remove($site);
+        return ['configured' => false];
     }
 
     /**
@@ -321,11 +314,6 @@ final readonly class ApiController
     private function dimension(array $query): string
     {
         return ($query['dimension'] ?? 'query') === 'page' ? 'page' : 'query';
-    }
-
-    private function userId(BackendUserAuthentication $user): int
-    {
-        return (int)($user->user['uid'] ?? 0);
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Derspe\SiteInsights\Tests\Unit\Settings;
 
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Settings\SettingsValidator;
+use Derspe\SiteInsights\Tests\Unit\Fixtures\KeyFile;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -28,7 +29,7 @@ final class SettingsValidatorTest extends TestCase
     #[Test]
     public function emptySecretKeepsTheStoredValue(): void
     {
-        self::assertSame([], $this->validator->validate(['matomo_token' => '  ', 'gsc_oauth_client_secret' => '']));
+        self::assertSame([], $this->validator->validate(['matomo_token' => '  ', 'gsc_service_account_key' => '']));
         self::assertSame(['matomo_token' => 'abc'], $this->validator->validate(['matomo_token' => ' abc ']));
     }
 
@@ -106,5 +107,22 @@ final class SettingsValidatorTest extends TestCase
         self::assertSame('https://matomo.example.com:8443', SettingsValidator::origin('https://matomo.example.com:8443'));
         self::assertNotSame(SettingsValidator::origin('https://a.example'), SettingsValidator::origin('http://a.example'));
         self::assertSame('', SettingsValidator::origin('not a url'));
+    }
+
+    #[Test]
+    public function serviceAccountKeyIsReducedToTheNeededFields(): void
+    {
+        $key = json_decode(KeyFile::json(), true);
+        $changes = $this->validator->validate(['gsc_service_account_key' => json_encode($key + ['token_uri' => 'https://attacker.example/token'])]);
+        self::assertSame(['client_email', 'private_key', 'private_key_id', 'project_id'], array_keys($changes['gsc_service_account_key']));
+        self::assertSame($key['client_email'], $changes['gsc_service_account_key']['client_email']);
+    }
+
+    #[Test]
+    public function invalidServiceAccountKeyIsRejected(): void
+    {
+        $this->expectException(ApiException::class);
+        $this->expectExceptionCode(400);
+        $this->validator->validate(['gsc_service_account_key' => '{"type":"authorized_user"}']);
     }
 }

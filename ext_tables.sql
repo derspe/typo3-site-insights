@@ -128,16 +128,3 @@ CREATE TABLE tx_derspesiteinsights_job (
 	KEY site_type_status (site, type, status)
 );
 
-#
-# Pending OAuth requests (single use CSRF state)
-#
-CREATE TABLE tx_derspesiteinsights_oauth_state (
-	uid int(11) unsigned NOT NULL auto_increment,
-	state varchar(64) DEFAULT '' NOT NULL,
-	site varchar(255) DEFAULT '' NOT NULL,
-	be_user int(11) unsigned DEFAULT '0' NOT NULL,
-	created_at int(11) unsigned DEFAULT '0' NOT NULL,
-
-	PRIMARY KEY (uid),
-	UNIQUE KEY state (state)
-);

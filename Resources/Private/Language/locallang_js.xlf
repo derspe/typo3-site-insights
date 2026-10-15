@@ -375,20 +375,101 @@
 			<trans-unit id="gsc.settings.title" resname="gsc.settings.title">
 				<source>Search Console settings</source>
 			</trans-unit>
-			<trans-unit id="gsc.settings.clientId" resname="gsc.settings.clientId">
-				<source>OAuth client ID</source>
+			<trans-unit id="gsc.settings.key" resname="gsc.settings.key">
+				<source>Service account key (JSON)</source>
 			</trans-unit>
-			<trans-unit id="gsc.settings.clientSecret" resname="gsc.settings.clientSecret">
-				<source>OAuth client secret</source>
+			<trans-unit id="gsc.settings.key.description" resname="gsc.settings.key.description">
+				<source>Paste the content of the downloaded JSON key file or choose the file. The key is stored encrypted and never sent back to the browser.</source>
 			</trans-unit>
-			<trans-unit id="gsc.settings.clientSecret.placeholder" resname="gsc.settings.clientSecret.placeholder">
-				<source>Enter client secret</source>
+			<trans-unit id="gsc.settings.key.stored" resname="gsc.settings.key.stored">
+				<source>A key for {email} is stored. Paste a new key only to replace it.</source>
 			</trans-unit>
-			<trans-unit id="gsc.settings.redirectUri" resname="gsc.settings.redirectUri">
-				<source>Authorized redirect URI</source>
+			<trans-unit id="gsc.settings.key.file" resname="gsc.settings.key.file">
+				<source>Choose key file</source>
 			</trans-unit>
-			<trans-unit id="gsc.settings.redirectUri.description" resname="gsc.settings.redirectUri.description">
-				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console. It points to a static page of the extension that hands the result back to this window.</source>
+			<trans-unit id="gsc.settings.key.tooLarge" resname="gsc.settings.key.tooLarge">
+				<source>This file is too large for a service account key.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.key.account" resname="gsc.settings.key.account">
+				<source>Service account:</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.key.remove" resname="gsc.settings.key.remove">
+				<source>Remove key</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.key.removeConfirm" resname="gsc.settings.key.removeConfirm">
+				<source>Remove the stored service account key? Search Console reports stop until a new key is saved.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.copy" resname="gsc.settings.copy">
+				<source>Copy</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.copied" resname="gsc.settings.copied">
+				<source>Copied</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.check" resname="gsc.settings.check">
+				<source>Check again</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.missing" resname="gsc.settings.state.missing">
+				<source>no key</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.missing.hint" resname="gsc.settings.state.missing.hint">
+				<source>Save the key of a service account first – the setup guide above shows how.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.error" resname="gsc.settings.state.error">
+				<source>error</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.noProperty" resname="gsc.settings.state.noProperty">
+				<source>no access to property</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.ok" resname="gsc.settings.state.ok">
+				<source>connected</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.noProperty.hint" resname="gsc.settings.state.noProperty.hint">
+				<source>The service account cannot see the property {property} yet. Add its address as a user of this property in Search Console (step 6) and check again. New users can take a few minutes to become active.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.noPropertySet" resname="gsc.settings.state.noPropertySet">
+				<source>The key works. Now enter the Search Console property and save.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.title" resname="gsc.settings.guide.title">
+				<source>Setup guide (about 5 minutes)</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.project" resname="gsc.settings.guide.project">
+				<source>Open the Google Cloud Console and create a project (or choose an existing one). Name and organization do not matter.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.project.link" resname="gsc.settings.guide.project.link">
+				<source>Create project</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.api" resname="gsc.settings.guide.api">
+				<source>Enable the "Google Search Console API" for this project.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.api.link" resname="gsc.settings.guide.api.link">
+				<source>Enable API</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.account" resname="gsc.settings.guide.account">
+				<source>Create a service account: enter any name and click "Create and continue". Roles and user access are not needed – skip both steps with "Done".</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.account.link" resname="gsc.settings.guide.account.link">
+				<source>Create service account</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.key" resname="gsc.settings.guide.key">
+				<source>Open the new service account, tab "Keys" → "Add key" → "Create new key" → type JSON. The browser downloads the key file.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.key.link" resname="gsc.settings.guide.key.link">
+				<source>Service accounts</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.paste" resname="gsc.settings.guide.paste">
+				<source>Choose the file below (or paste its content), enter the property and save. The e-mail address of the service account is then shown here.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.user" resname="gsc.settings.guide.user">
+				<source>In Search Console open "Settings" → "Users and permissions" of the property, click "Add user", enter the address of the service account and choose the permission "Full". The extension only requests read access, so it cannot change anything.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.user.link" resname="gsc.settings.guide.user.link">
+				<source>Open Search Console</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.property" resname="gsc.settings.guide.property">
+				<source>Click "Check again" below. The status turns green as soon as the service account can see the property.</source>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.policy" resname="gsc.settings.guide.policy">
+				<source>In Google Workspace organizations an organization policy can block creating keys ("iam.disableServiceAccountKeyCreation"). Then an administrator of the organization has to allow it for the project. Keep the key file private and delete it after saving.</source>
 			</trans-unit>
 			<trans-unit id="gsc.settings.property" resname="gsc.settings.property">
 				<source>Search Console property</source>
@@ -435,23 +516,8 @@
 			<trans-unit id="gsc.settings.connection" resname="gsc.settings.connection">
 				<source>Google connection</source>
 			</trans-unit>
-			<trans-unit id="gsc.settings.connected" resname="gsc.settings.connected">
-				<source>connected</source>
-			</trans-unit>
-			<trans-unit id="gsc.settings.notConnected" resname="gsc.settings.notConnected">
-				<source>not connected</source>
-			</trans-unit>
-			<trans-unit id="gsc.settings.connect" resname="gsc.settings.connect">
-				<source>Connect with Google</source>
-			</trans-unit>
-			<trans-unit id="gsc.settings.disconnect" resname="gsc.settings.disconnect">
-				<source>Disconnect</source>
-			</trans-unit>
-			<trans-unit id="gsc.settings.configureFirst" resname="gsc.settings.configureFirst">
-				<source>Save client ID and secret first, then connect.</source>
-			</trans-unit>
 			<trans-unit id="gsc.settings.properties" resname="gsc.settings.properties">
-				<source>Accessible properties:</source>
+				<source>Properties visible to the service account:</source>
 			</trans-unit>
 			<trans-unit id="gsc.settings.backfill" resname="gsc.settings.backfill">
 				<source>Snapshot backfill</source>
@@ -467,24 +533,6 @@
 			</trans-unit>
 			<trans-unit id="gsc.settings.scheduler" resname="gsc.settings.scheduler">
 				<source>Daily snapshots: add the scheduler task "site-insights:gsc-snapshot" (e.g. daily) and "site-insights:run-jobs" (every few minutes) so started jobs also finish in the background.</source>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.popupBlocked" resname="gsc.oauth.popupBlocked">
-				<source>The browser blocked the popup window. Please allow popups for the TYPO3 backend and try again.</source>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.ok" resname="gsc.oauth.ok">
-				<source>Google Search Console is connected.</source>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.denied" resname="gsc.oauth.denied">
-				<source>The Google consent was cancelled.</source>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.invalid" resname="gsc.oauth.invalid">
-				<source>The connection request was invalid or expired. Please try again.</source>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.failed" resname="gsc.oauth.failed">
-				<source>The token exchange with Google failed.</source>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.no-refresh-token" resname="gsc.oauth.no-refresh-token">
-				<source>Google did not return a refresh token. Remove the app access at myaccount.google.com/permissions and connect again.</source>
 			</trans-unit>
 			<trans-unit id="country.deu" resname="country.deu">
 				<source>Germany</source>

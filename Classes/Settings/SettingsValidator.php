@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Derspe\SiteInsights\Settings;
 
 use Derspe\SiteInsights\Http\ApiException;
+use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 
 /**
  * Validates settings submitted by the backend module.
@@ -17,6 +18,7 @@ final class SettingsValidator
     public const TYPE_INT = 'int';
     public const TYPE_LIST = 'list';
     public const TYPE_URL_LIST = 'url-list';
+    public const TYPE_SERVICE_ACCOUNT_KEY = 'service-account-key';
 
     /** Settings that can be edited in the module */
     public const KEYS = [
@@ -24,8 +26,7 @@ final class SettingsValidator
         'matomo_token' => self::TYPE_SECRET,
         'matomo_site_id' => self::TYPE_STRING,
         'matomo_goal_ids' => self::TYPE_LIST,
-        'gsc_oauth_client_id' => self::TYPE_STRING,
-        'gsc_oauth_client_secret' => self::TYPE_SECRET,
+        'gsc_service_account_key' => self::TYPE_SERVICE_ACCOUNT_KEY,
         'gsc_site_url' => self::TYPE_STRING,
         'gsc_brand_terms' => self::TYPE_LIST,
         'gsc_snapshot_top_n' => self::TYPE_INT,
@@ -58,6 +59,13 @@ final class SettingsValidator
                     $secret = is_string($value) ? trim($value) : '';
                     if ($secret !== '') {
                         $changes[$key] = mb_substr($secret, 0, self::MAX_STRING);
+                    }
+                    break;
+                case self::TYPE_SERVICE_ACCOUNT_KEY:
+                    // Secret as well: submitted empty keeps the stored key
+                    $json = is_string($value) ? trim($value) : '';
+                    if ($json !== '') {
+                        $changes[$key] = GoogleServiceAccount::parseKey($json);
                     }
                     break;
                 case self::TYPE_STRING:

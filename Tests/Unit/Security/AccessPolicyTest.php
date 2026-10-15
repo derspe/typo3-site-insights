@@ -29,9 +29,7 @@ final class AccessPolicyTest extends TestCase
         // Configuration, connection and on-demand quota: administrators
         yield 'settings read' => ['settings', false, [], AccessPolicy::ADMIN];
         yield 'settings write' => ['settings', true, [], AccessPolicy::ADMIN];
-        yield 'auth start' => ['gsc/auth/start', true, [], AccessPolicy::ADMIN];
-        yield 'auth complete' => ['gsc/auth/complete', true, [], AccessPolicy::ADMIN];
-        yield 'auth disconnect' => ['gsc/auth/disconnect', true, [], AccessPolicy::ADMIN];
+        yield 'remove service account key' => ['gsc/auth/remove', true, [], AccessPolicy::ADMIN];
         yield 'snapshot run' => ['gsc/snapshot/run', true, [], AccessPolicy::ADMIN];
         yield 'visibility rebuild' => ['gsc/visibility/rebuild', true, [], AccessPolicy::ADMIN];
         yield 'inspect forced' => ['gsc/inspect', true, ['force' => true], AccessPolicy::ADMIN];
@@ -40,7 +38,8 @@ final class AccessPolicyTest extends TestCase
         yield 'backfill' => ['job/start', true, ['type' => 'backfill'], AccessPolicy::ADMIN];
         yield 'unknown job type' => ['job/start', true, ['type' => 'whatever'], AccessPolicy::ADMIN];
         // Wrong method or unknown endpoint
-        yield 'write endpoint via GET' => ['gsc/auth/start', false, [], null];
+        yield 'write endpoint via GET' => ['gsc/auth/remove', false, [], null];
+        yield 'removed oauth endpoint' => ['gsc/auth/start', true, [], null];
         yield 'read endpoint via POST' => ['gsc/dashboard', true, [], null];
         yield 'job start via GET' => ['job/start', false, [], null];
         yield 'unknown' => ['../../etc/passwd', false, [], null];

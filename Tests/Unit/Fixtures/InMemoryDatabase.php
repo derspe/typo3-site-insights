@@ -11,7 +11,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 
 /**
  * Array backed replacement for the simple Connection API (select, insert, update, delete,
- * count) used by settings, OAuth state and similar tables.
+ * count) used by settings, jobs and similar tables.
  */
 final class InMemoryDatabase
 {

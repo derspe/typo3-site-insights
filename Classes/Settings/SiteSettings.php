@@ -12,7 +12,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 /**
  * Per-site key/value configuration, stored as JSON in tx_derspesiteinsights_setting.
  *
- * Secrets (API token, OAuth client secret, refresh token) are encrypted with a key
+ * Secrets (Matomo token, Google service account key) are encrypted with a key
  * derived from the instance encryptionKey and are never sent to the browser.
  */
 final class SiteSettings
@@ -21,8 +21,7 @@ final class SiteSettings
 
     public const SECRET_KEYS = [
         'matomo_token',
-        'gsc_oauth_client_secret',
-        'gsc_refresh_token',
+        'gsc_service_account_key',
     ];
 
     private const DEFAULTS = [
@@ -30,8 +29,7 @@ final class SiteSettings
         'matomo_token' => '',
         'matomo_site_id' => '',
         'matomo_goal_ids' => [],
-        'gsc_oauth_client_id' => '',
-        'gsc_oauth_client_secret' => '',
+        'gsc_service_account_key' => [],
         'gsc_site_url' => '',
         'gsc_brand_terms' => [],
         'gsc_snapshot_top_n' => 100,
@@ -39,8 +37,6 @@ final class SiteSettings
         'gsc_sitemap_url' => '',
         'gsc_extra_source_urls' => [],
         'gsc_extra_include' => '',
-        'gsc_refresh_token' => '',
-        'gsc_token_obtained_at' => '',
     ];
 
     /** @var array<string, array<string, mixed>> */

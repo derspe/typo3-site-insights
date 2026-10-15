@@ -56,12 +56,12 @@ Open **Sites → Site Insights**. Each site configuration has its own settings.
 - Only administrators can see and change settings, connect Google, run snapshots and
   backfills or force re-inspections. Other users need access to the module and only see
   sites whose root page is inside their DB mounts.
-- Secrets (Matomo token, OAuth client secret, refresh token, cached access tokens) are
+- Secrets (Matomo token, Google service account key, cached access tokens) are
   encrypted with a key derived from the instance `encryptionKey` and never sent to the
   browser. Changing the Matomo host removes the stored token.
-- There is no public endpoint: the OAuth result is completed through the CSRF protected
-  backend API; the state is single use, expires after 10 minutes and is bound to the
-  site and the administrator who started the connection.
+- There is no public endpoint. Google is accessed with a service account and the
+  read-only scope; access tokens are always requested from Google's fixed token
+  endpoint, whatever the key file says.
 - URL Inspection calls are limited to 1,800 per site and day (Google allows 2,000).
 - Child sitemaps are only fetched on the host of the configured sitemap; responses are
   limited in size and number.
@@ -74,18 +74,30 @@ so Matomo's option "only accept POST requests with token_auth" can stay enabled.
 
 ### Google Search Console
 
-1. In the Google Cloud Console create an OAuth client of type **Web application**
-   and enable the *Google Search Console API*.
-2. Add the redirect URI shown in the settings as authorized redirect URI. It points
-   to a static page of the extension (`/_assets/<hash>/OAuth/callback.html`), which
-   hands the result to the settings window; the connection is then completed through
-   the authenticated backend API. The path depends on the installation path of the
-   extension, so register the URI shown by each environment.
-3. Enter client ID and secret, save, then click **Connect with Google**.
-4. Enter the property: `sc-domain:example.com` (domain property) or the URL
-   prefix (`https://www.example.com/`).
+The extension reads Search Console data with a Google **service account**. There is
+no consent popup and no redirect URI, so the same setup works in every environment.
+The settings tab contains the same guide with direct links.
 
-Only the read-only scope `webmasters.readonly` is requested.
+1. In the [Google Cloud Console](https://console.cloud.google.com/projectcreate)
+   create a project (or choose an existing one).
+2. [Enable the Google Search Console API](https://console.cloud.google.com/apis/library/searchconsole.googleapis.com)
+   for this project.
+3. [Create a service account](https://console.cloud.google.com/iam-admin/serviceaccounts/create).
+   It needs no roles and no user access.
+4. Open the service account, tab *Keys* → *Add key* → *Create new key* → JSON.
+5. Choose the downloaded file in the settings (or paste its content), enter the
+   property – `sc-domain:example.com` (domain property) or the URL prefix
+   (`https://www.example.com/`) – and save.
+6. In Search Console open *Settings* → *Users and permissions* of the property and add
+   the e-mail address of the service account (shown in the settings) with the
+   permission *Full*. The extension only requests the read-only scope
+   `webmasters.readonly`, so it cannot change anything.
+7. Click **Check again**: the status turns green as soon as the service account can
+   see the property.
+
+In Google Workspace organizations the policy `iam.disableServiceAccountKeyCreation`
+can block creating keys; an administrator of the organization has to allow it for
+the project. Treat the key file like a password and delete it after saving.
 
 ### Scheduler
 

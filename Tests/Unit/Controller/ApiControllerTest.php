@@ -8,7 +8,7 @@ use Derspe\SiteInsights\Controller\Backend\ApiController;
 use Derspe\SiteInsights\Domain\Repository\InspectRepository;
 use Derspe\SiteInsights\Domain\Repository\SnapshotRepository;
 use Derspe\SiteInsights\Security\SiteAccess;
-use Derspe\SiteInsights\Service\Gsc\GoogleOAuth;
+use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\InspectService;
 use Derspe\SiteInsights\Service\Gsc\SearchConsoleClient;
@@ -18,6 +18,7 @@ use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
+use Derspe\SiteInsights\Tests\Unit\Fixtures\KeyFile;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,15 +30,11 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 final class ApiControllerTest extends UnitTestCase
 {
     private FakeHttp $http;
-    private GoogleOAuth $oauth;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->http = new FakeHttp($this);
-        $this->oauth = $this->createMock(GoogleOAuth::class);
-        $this->oauth->method('redirectUri')->willReturn('https://backend.example/callback.html');
-        $this->oauth->method('accessToken')->willReturn('token');
         $language = $this->createMock(LanguageService::class);
         $language->method('getLabelsFromResource')->willReturn(['app.title' => 'Site Insights']);
         $GLOBALS['LANG'] = $language;
@@ -47,14 +44,21 @@ final class ApiControllerTest extends UnitTestCase
     {
         $sites = $this->siteFinder([self::site('alpha', 1), self::site('beta', 2)]);
         $settings = $this->settings();
+        // Real key handling, only the token request to Google is skipped
+        $serviceAccount = new class ($settings, $this->http->factory(), $this->cache()) extends GoogleServiceAccount {
+            public function accessToken(string $site): string
+            {
+                return 'token';
+            }
+        };
         return new ApiController(
             new SiteAccess($sites),
             $settings,
             new SettingsValidator(),
             self::unused(MatomoDashboardService::class),
             self::unused(GscDashboardService::class),
-            new SearchConsoleClient($this->oauth, $settings, $this->http->factory()),
-            $this->oauth,
+            new SearchConsoleClient($serviceAccount, $settings, $this->http->factory()),
+            $serviceAccount,
             self::unused(SnapshotService::class),
             new SnapshotRepository($this->db->connectionPool()),
             self::unused(InspectService::class),
@@ -99,7 +103,8 @@ final class ApiControllerTest extends UnitTestCase
     {
         $GLOBALS['BE_USER'] = $this->backendUser(true);
         self::assertSame(404, $this->call(['endpoint' => 'nope'])[0]);
-        self::assertSame(404, $this->call(['endpoint' => 'gsc/auth/start'])[0], 'write endpoint via GET');
+        self::assertSame(404, $this->call(['endpoint' => 'gsc/auth/remove'])[0], 'write endpoint via GET');
+        self::assertSame(404, $this->call(['endpoint' => 'gsc/auth/start'], [])[0], 'OAuth endpoints are gone');
     }
 
     /**
@@ -109,9 +114,8 @@ final class ApiControllerTest extends UnitTestCase
     {
         yield 'read settings' => [['endpoint' => 'settings'], null];
         yield 'write settings' => [['endpoint' => 'settings'], ['values' => ['matomo_url' => 'https://evil.example']]];
-        yield 'connect google' => [['endpoint' => 'gsc/auth/start'], []];
-        yield 'complete google' => [['endpoint' => 'gsc/auth/complete'], ['state' => str_repeat('a', 32), 'code' => 'x']];
-        yield 'disconnect google' => [['endpoint' => 'gsc/auth/disconnect'], []];
+        yield 'save service account key' => [['endpoint' => 'settings'], ['values' => ['gsc_service_account_key' => '{}']]];
+        yield 'remove service account key' => [['endpoint' => 'gsc/auth/remove'], []];
         yield 'snapshot' => [['endpoint' => 'gsc/snapshot/run'], ['force' => true]];
         yield 'backfill' => [['endpoint' => 'job/start'], ['type' => 'backfill', 'days' => 90]];
         yield 'forced scan' => [['endpoint' => 'job/start'], ['type' => 'index_scan', 'force' => true]];
@@ -170,16 +174,18 @@ final class ApiControllerTest extends UnitTestCase
         $GLOBALS['BE_USER'] = $this->backendUser(true);
         $settings = $this->settings();
         $settings->set('alpha', 'matomo_token', 'tok-secret');
-        $settings->set('alpha', 'gsc_oauth_client_secret', 'client-secret');
-        $settings->set('alpha', 'gsc_refresh_token', 'refresh-secret');
+        $settings->set('alpha', 'gsc_service_account_key', GoogleServiceAccount::parseKey(KeyFile::json()));
         [$status, $data] = $this->call(['endpoint' => 'settings', 'site' => 'alpha']);
         self::assertSame(200, $status);
         $json = json_encode($data);
-        foreach (['tok-secret', 'client-secret', 'refresh-secret'] as $secret) {
-            self::assertStringNotContainsString($secret, $json);
-        }
+        self::assertStringNotContainsString('tok-secret', $json);
+        self::assertStringNotContainsString('PRIVATE KEY', $json);
+        self::assertStringNotContainsString('kid-reports', $json);
         self::assertTrue($data['matomo_token_set']);
-        self::assertArrayNotHasKey('gsc_refresh_token', $data);
+        self::assertTrue($data['gsc_service_account_key_set']);
+        self::assertArrayNotHasKey('gsc_service_account_key', $data);
+        // The address is needed to add the account in Search Console
+        self::assertSame(KeyFile::email(), $data['gsc_service_account_email']);
     }
 
     #[Test]
@@ -218,56 +224,85 @@ final class ApiControllerTest extends UnitTestCase
     #[Test]
     public function editorsOnlySeeTheConfiguredProperty(): void
     {
-        $this->settings()->set('alpha', 'gsc_oauth_client_id', 'id');
-        $this->settings()->set('alpha', 'gsc_oauth_client_secret', 'secret');
-        $this->settings()->set('alpha', 'gsc_refresh_token', 'refresh');
+        $this->settings()->set('alpha', 'gsc_service_account_key', GoogleServiceAccount::parseKey(KeyFile::json()));
         $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
-        $this->oauth->method('isConnected')->willReturn(true);
-        $this->oauth->method('isConfigured')->willReturn(true);
         $properties = ['siteEntry' => [
-            ['siteUrl' => 'sc-domain:alpha.example', 'permissionLevel' => 'siteOwner'],
-            ['siteUrl' => 'https://other-customer.example/', 'permissionLevel' => 'siteOwner'],
+            ['siteUrl' => 'sc-domain:alpha.example', 'permissionLevel' => 'siteFullUser'],
+            ['siteUrl' => 'https://other-customer.example/', 'permissionLevel' => 'siteFullUser'],
         ]];
         $this->http->queue(FakeHttp::json($properties), FakeHttp::json($properties));
 
         $GLOBALS['BE_USER'] = $this->backendUser(false, true, [1]);
         [, $editor] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
         self::assertSame(['sc-domain:alpha.example'], array_column($editor['sites'], 'siteUrl'));
+        self::assertSame('', $editor['clientEmail']);
+        self::assertTrue($editor['propertyAccessible']);
 
         $GLOBALS['BE_USER'] = $this->backendUser(true);
         [, $admin] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
         self::assertCount(2, $admin['sites']);
+        self::assertSame(KeyFile::email(), $admin['clientEmail']);
     }
 
     #[Test]
-    public function oauthCompletionUsesTheCurrentAdministrator(): void
-    {
-        $GLOBALS['BE_USER'] = $this->backendUser(true, true, [], 42);
-        $this->oauth->expects(self::once())->method('complete')->with('alpha', 42, 'the-state', 'the-code');
-        [$status] = $this->call(['endpoint' => 'gsc/auth/complete', 'site' => 'alpha'], ['state' => 'the-state', 'code' => 'the-code']);
-        self::assertSame(200, $status);
-    }
-
-    #[Test]
-    public function cancelledConsentIsNotCompleted(): void
+    public function statusTellsWhenThePropertyIsNotSharedWithTheServiceAccount(): void
     {
         $GLOBALS['BE_USER'] = $this->backendUser(true);
-        $this->oauth->expects(self::never())->method('complete');
-        [$status] = $this->call(['endpoint' => 'gsc/auth/complete', 'site' => 'alpha'], ['error' => 'access_denied']);
+        $this->settings()->set('alpha', 'gsc_service_account_key', GoogleServiceAccount::parseKey(KeyFile::json()));
+        $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
+        $this->http->queue(FakeHttp::json(['siteEntry' => []]));
+        [$status, $data] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
+        self::assertSame(200, $status);
+        self::assertTrue($data['connected']);
+        self::assertFalse($data['propertyAccessible']);
+    }
+
+    #[Test]
+    public function statusWithoutKeyDoesNotCallGoogle(): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
+        [, $data] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
+        self::assertFalse($data['configured']);
+        self::assertSame([], $this->http->history);
+    }
+
+    #[Test]
+    public function keyIsSavedThroughTheSettingsAndCanBeRemoved(): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
+        [$status, $data] = $this->call(['endpoint' => 'settings', 'site' => 'alpha'], ['values' => ['gsc_service_account_key' => KeyFile::json()]]);
+        self::assertSame(200, $status);
+        self::assertSame(KeyFile::email(), $data['gsc_service_account_email']);
+
+        [$status] = $this->call(['endpoint' => 'settings', 'site' => 'alpha'], ['values' => ['gsc_service_account_key' => '']]);
+        self::assertSame(200, $status);
+        self::assertTrue($this->settings()->isSet('alpha', 'gsc_service_account_key'), 'empty field keeps the key');
+
+        [$status] = $this->call(['endpoint' => 'gsc/auth/remove', 'site' => 'alpha'], []);
+        self::assertSame(200, $status);
+        self::assertFalse($this->settings()->isSet('alpha', 'gsc_service_account_key'));
+    }
+
+    #[Test]
+    public function invalidKeyIsRejectedWithAHint(): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
+        [$status, $data] = $this->call(['endpoint' => 'settings', 'site' => 'alpha'], ['values' => ['gsc_service_account_key' => '{"web":{}}']]);
         self::assertSame(400, $status);
+        self::assertStringContainsString('service account key', $data['error']);
     }
 
     #[Test]
     public function jsonBodyIsAccepted(): void
     {
-        $GLOBALS['BE_USER'] = $this->backendUser(true, true, [], 42);
-        $this->oauth->expects(self::once())->method('complete')->with('alpha', 42, 's', 'c');
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
         $body = new Stream('php://temp', 'rw');
-        $body->write(json_encode(['site' => 'alpha', 'state' => 's', 'code' => 'c']));
+        $body->write(json_encode(['site' => 'alpha', 'values' => ['gsc_site_url' => 'sc-domain:alpha.example']]));
         $body->rewind();
         $request = (new ServerRequest('https://backend.example/typo3/ajax/x', 'POST', $body))
-            ->withQueryParams(['endpoint' => 'gsc/auth/complete']);
+            ->withQueryParams(['endpoint' => 'settings']);
         $response = $this->controller()->handle($request);
         self::assertSame(200, $response->getStatusCode(), (string)$response->getBody());
+        self::assertSame('sc-domain:alpha.example', $this->settings()->getString('alpha', 'gsc_site_url'));
     }
 }

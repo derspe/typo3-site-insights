@@ -9,7 +9,7 @@ namespace Derspe\SiteInsights\Security;
  *
  * Module users may read reports and run quota friendly actions (index scan without force,
  * cached URL inspection). Everything that changes configuration, uses up API quota on
- * demand or touches the Google connection is reserved for administrators.
+ * demand or touches the Google credentials is reserved for administrators.
  */
 final class AccessPolicy
 {
@@ -35,9 +35,7 @@ final class AccessPolicy
 
     private const ADMIN_POST_ENDPOINTS = [
         'settings',
-        'gsc/auth/start',
-        'gsc/auth/complete',
-        'gsc/auth/disconnect',
+        'gsc/auth/remove',
         'gsc/snapshot/run',
         'gsc/visibility/rebuild',
     ];

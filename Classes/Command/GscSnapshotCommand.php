@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Derspe\SiteInsights\Command;
 
 use Derspe\SiteInsights\Http\ApiException;
-use Derspe\SiteInsights\Service\Gsc\GoogleOAuth;
+use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Settings\SiteSettings;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,7 +29,7 @@ final class GscSnapshotCommand extends Command
     public function __construct(
         private readonly SiteFinder $siteFinder,
         private readonly SiteSettings $settings,
-        private readonly GoogleOAuth $oauth,
+        private readonly GoogleServiceAccount $serviceAccount,
         private readonly SnapshotService $snapshots,
     ) {
         parent::__construct();
@@ -54,7 +54,7 @@ final class GscSnapshotCommand extends Command
             if ($onlySite !== '' && $onlySite !== $identifier) {
                 continue;
             }
-            if (!$this->oauth->isConnected($identifier) || !$this->settings->isSet($identifier, 'gsc_site_url')) {
+            if (!$this->serviceAccount->isConfigured($identifier) || !$this->settings->isSet($identifier, 'gsc_site_url')) {
                 $io->writeln(sprintf('<comment>%s: not connected, skipped</comment>', $identifier));
                 continue;
             }

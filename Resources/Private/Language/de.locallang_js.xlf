@@ -499,25 +499,133 @@
 				<source>Search Console settings</source>
 				<target>Search-Console-Einstellungen</target>
 			</trans-unit>
-			<trans-unit id="gsc.settings.clientId" resname="gsc.settings.clientId">
-				<source>OAuth client ID</source>
-				<target>OAuth-Client-ID</target>
+			<trans-unit id="gsc.settings.key" resname="gsc.settings.key">
+				<source>Service account key (JSON)</source>
+				<target>Dienstkonto-Schlüssel (JSON)</target>
 			</trans-unit>
-			<trans-unit id="gsc.settings.clientSecret" resname="gsc.settings.clientSecret">
-				<source>OAuth client secret</source>
-				<target>OAuth-Client-Secret</target>
+			<trans-unit id="gsc.settings.key.description" resname="gsc.settings.key.description">
+				<source>Paste the content of the downloaded JSON key file or choose the file. The key is stored encrypted and never sent back to the browser.</source>
+				<target>Inhalt der heruntergeladenen JSON-Schlüsseldatei einfügen oder die Datei auswählen. Der Schlüssel wird verschlüsselt gespeichert und nie an den Browser zurückgegeben.</target>
 			</trans-unit>
-			<trans-unit id="gsc.settings.clientSecret.placeholder" resname="gsc.settings.clientSecret.placeholder">
-				<source>Enter client secret</source>
-				<target>Client-Secret eintragen</target>
+			<trans-unit id="gsc.settings.key.stored" resname="gsc.settings.key.stored">
+				<source>A key for {email} is stored. Paste a new key only to replace it.</source>
+				<target>Ein Schlüssel für {email} ist gespeichert. Nur zum Ersetzen einen neuen Schlüssel einfügen.</target>
 			</trans-unit>
-			<trans-unit id="gsc.settings.redirectUri" resname="gsc.settings.redirectUri">
-				<source>Authorized redirect URI</source>
-				<target>Autorisierte Weiterleitungs-URI</target>
+			<trans-unit id="gsc.settings.key.file" resname="gsc.settings.key.file">
+				<source>Choose key file</source>
+				<target>Schlüsseldatei auswählen</target>
 			</trans-unit>
-			<trans-unit id="gsc.settings.redirectUri.description" resname="gsc.settings.redirectUri.description">
-				<source>Add this URI to the OAuth client (type "Web application") in the Google Cloud Console. It points to a static page of the extension that hands the result back to this window.</source>
-				<target>Diese URI im OAuth-Client (Typ „Webanwendung“) in der Google Cloud Console eintragen. Sie zeigt auf eine statische Seite der Extension, die das Ergebnis an dieses Fenster zurückgibt.</target>
+			<trans-unit id="gsc.settings.key.tooLarge" resname="gsc.settings.key.tooLarge">
+				<source>This file is too large for a service account key.</source>
+				<target>Die Datei ist zu groß für einen Dienstkonto-Schlüssel.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.key.account" resname="gsc.settings.key.account">
+				<source>Service account:</source>
+				<target>Dienstkonto:</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.key.remove" resname="gsc.settings.key.remove">
+				<source>Remove key</source>
+				<target>Schlüssel entfernen</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.key.removeConfirm" resname="gsc.settings.key.removeConfirm">
+				<source>Remove the stored service account key? Search Console reports stop until a new key is saved.</source>
+				<target>Gespeicherten Dienstkonto-Schlüssel entfernen? Die Search-Console-Berichte stoppen, bis ein neuer Schlüssel gespeichert ist.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.copy" resname="gsc.settings.copy">
+				<source>Copy</source>
+				<target>Kopieren</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.copied" resname="gsc.settings.copied">
+				<source>Copied</source>
+				<target>Kopiert</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.check" resname="gsc.settings.check">
+				<source>Check again</source>
+				<target>Erneut prüfen</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.missing" resname="gsc.settings.state.missing">
+				<source>no key</source>
+				<target>kein Schlüssel</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.missing.hint" resname="gsc.settings.state.missing.hint">
+				<source>Save the key of a service account first – the setup guide above shows how.</source>
+				<target>Zuerst den Schlüssel eines Dienstkontos speichern – wie das geht, zeigt die Anleitung oben.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.error" resname="gsc.settings.state.error">
+				<source>error</source>
+				<target>Fehler</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.noProperty" resname="gsc.settings.state.noProperty">
+				<source>no access to property</source>
+				<target>kein Zugriff auf Property</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.ok" resname="gsc.settings.state.ok">
+				<source>connected</source>
+				<target>verbunden</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.noProperty.hint" resname="gsc.settings.state.noProperty.hint">
+				<source>The service account cannot see the property {property} yet. Add its address as a user of this property in Search Console (step 6) and check again. New users can take a few minutes to become active.</source>
+				<target>Das Dienstkonto sieht die Property {property} noch nicht. Seine Adresse in der Search Console als Nutzer dieser Property hinzufügen (Schritt 6) und erneut prüfen. Neue Nutzer können einige Minuten brauchen, bis sie aktiv sind.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.state.noPropertySet" resname="gsc.settings.state.noPropertySet">
+				<source>The key works. Now enter the Search Console property and save.</source>
+				<target>Der Schlüssel funktioniert. Jetzt die Search-Console-Property eintragen und speichern.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.title" resname="gsc.settings.guide.title">
+				<source>Setup guide (about 5 minutes)</source>
+				<target>Anleitung zur Einrichtung (ca. 5 Minuten)</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.project" resname="gsc.settings.guide.project">
+				<source>Open the Google Cloud Console and create a project (or choose an existing one). Name and organization do not matter.</source>
+				<target>Google Cloud Console öffnen und ein Projekt anlegen (oder ein vorhandenes wählen). Name und Organisation spielen keine Rolle.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.project.link" resname="gsc.settings.guide.project.link">
+				<source>Create project</source>
+				<target>Projekt anlegen</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.api" resname="gsc.settings.guide.api">
+				<source>Enable the "Google Search Console API" for this project.</source>
+				<target>Für dieses Projekt die „Google Search Console API“ aktivieren.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.api.link" resname="gsc.settings.guide.api.link">
+				<source>Enable API</source>
+				<target>API aktivieren</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.account" resname="gsc.settings.guide.account">
+				<source>Create a service account: enter any name and click "Create and continue". Roles and user access are not needed – skip both steps with "Done".</source>
+				<target>Dienstkonto erstellen: beliebigen Namen eingeben und „Erstellen und fortfahren“ klicken. Rollen und Nutzerzugriff werden nicht gebraucht – beide Schritte mit „Fertig“ überspringen.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.account.link" resname="gsc.settings.guide.account.link">
+				<source>Create service account</source>
+				<target>Dienstkonto erstellen</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.key" resname="gsc.settings.guide.key">
+				<source>Open the new service account, tab "Keys" → "Add key" → "Create new key" → type JSON. The browser downloads the key file.</source>
+				<target>Das neue Dienstkonto öffnen, Tab „Schlüssel“ → „Schlüssel hinzufügen“ → „Neuen Schlüssel erstellen“ → Typ JSON. Der Browser lädt die Schlüsseldatei herunter.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.key.link" resname="gsc.settings.guide.key.link">
+				<source>Service accounts</source>
+				<target>Dienstkonten</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.paste" resname="gsc.settings.guide.paste">
+				<source>Choose the file below (or paste its content), enter the property and save. The e-mail address of the service account is then shown here.</source>
+				<target>Die Datei unten auswählen (oder ihren Inhalt einfügen), die Property eintragen und speichern. Danach erscheint hier die E-Mail-Adresse des Dienstkontos.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.user" resname="gsc.settings.guide.user">
+				<source>In Search Console open "Settings" → "Users and permissions" of the property, click "Add user", enter the address of the service account and choose the permission "Full". The extension only requests read access, so it cannot change anything.</source>
+				<target>In der Search Console bei der Property „Einstellungen“ → „Nutzer und Berechtigungen“ öffnen, „Nutzer hinzufügen“ klicken, die Adresse des Dienstkontos eintragen und die Berechtigung „Uneingeschränkt“ wählen. Die Extension fordert nur Lesezugriff an und kann nichts ändern.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.user.link" resname="gsc.settings.guide.user.link">
+				<source>Open Search Console</source>
+				<target>Search Console öffnen</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.property" resname="gsc.settings.guide.property">
+				<source>Click "Check again" below. The status turns green as soon as the service account can see the property.</source>
+				<target>Unten auf „Erneut prüfen“ klicken. Der Status wird grün, sobald das Dienstkonto die Property sieht.</target>
+			</trans-unit>
+			<trans-unit id="gsc.settings.guide.policy" resname="gsc.settings.guide.policy">
+				<source>In Google Workspace organizations an organization policy can block creating keys ("iam.disableServiceAccountKeyCreation"). Then an administrator of the organization has to allow it for the project. Keep the key file private and delete it after saving.</source>
+				<target>In Google-Workspace-Organisationen kann eine Organisationsrichtlinie das Erstellen von Schlüsseln sperren („iam.disableServiceAccountKeyCreation“). Dann muss ein Administrator der Organisation es für das Projekt erlauben. Die Schlüsseldatei vertraulich behandeln und nach dem Speichern löschen.</target>
 			</trans-unit>
 			<trans-unit id="gsc.settings.property" resname="gsc.settings.property">
 				<source>Search Console property</source>
@@ -579,29 +687,9 @@
 				<source>Google connection</source>
 				<target>Google-Verbindung</target>
 			</trans-unit>
-			<trans-unit id="gsc.settings.connected" resname="gsc.settings.connected">
-				<source>connected</source>
-				<target>verbunden</target>
-			</trans-unit>
-			<trans-unit id="gsc.settings.notConnected" resname="gsc.settings.notConnected">
-				<source>not connected</source>
-				<target>nicht verbunden</target>
-			</trans-unit>
-			<trans-unit id="gsc.settings.connect" resname="gsc.settings.connect">
-				<source>Connect with Google</source>
-				<target>Mit Google verbinden</target>
-			</trans-unit>
-			<trans-unit id="gsc.settings.disconnect" resname="gsc.settings.disconnect">
-				<source>Disconnect</source>
-				<target>Trennen</target>
-			</trans-unit>
-			<trans-unit id="gsc.settings.configureFirst" resname="gsc.settings.configureFirst">
-				<source>Save client ID and secret first, then connect.</source>
-				<target>Erst Client-ID und Secret speichern, dann verbinden.</target>
-			</trans-unit>
 			<trans-unit id="gsc.settings.properties" resname="gsc.settings.properties">
-				<source>Accessible properties:</source>
-				<target>Sichtbare Properties:</target>
+				<source>Properties visible to the service account:</source>
+				<target>Für das Dienstkonto sichtbare Properties:</target>
 			</trans-unit>
 			<trans-unit id="gsc.settings.backfill" resname="gsc.settings.backfill">
 				<source>Snapshot backfill</source>
@@ -622,30 +710,6 @@
 			<trans-unit id="gsc.settings.scheduler" resname="gsc.settings.scheduler">
 				<source>Daily snapshots: add the scheduler task "site-insights:gsc-snapshot" (e.g. daily) and "site-insights:run-jobs" (every few minutes) so started jobs also finish in the background.</source>
 				<target>Tägliche Snapshots: Scheduler-Task „site-insights:gsc-snapshot“ (z. B. täglich) und „site-insights:run-jobs“ (alle paar Minuten) anlegen, damit gestartete Jobs auch im Hintergrund fertig werden.</target>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.popupBlocked" resname="gsc.oauth.popupBlocked">
-				<source>The browser blocked the popup window. Please allow popups for the TYPO3 backend and try again.</source>
-				<target>Der Browser hat das Popup-Fenster blockiert. Bitte Popups für das TYPO3-Backend erlauben und erneut versuchen.</target>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.ok" resname="gsc.oauth.ok">
-				<source>Google Search Console is connected.</source>
-				<target>Google Search Console ist verbunden.</target>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.denied" resname="gsc.oauth.denied">
-				<source>The Google consent was cancelled.</source>
-				<target>Die Google-Einwilligung wurde abgebrochen.</target>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.invalid" resname="gsc.oauth.invalid">
-				<source>The connection request was invalid or expired. Please try again.</source>
-				<target>Die Verbindungsanfrage war ungültig oder abgelaufen. Bitte erneut versuchen.</target>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.failed" resname="gsc.oauth.failed">
-				<source>The token exchange with Google failed.</source>
-				<target>Der Token-Austausch mit Google ist fehlgeschlagen.</target>
-			</trans-unit>
-			<trans-unit id="gsc.oauth.no-refresh-token" resname="gsc.oauth.no-refresh-token">
-				<source>Google did not return a refresh token. Remove the app access at myaccount.google.com/permissions and connect again.</source>
-				<target>Google hat kein Refresh-Token geliefert. App-Zugriff unter myaccount.google.com/permissions entfernen und erneut verbinden.</target>
 			</trans-unit>
 			<trans-unit id="country.deu" resname="country.deu">
 				<source>Germany</source>

@@ -10,9 +10,15 @@ import { JobRunner, jobProgressText } from '@derspe/site-insights/jobs.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
 
-const OAUTH_STORAGE_KEY = 'derspe-site-insights-oauth';
-
 export const GSC_DEFAULT_RANGE = { period: 'range', date: 'last28', searchType: 'web', compare: '' };
+
+const GUIDE_LINKS = {
+  project: 'https://console.cloud.google.com/projectcreate',
+  api: 'https://console.cloud.google.com/apis/library/searchconsole.googleapis.com',
+  serviceAccount: 'https://console.cloud.google.com/iam-admin/serviceaccounts/create',
+  serviceAccounts: 'https://console.cloud.google.com/iam-admin/serviceaccounts',
+  searchConsole: 'https://search.google.com/search-console/users',
+};
 
 const PRESETS = [
   { key: 'latest', period: 'day', date: 'today' },
@@ -720,8 +726,20 @@ class SiGscIndex extends SiElement {
 class SiGscSettings extends SiElement {
   static properties = {
     form: { state: true }, values: { state: true }, status: { state: true }, saving: { state: true },
-    saved: { state: true }, error: { state: true }, job: { state: true }, backfillDays: { state: true }, notice: { state: true },
+    saved: { state: true }, error: { state: true }, job: { state: true }, backfillDays: { state: true },
+    checking: { state: true }, copied: { state: true },
   };
+
+  static styles = [...SiElement.styles, css`
+    .guide { border: 1px solid var(--si-border); border-radius: var(--si-radius); padding: 0 14px; }
+    .guide summary { cursor: pointer; padding: 10px 0; font-weight: 600; font-size: 14px; }
+    .guide ol { margin: 0 0 12px; padding-left: 20px; font-size: 14px; }
+    .guide li { margin: 0 0 8px; }
+    .guide a { color: var(--si-blue-6); }
+    .mt-xs { margin-top: 6px; }
+    label.btn { cursor: pointer; }
+    textarea.key { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; min-height: 110px; }
+  `];
 
   constructor() {
     super();
@@ -733,27 +751,13 @@ class SiGscSettings extends SiElement {
     this.error = null;
     this.job = null;
     this.backfillDays = 90;
-    this.notice = null;
-    this.noticeText = '';
     this.runner = null;
-    this.waitingForGoogle = false;
-    this.onStorage = (event) => {
-      if (event.type === 'focus' || (event.key === OAUTH_STORAGE_KEY && event.newValue)) {
-        this.pickUpOAuthResult();
-      }
-    };
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-    window.addEventListener('storage', this.onStorage);
-    window.addEventListener('focus', this.onStorage);
+    this.checking = false;
+    this.copied = false;
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    window.removeEventListener('storage', this.onStorage);
-    window.removeEventListener('focus', this.onStorage);
     this.runner?.stop();
   }
 
@@ -766,43 +770,12 @@ class SiGscSettings extends SiElement {
     }
   }
 
-  /**
-   * Reads (and immediately removes) the result the callback page left in localStorage.
-   * Only accepted while this window waits for Google; the server validates state, site and user.
-   */
-  pickUpOAuthResult() {
-    let result = null;
-    try {
-      result = JSON.parse(window.localStorage.getItem(OAUTH_STORAGE_KEY) ?? 'null');
-      window.localStorage.removeItem(OAUTH_STORAGE_KEY);
-    } catch {
-      return;
-    }
-    if (!this.waitingForGoogle || !result || Date.now() - (result.time ?? 0) > 10 * 60 * 1000) {
-      return;
-    }
-    this.waitingForGoogle = false;
-    this.completeConnection(result);
-  }
-
-  async completeConnection({ code, state, error }) {
-    try {
-      await this.api('gsc/auth/complete', { method: 'POST', body: { code, state, error } });
-      this.notice = 'ok';
-    } catch (e) {
-      this.notice = 'failed';
-      this.noticeText = e.message;
-    }
-    this.loadStatus();
-  }
-
   async load() {
     try {
       const v = await this.api('settings');
       this.values = v;
       this.form = {
-        gsc_oauth_client_id: v.gsc_oauth_client_id ?? '',
-        gsc_oauth_client_secret: '',
+        gsc_service_account_key: '',
         gsc_site_url: v.gsc_site_url ?? '',
         gsc_brand_terms: (v.gsc_brand_terms ?? []).join(', '),
         gsc_snapshot_top_n: v.gsc_snapshot_top_n ?? 100,
@@ -817,8 +790,15 @@ class SiGscSettings extends SiElement {
     this.loadStatus();
   }
 
-  loadStatus() {
-    this.api('gsc/auth/status').then((s) => { this.status = s; }).catch(() => {});
+  async loadStatus() {
+    this.checking = true;
+    try {
+      this.status = await this.api('gsc/auth/status');
+    } catch {
+      this.status = null;
+    } finally {
+      this.checking = false;
+    }
   }
 
   async save() {
@@ -839,29 +819,35 @@ class SiGscSettings extends SiElement {
     }
   }
 
-  async connect() {
-    this.notice = null;
-    this.noticeText = '';
-    // Open the window synchronously (popup blockers), then navigate it to Google
-    const popup = window.open('', 'derspe-site-insights-oauth', 'width=520,height=680');
-    if (!popup) {
-      this.error = new Error(t('gsc.oauth.popupBlocked'));
+  async readKeyFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) {
       return;
     }
-    try {
-      window.localStorage.removeItem(OAUTH_STORAGE_KEY);
-      const { url } = await this.api('gsc/auth/start', { method: 'POST' });
-      this.waitingForGoogle = true;
-      popup.location.href = url;
-    } catch (e) {
-      popup.close();
-      this.error = e;
+    if (file.size > 16384) {
+      this.error = new Error(t('gsc.settings.key.tooLarge'));
+      return;
     }
+    this.form = { ...this.form, gsc_service_account_key: await file.text() };
   }
 
-  async disconnect() {
-    await this.api('gsc/auth/disconnect', { method: 'POST' });
-    this.loadStatus();
+  async removeKey() {
+    if (!window.confirm(t('gsc.settings.key.removeConfirm'))) {
+      return;
+    }
+    await this.api('gsc/auth/remove', { method: 'POST' });
+    await this.load();
+  }
+
+  async copyEmail(email) {
+    try {
+      await navigator.clipboard.writeText(email);
+      this.copied = true;
+      setTimeout(() => { this.copied = false; }, 1500);
+    } catch {
+      // Clipboard not available (e.g. insecure context): the address stays selectable
+    }
   }
 
   field(key, label, { description = '', placeholder = '', type = 'text' } = {}) {
@@ -869,8 +855,64 @@ class SiGscSettings extends SiElement {
       <label for="f-${key}">${label}</label>
       ${description ? html`<span class="description">${description}</span>` : nothing}
       <input id="f-${key}" class="input" type=${type} .value=${String(this.form[key] ?? '')} placeholder=${placeholder}
-        ?disabled=${!getMeta().isAdmin} autocomplete="off"
-        @input=${(e) => { this.form = { ...this.form, [key]: e.target.value }; }}>
+        autocomplete="off" @input=${(e) => { this.form = { ...this.form, [key]: e.target.value }; }}>
+    </div>`;
+  }
+
+  link(name, label) {
+    return html`<a href=${GUIDE_LINKS[name]} target="_blank" rel="noopener noreferrer">${label}</a>`;
+  }
+
+  guide() {
+    const email = this.status?.clientEmail || this.values.gsc_service_account_email;
+    return html`<details class="guide" ?open=${!this.values.gsc_service_account_key_set}>
+      <summary>${t('gsc.settings.guide.title')}</summary>
+      <ol>
+        <li>${t('gsc.settings.guide.project')} ${this.link('project', t('gsc.settings.guide.project.link'))}</li>
+        <li>${t('gsc.settings.guide.api')} ${this.link('api', t('gsc.settings.guide.api.link'))}</li>
+        <li>${t('gsc.settings.guide.account')} ${this.link('serviceAccount', t('gsc.settings.guide.account.link'))}</li>
+        <li>${t('gsc.settings.guide.key')} ${this.link('serviceAccounts', t('gsc.settings.guide.key.link'))}</li>
+        <li>${t('gsc.settings.guide.paste')}</li>
+        <li>${t('gsc.settings.guide.user')} ${this.link('searchConsole', t('gsc.settings.guide.user.link'))}
+          ${email ? html`<div class="mt-xs"><code>${email}</code></div>` : nothing}</li>
+        <li>${t('gsc.settings.guide.property')}</li>
+      </ol>
+      <div class="xs dimmed mb">${t('gsc.settings.guide.policy')}</div>
+    </details>`;
+  }
+
+  connection() {
+    const status = this.status;
+    if (!status) {
+      return nothing;
+    }
+    let state = 'missing';
+    if (status.configured) {
+      state = status.error ? 'error' : (status.propertyAccessible ? 'ok' : 'noProperty');
+    }
+    const colors = { missing: 'gray', error: 'red', noProperty: 'yellow', ok: 'green' };
+    return html`<div class="paper alt mt">
+      <div class="group between mb-sm">
+        <span class="fw6">${t('gsc.settings.connection')}</span>
+        ${this.checking ? html`<span class="spinner"></span>` : badge(t(`gsc.settings.state.${state}`), colors[state])}
+      </div>
+      ${status.clientEmail ? html`<div class="group-xs mb-sm">
+        <span class="sm dimmed">${t('gsc.settings.key.account')}</span>
+        <code>${status.clientEmail}</code>
+        <button type="button" class="btn xs subtle" @click=${() => this.copyEmail(status.clientEmail)}>${icon(this.copied ? 'check' : 'copy', 14)}${this.copied ? t('gsc.settings.copied') : t('gsc.settings.copy')}</button>
+      </div>` : nothing}
+      ${!status.configured ? html`<div class="sm dimmed">${t('gsc.settings.state.missing.hint')}</div>` : nothing}
+      ${status.error ? html`<div class="mb-sm">${alertBox(status.error, { color: 'red' })}</div>` : nothing}
+      ${state === 'noProperty' ? html`<div class="mb-sm">${alertBox(status.property
+        ? t('gsc.settings.state.noProperty.hint', { property: status.property })
+        : t('gsc.settings.state.noPropertySet'), { color: 'yellow' })}</div>` : nothing}
+      ${status.connected && status.sites.length ? html`
+        <div class="sm mb-sm">${t('gsc.settings.properties')}</div>
+        <ul class="list mb">${status.sites.map((s) => html`<li>${s.siteUrl} <span class="dimmed">(${s.permissionLevel})</span></li>`)}</ul>` : nothing}
+      <div class="group-xs">
+        ${status.configured ? spinnerButton(t('gsc.settings.check'), { size: 'xs', variant: 'default', iconName: 'refresh', loading: this.checking, onClick: () => this.loadStatus() }) : nothing}
+        ${status.configured ? html`<button type="button" class="btn xs danger" @click=${() => this.removeKey()}>${t('gsc.settings.key.remove')}</button>` : nothing}
+      </div>
     </div>`;
   }
 
@@ -881,23 +923,27 @@ class SiGscSettings extends SiElement {
     if (!this.form) {
       return this.error ? errorState(this.error) : skeleton(400);
     }
-    const isAdmin = true;
-    const status = this.status;
     const running = this.job && (this.job.status === 'running' || this.job.status === 'pending');
-    const noticeColor = this.notice === 'ok' ? 'green' : 'red';
+    const keySet = this.values.gsc_service_account_key_set;
     return html`<div class="paper" style="max-width:860px">
       <h3 class="title mb">${t('gsc.settings.title')}</h3>
       <div class="stack-sm">
         ${this.error ? alertBox(this.error.message) : nothing}
-        ${this.field('gsc_oauth_client_id', t('gsc.settings.clientId'), { placeholder: '….apps.googleusercontent.com' })}
-        ${this.field('gsc_oauth_client_secret', t('gsc.settings.clientSecret'), {
-          type: 'password',
-          placeholder: this.values.gsc_oauth_client_secret_set ? t('settings.secretSet') : t('gsc.settings.clientSecret.placeholder'),
-        })}
+        ${this.guide()}
         <div class="field">
-          <label>${t('gsc.settings.redirectUri')}</label>
-          <span class="description">${t('gsc.settings.redirectUri.description')}</span>
-          <code style="padding:8px 10px;word-break:break-all">${this.values.oauth_redirect_uri}</code>
+          <label for="f-key">${t('gsc.settings.key')}</label>
+          <span class="description">${keySet
+            ? t('gsc.settings.key.stored', { email: this.values.gsc_service_account_email })
+            : t('gsc.settings.key.description')}</span>
+          <textarea id="f-key" class="input key" spellcheck="false" autocomplete="off"
+            placeholder=${keySet ? t('settings.secretSet') : '{ "type": "service_account", … }'}
+            .value=${this.form.gsc_service_account_key}
+            @input=${(e) => { this.form = { ...this.form, gsc_service_account_key: e.target.value }; }}></textarea>
+          <div class="mt-xs">
+            <label class="btn xs default">${icon('upload', 14)}${t('gsc.settings.key.file')}
+              <input type="file" accept=".json,application/json" hidden @change=${(e) => this.readKeyFile(e)}>
+            </label>
+          </div>
         </div>
         ${this.field('gsc_site_url', t('gsc.settings.property'), { description: t('gsc.settings.property.description'), placeholder: 'sc-domain:example.com' })}
         ${this.field('gsc_brand_terms', t('gsc.settings.brandTerms'), { description: t('gsc.settings.brandTerms.description'), placeholder: t('settings.commaSeparated') })}
@@ -906,27 +952,13 @@ class SiGscSettings extends SiElement {
         ${this.field('gsc_sitemap_url', t('gsc.settings.sitemap'), { description: t('gsc.settings.sitemap.description'), placeholder: this.values.gsc_sitemap_url_default || 'https://example.com/sitemap.xml' })}
         ${this.field('gsc_extra_source_urls', t('gsc.settings.extraSources'), { description: t('gsc.settings.extraSources.description'), placeholder: 'https://example.com/products' })}
         ${this.field('gsc_extra_include', t('gsc.settings.extraInclude'), { description: t('gsc.settings.extraInclude.description'), placeholder: '/products/' })}
-        ${isAdmin ? html`<div>${spinnerButton(this.saved ? t('settings.saved') : t('settings.save'), {
+        <div>${spinnerButton(this.saved ? t('settings.saved') : t('settings.save'), {
           loading: this.saving, color: this.saved ? 'success' : '', onClick: () => this.save(),
-        })}</div>` : nothing}
+        })}</div>
 
-        <div class="paper alt mt">
-          <div class="group between mb-sm">
-            <span class="fw6">${t('gsc.settings.connection')}</span>
-            ${status ? badge(status.connected ? t('gsc.settings.connected') : t('gsc.settings.notConnected'), status.connected ? 'green' : 'red') : nothing}
-          </div>
-          ${this.notice ? html`<div class="mb-sm">${alertBox(this.noticeText || t(`gsc.oauth.${this.notice}`), { color: noticeColor })}</div>` : nothing}
-          ${status?.error ? html`<div class="mb-sm">${alertBox(status.error, { color: 'yellow' })}</div>` : nothing}
-          ${status && !status.connected ? html`
-            ${isAdmin ? html`<button type="button" class="btn" ?disabled=${!status.configured} @click=${() => this.connect()}>${icon('google', 16)}${t('gsc.settings.connect')}</button>` : nothing}
-            ${!status.configured ? html`<div class="sm dimmed mt">${t('gsc.settings.configureFirst')}</div>` : nothing}` : nothing}
-          ${status?.connected ? html`
-            <div class="sm mb-sm">${t('gsc.settings.properties')}</div>
-            <ul class="list mb">${(status.sites ?? []).map((s) => html`<li>${s.siteUrl} <span class="dimmed">(${s.permissionLevel})</span></li>`)}</ul>
-            ${isAdmin ? html`<button type="button" class="btn danger" @click=${() => this.disconnect()}>${t('gsc.settings.disconnect')}</button>` : nothing}` : nothing}
-        </div>
+        ${this.connection()}
 
-        ${status?.connected ? html`<div class="paper alt mt">
+        ${this.status?.connected ? html`<div class="paper alt mt">
           <div class="fw6 mb-sm">${t('gsc.settings.backfill')}</div>
           <div class="sm dimmed mb">${t('gsc.settings.backfill.description')}</div>
           <div class="group end">
