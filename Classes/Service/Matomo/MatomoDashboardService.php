@@ -14,6 +14,8 @@ use Derspe\SiteInsights\Settings\SiteSettings;
 final readonly class MatomoDashboardService
 {
     private const RANGE_DAYS = ['last7' => 7, 'last30' => 30, 'last90' => 90, 'last365' => 365];
+    // Custom ranges reach back one year at most: longer ranges (plus comparison) make Matomo archiving slow
+    public const CUSTOM_MAX_MONTHS = 12;
 
     public function __construct(
         private MatomoClient $client,
@@ -68,7 +70,7 @@ final readonly class MatomoDashboardService
         $period = $period === 'day' ? 'day' : 'range';
         $date = $period === 'day'
             ? (in_array($date, ['today', 'yesterday'], true) ? $date : 'today')
-            : (isset(self::RANGE_DAYS[$date]) ? $date : 'last30');
+            : (isset(self::RANGE_DAYS[$date]) ? $date : $this->customDate($date));
         $compare = in_array($compare, ['previous', 'year'], true) ? $compare : '';
         // Only segments defined in Matomo: free-form segments could trigger expensive archiving
         if ($segment !== '' && !in_array($segment, array_column($this->segments($site), 'definition'), true)) {
@@ -205,14 +207,64 @@ final readonly class MatomoDashboardService
         return new \DateTimeImmutable('today');
     }
 
+    /**
+     * Validates a custom range "YYYY-MM-DD,YYYY-MM-DD"; anything that is no date range falls back to the default preset.
+     */
+    private function customDate(string $date): string
+    {
+        if (!str_contains($date, ',')) {
+            return 'last30';
+        }
+        $bounds = self::customRange($date, $this->today());
+        if ($bounds === null) {
+            throw new ApiException(sprintf('Invalid date range: dates must lie within the last %d months', self::CUSTOM_MAX_MONTHS), 400);
+        }
+        return $bounds[0]->format('Y-m-d') . ',' . $bounds[1]->format('Y-m-d');
+    }
+
+    /**
+     * @return array{0: \DateTimeImmutable, 1: \DateTimeImmutable}|null [start, end], null = invalid
+     */
+    public static function customRange(string $date, \DateTimeImmutable $today): ?array
+    {
+        $parts = explode(',', $date);
+        if (count($parts) !== 2) {
+            return null;
+        }
+        $bounds = [];
+        foreach ($parts as $part) {
+            $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $part, $today->getTimezone());
+            // Rejects overflowing dates such as 2026-02-31
+            if ($day === false || $day->format('Y-m-d') !== $part) {
+                return null;
+            }
+            $bounds[] = $day;
+        }
+        [$start, $end] = $bounds;
+        if ($start > $end || $end > $today || $start < $today->modify('-' . self::CUSTOM_MAX_MONTHS . ' months')) {
+            return null;
+        }
+        return [$start, $end];
+    }
+
+    /**
+     * @return array{0: \DateTimeImmutable, 1: \DateTimeImmutable} [start, end] of a preset or custom range
+     */
+    private function rangeBounds(string $date): array
+    {
+        if (isset(self::RANGE_DAYS[$date])) {
+            $end = $this->today();
+            return [$end->modify('-' . (self::RANGE_DAYS[$date] - 1) . ' days'), $end];
+        }
+        return self::customRange($date, $this->today()) ?? throw new ApiException('Invalid date range', 400);
+    }
+
     private function explicitDate(string $period, string $date): string
     {
         if ($period === 'day') {
             return $this->dayDate($date);
         }
-        $days = self::RANGE_DAYS[$date];
-        $end = $this->today();
-        $start = $end->modify('-' . ($days - 1) . ' days');
+        [$start, $end] = $this->rangeBounds($date);
         return $start->format('Y-m-d') . ',' . $end->format('Y-m-d');
     }
 
@@ -233,10 +285,13 @@ final readonly class MatomoDashboardService
             $base = $compare === 'year' ? $base->modify('-1 year') : $base->modify('-1 day');
             return ['day', $base->format('Y-m-d')];
         }
-        $days = self::RANGE_DAYS[$date];
-        $end = $compare === 'year' ? $today->modify('-1 year') : $today->modify('-' . $days . ' days');
-        $start = $end->modify('-' . ($days - 1) . ' days');
-        return ['range', $start->format('Y-m-d') . ',' . $end->format('Y-m-d')];
+        [$start, $end] = $this->rangeBounds($date);
+        if ($compare === 'year') {
+            return ['range', $start->modify('-1 year')->format('Y-m-d') . ',' . $end->modify('-1 year')->format('Y-m-d')];
+        }
+        $days = (int)$start->diff($end)->days + 1;
+        $compareEnd = $start->modify('-1 day');
+        return ['range', $compareEnd->modify('-' . ($days - 1) . ' days')->format('Y-m-d') . ',' . $compareEnd->format('Y-m-d')];
     }
 
     /**

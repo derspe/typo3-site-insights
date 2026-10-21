@@ -20,6 +20,20 @@ const PRESETS = [
   { key: '1y', period: 'range', date: 'last365' },
 ];
 
+// Same limit as MatomoDashboardService::CUSTOM_MAX_MONTHS
+const CUSTOM_MAX_MONTHS = 12;
+
+function isoDay(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function customBounds() {
+  const today = new Date();
+  const min = new Date(today);
+  min.setMonth(min.getMonth() - CUSTOM_MAX_MONTHS);
+  return { min: isoDay(min), max: isoDay(today) };
+}
+
 function compareLabel(compare) {
   return compare === 'year' ? t('compare.previousYear') : t('compare.previousPeriod');
 }
@@ -57,6 +71,8 @@ export class SiMatomo extends SiElement {
   static properties = {
     tab: { type: String },
     range: { state: true },
+    customFrom: { state: true },
+    customTo: { state: true },
     segments: { state: true },
     data: { state: true },
     error: { state: true },
@@ -66,6 +82,8 @@ export class SiMatomo extends SiElement {
     super();
     this.tab = 'dashboard';
     this.range = { ...MATOMO_DEFAULT_RANGE };
+    this.customFrom = '';
+    this.customTo = '';
     this.segments = [];
     this.data = null;
     this.error = null;
@@ -127,7 +145,12 @@ export class SiMatomo extends SiElement {
     const change = (next) => { this.range = next; };
     return html`<div class="group mb">
       ${segmented(PRESETS.map((p) => ({ label: t(`preset.${p.key}`), value: p, active: v.period === p.period && v.date === p.date })),
-        (item) => change({ ...v, period: item.value.period, date: item.value.date }))}
+        (item) => {
+          this.customFrom = '';
+          this.customTo = '';
+          change({ ...v, period: item.value.period, date: item.value.date });
+        })}
+      ${this.renderCustomRange(v, change)}
       ${this.segments.length ? selectInput(
         [{ value: '', label: t('matomo.allVisitors') }, ...this.segments.map((s) => ({ value: s.definition, label: s.name }))],
         v.segment, (segment) => change({ ...v, segment }), { minWidth: 180, label: t('matomo.segment') },
@@ -137,6 +160,27 @@ export class SiMatomo extends SiElement {
         { value: 'previous', label: t('compare.previousPeriod') },
         { value: 'year', label: t('compare.previousYear') },
       ], v.compare, (compare) => change({ ...v, compare }), { minWidth: 160 }) : nothing}
+    </div>`;
+  }
+
+  /**
+   * Custom range, applied as soon as both dates are set and inside the allowed window.
+   */
+  renderCustomRange(v, change) {
+    const { min, max } = customBounds();
+    const apply = (from, to) => {
+      this.customFrom = from;
+      this.customTo = to;
+      if (from && to && from >= min && to <= max && from <= to) {
+        change({ ...v, period: 'range', date: `${from},${to}` });
+      }
+    };
+    return html`<div class="group-xs nowrap" title=${t('matomo.range.limit', { months: CUSTOM_MAX_MONTHS })}>
+      <input type="date" class="input xs" style="width:auto" aria-label=${t('matomo.range.from')}
+        .value=${this.customFrom} min=${min} max=${this.customTo || max} @change=${(e) => apply(e.target.value, this.customTo)}>
+      <span class="dimmed">–</span>
+      <input type="date" class="input xs" style="width:auto" aria-label=${t('matomo.range.to')}
+        .value=${this.customTo} min=${this.customFrom || min} max=${max} @change=${(e) => apply(this.customFrom, e.target.value)}>
     </div>`;
   }
 

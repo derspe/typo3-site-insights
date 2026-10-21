@@ -795,6 +795,18 @@
 				<source>Visits</source>
 				<target>Besuche</target>
 			</trans-unit>
+			<trans-unit id="matomo.range.from" resname="matomo.range.from">
+				<source>From</source>
+				<target>Von</target>
+			</trans-unit>
+			<trans-unit id="matomo.range.to" resname="matomo.range.to">
+				<source>To</source>
+				<target>Bis</target>
+			</trans-unit>
+			<trans-unit id="matomo.range.limit" resname="matomo.range.limit">
+				<source>Custom range – up to {months} months back</source>
+				<target>Eigener Zeitraum – bis zu {months} Monate zurück</target>
+			</trans-unit>
 			<trans-unit id="matomo.pageviews" resname="matomo.pageviews">
 				<source>Pageviews</source>
 				<target>Seitenaufrufe</target>

@@ -597,6 +597,15 @@
 			<trans-unit id="matomo.visits" resname="matomo.visits">
 				<source>Visits</source>
 			</trans-unit>
+			<trans-unit id="matomo.range.from" resname="matomo.range.from">
+				<source>From</source>
+			</trans-unit>
+			<trans-unit id="matomo.range.to" resname="matomo.range.to">
+				<source>To</source>
+			</trans-unit>
+			<trans-unit id="matomo.range.limit" resname="matomo.range.limit">
+				<source>Custom range – up to {months} months back</source>
+			</trans-unit>
 			<trans-unit id="matomo.pageviews" resname="matomo.pageviews">
 				<source>Pageviews</source>
 			</trans-unit>
