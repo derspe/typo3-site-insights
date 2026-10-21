@@ -31,6 +31,7 @@ final class AccessPolicy
         'gsc/index/pages',
         'gsc/auth/status',
         'job/active',
+        'page/insights',
     ];
 
     private const ADMIN_POST_ENDPOINTS = [

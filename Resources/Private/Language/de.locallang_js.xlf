@@ -891,6 +891,22 @@
 				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
 				<target>Keine Ziele geladen. URL, Token und Site-ID speichern – danach erscheinen die Ziele hier.</target>
 			</trans-unit>
+			<trans-unit id="page.entries" resname="page.entries">
+				<source>Entries</source>
+				<target>Einstiege</target>
+			</trans-unit>
+			<trans-unit id="page.unavailable" resname="page.unavailable">
+				<source>Not available</source>
+				<target>Nicht verfügbar</target>
+			</trans-unit>
+			<trans-unit id="page.topQueries" resname="page.topQueries">
+				<source>Top {count} search queries (Google)</source>
+				<target>Top {count} Suchbegriffe (Google)</target>
+			</trans-unit>
+			<trans-unit id="page.anonymizedHint" resname="page.anonymizedHint">
+				<source>Google hides rare (anonymized) queries, so the queries add up to fewer clicks than the page total.</source>
+				<target>Google blendet seltene (anonymisierte) Suchanfragen aus – die Suchbegriffe ergeben daher in Summe weniger Klicks als die Seite insgesamt.</target>
+			</trans-unit>
 			<trans-unit id="widget.last28" resname="widget.last28">
 				<source>Last 28 days</source>
 				<target>Letzte 28 Tage</target>

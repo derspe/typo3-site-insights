@@ -669,6 +669,18 @@
 			<trans-unit id="matomo.settings.goals.empty" resname="matomo.settings.goals.empty">
 				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
 			</trans-unit>
+			<trans-unit id="page.entries" resname="page.entries">
+				<source>Entries</source>
+			</trans-unit>
+			<trans-unit id="page.unavailable" resname="page.unavailable">
+				<source>Not available</source>
+			</trans-unit>
+			<trans-unit id="page.topQueries" resname="page.topQueries">
+				<source>Top {count} search queries (Google)</source>
+			</trans-unit>
+			<trans-unit id="page.anonymizedHint" resname="page.anonymizedHint">
+				<source>Google hides rare (anonymized) queries, so the queries add up to fewer clicks than the page total.</source>
+			</trans-unit>
 			<trans-unit id="widget.last28" resname="widget.last28">
 				<source>Last 28 days</source>
 			</trans-unit>

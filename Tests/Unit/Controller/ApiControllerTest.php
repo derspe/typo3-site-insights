@@ -16,6 +16,7 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\KeyFile;
@@ -66,6 +67,7 @@ final class ApiControllerTest extends UnitTestCase
             new UrlCollector($settings, $sites, $this->http->factory(), new NullLogger()),
             self::unused(JobService::class),
             new NullLogger(),
+            self::unused(PageInsightsService::class),
         );
     }
 

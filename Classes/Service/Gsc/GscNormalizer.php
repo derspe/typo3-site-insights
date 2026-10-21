@@ -186,6 +186,15 @@ final class GscNormalizer
     }
 
     /**
+     * RE2 pattern for the "page" dimension that matches a URL with and without trailing slash.
+     * Search Console reports the canonical URL, TYPO3 may generate the other variant.
+     */
+    public static function pageRegex(string $url): string
+    {
+        return '^' . preg_quote(rtrim($url, '/')) . '/?$';
+    }
+
+    /**
      * Adds Matomo pageviews to Search Console page rows (joined by path).
      *
      * @param list<array<string, mixed>> $gscPages

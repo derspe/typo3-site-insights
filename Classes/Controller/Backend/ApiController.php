@@ -17,14 +17,17 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\SiteSettings;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Site\Entity\Site;
 
 /**
@@ -54,6 +57,7 @@ final readonly class ApiController
         private UrlCollector $urlCollector,
         private JobService $jobs,
         private LoggerInterface $logger,
+        private PageInsightsService $pageInsights,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -134,8 +138,27 @@ final readonly class ApiController
             $endpoint === 'job/active' => ['job' => JobService::toDto($this->jobs->findActive($site, (string)($query['type'] ?? '')))],
             $endpoint === 'job/step' => $this->stepJob($site, (int)($body['id'] ?? 0)),
 
+            $endpoint === 'page/insights' => $this->pageInsights($site, $query, $user),
+
             default => throw new ApiException('Unknown endpoint', 404),
         };
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @return array<string, mixed>
+     */
+    private function pageInsights(string $site, array $query, BackendUserAuthentication $user): array
+    {
+        $pageId = (int)($query['page'] ?? 0);
+        if ($pageId <= 0) {
+            throw new ApiException('Parameter "page" missing', 400);
+        }
+        if (!$user->isAdmin() && BackendUtility::readPageAccess($pageId, $user->getPagePermsClause(Permission::PAGE_SHOW)) === false) {
+            throw new ApiException('Access to this page denied', 403);
+        }
+        $url = $this->pageInsights->pageUrl($site, $pageId, max(0, (int)($query['language'] ?? 0)));
+        return $this->pageInsights->insights($site, $url);
     }
 
     /**

@@ -135,4 +135,25 @@ final class GscNormalizerTest extends TestCase
         self::assertSame('/a/b', GscNormalizer::extractPath('https://example.com/a/b/'));
         self::assertSame('/x', GscNormalizer::extractPath('/x/'));
     }
+
+    #[Test]
+    public function pageRegexMatchesWithAndWithoutTrailingSlash(): void
+    {
+        $regex = GscNormalizer::pageRegex('https://www.example.com/smart-home/');
+        self::assertSame('^https\\://www\\.example\\.com/smart\\-home/?$', $regex);
+        $php = '#' . $regex . '#';
+        self::assertMatchesRegularExpression($php, 'https://www.example.com/smart-home');
+        self::assertMatchesRegularExpression($php, 'https://www.example.com/smart-home/');
+        self::assertDoesNotMatchRegularExpression($php, 'https://www.example.com/smart-home/lights');
+        self::assertDoesNotMatchRegularExpression($php, 'https://www.example.com/smart-homes');
+    }
+
+    #[Test]
+    public function pageRegexOfTheRootPage(): void
+    {
+        $php = '#' . GscNormalizer::pageRegex('https://example.com/') . '#';
+        self::assertMatchesRegularExpression($php, 'https://example.com/');
+        self::assertMatchesRegularExpression($php, 'https://example.com');
+        self::assertDoesNotMatchRegularExpression($php, 'https://example.com/about');
+    }
 }

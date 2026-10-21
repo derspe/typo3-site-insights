@@ -28,6 +28,14 @@ service, no long-running processes. It works on ordinary shared hosting.
 - Segments, goals (selectable) with conversions and chart
 - Visits over time, most viewed pages, traffic sources
 
+**Page module**
+
+- Key figures of the current page above the content: Matomo pageviews and entries,
+  Search Console clicks and impressions of the last 28 days
+- Collapsible box with the top 10 search queries of the page
+- Shown to users with access to the Site Insights module; data is loaded in the
+  background and cached (Matomo 1 hour, Search Console 6 hours)
+
 **Dashboard widgets** (group "Site Insights")
 
 - Search Console: key figures, clicks & impressions, top queries, visibility index

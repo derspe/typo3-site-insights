@@ -111,4 +111,22 @@ final class MatomoNormalizerTest extends TestCase
         $sources = MatomoNormalizer::addSourcesDelta([['label' => 'X', 'visits' => 3]], [['label' => 'X', 'visits' => 0]]);
         self::assertArrayNotHasKey('visitsDelta', $sources[0]);
     }
+
+    #[Test]
+    public function pageMetricsSumAllRowsOfThePage(): void
+    {
+        self::assertSame(['pageviews' => 15, 'entries' => 4], MatomoNormalizer::pageMetrics([
+            ['label' => '/a', 'nb_hits' => 10, 'entry_nb_visits' => 3],
+            ['label' => '/a?x=1', 'nb_hits' => 5, 'entry_nb_visits' => 1],
+        ]));
+    }
+
+    #[Test]
+    public function pageMetricsOfAnUnknownPageAreZero(): void
+    {
+        self::assertSame(['pageviews' => 0, 'entries' => 0], MatomoNormalizer::pageMetrics([]));
+        self::assertSame(['pageviews' => 0, 'entries' => 0], MatomoNormalizer::pageMetrics(['result' => 'x']));
+        // Rows of pages without entries carry no entry metrics
+        self::assertSame(['pageviews' => 2, 'entries' => 0], MatomoNormalizer::pageMetrics([['nb_hits' => 2]]));
+    }
 }

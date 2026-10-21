@@ -22,6 +22,8 @@ final class AccessPolicyTest extends TestCase
         yield 'matomo dashboard' => ['matomo/dashboard', false, [], AccessPolicy::USER];
         yield 'index pages' => ['gsc/index/pages', false, [], AccessPolicy::USER];
         yield 'auth status' => ['gsc/auth/status', false, [], AccessPolicy::USER];
+        yield 'page insights' => ['page/insights', false, [], AccessPolicy::USER];
+        yield 'page insights via POST' => ['page/insights', true, [], null];
         yield 'job step' => ['job/step', true, [], AccessPolicy::USER];
         // Quota friendly actions: module users
         yield 'inspect cached' => ['gsc/inspect', true, [], AccessPolicy::USER];

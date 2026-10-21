@@ -78,6 +78,24 @@ final class MatomoNormalizer
     }
 
     /**
+     * Pageviews and entries of one page (Actions.getPageUrl, may return several rows).
+     *
+     * @return array{pageviews: int, entries: int}
+     */
+    public static function pageMetrics(mixed $data): array
+    {
+        $metrics = ['pageviews' => 0, 'entries' => 0];
+        if (!is_array($data) || !array_is_list($data)) {
+            return $metrics;
+        }
+        foreach ($data as $row) {
+            $metrics['pageviews'] += (int)($row['nb_hits'] ?? 0);
+            $metrics['entries'] += (int)($row['entry_nb_visits'] ?? 0);
+        }
+        return $metrics;
+    }
+
+    /**
      * @return list<array{label: string, visits: int, percent: string}>
      */
     public static function trafficSources(mixed $data): array
