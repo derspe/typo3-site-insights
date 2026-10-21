@@ -63,19 +63,27 @@ final class PageInsightsServiceTest extends UnitTestCase
         $this->configureMatomo();
         $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
         $this->http->queue(
-            FakeHttp::json([['label' => '/smart-home', 'nb_hits' => 120, 'entry_nb_visits' => 45]]),
+            FakeHttp::json([[['label' => '/smart-home', 'nb_hits' => 120, 'entry_nb_visits' => 45]], [['nb_hits' => 100, 'entry_nb_visits' => 50]]]),
             FakeHttp::json(['rows' => [['keys' => ['2026-10-18']], ['keys' => ['2026-10-19']]]]),
             FakeHttp::json(['rows' => [['clicks' => 30, 'impressions' => 900, 'position' => 6.5]]]),
             FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 500, 'ctr' => 0.04, 'position' => 4.0]]]),
             FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 500], ['keys' => ['licht'], 'clicks' => 0, 'impressions' => 150]]]),
+            FakeHttp::json(['rows' => [['clicks' => 24, 'impressions' => 800, 'position' => 7.0]]]),
         );
 
         $result = $this->service()->insights('alpha', self::URL);
 
         self::assertSame(120, $result['matomo']['pageviews']);
         self::assertSame(45, $result['matomo']['entries']);
+        self::assertSame(['pageviews' => 100, 'entries' => 50], $result['matomo']['compare']);
+        $yesterday = new \DateTimeImmutable('yesterday');
+        self::assertSame($yesterday->format('Y-m-d'), $result['matomo']['range']['endDate'], 'full days only');
+        self::assertSame($yesterday->modify('-28 days')->format('Y-m-d'), $result['matomo']['compareRange']['endDate']);
+        self::assertSame($yesterday->modify('-55 days')->format('Y-m-d'), $result['matomo']['compareRange']['startDate']);
         $form = $this->http->formFields(0);
-        self::assertSame(['Actions.getPageUrl', self::URL, 'range'], [$form['method'], $form['pageUrl'], $form['period']]);
+        self::assertSame('API.getBulkRequest', $form['method']);
+        parse_str($form['urls'][0], $sub);
+        self::assertSame(['Actions.getPageUrl', self::URL, 'range'], [$sub['method'], $sub['pageUrl'], $sub['period']]);
 
         self::assertSame(30, $result['gsc']['clicks']);
         self::assertSame(900, $result['gsc']['impressions']);
@@ -83,6 +91,9 @@ final class PageInsightsServiceTest extends UnitTestCase
         self::assertSame('smart home', $result['gsc']['queries'][0]['query']);
         self::assertSame(['clicks' => 10, 'impressions' => 250], $result['gsc']['anonymized']);
         self::assertSame(25000, $this->gscBody(4)['rowLimit']);
+        self::assertSame(24, $result['gsc']['compare']['clicks']);
+        self::assertSame(['startDate' => '2026-08-25', 'endDate' => '2026-09-21'], $result['gsc']['compareRange']);
+        self::assertSame(['startDate' => '2026-08-25', 'endDate' => '2026-09-21'], array_intersect_key($this->gscBody(5), ['startDate' => 1, 'endDate' => 1]));
 
         $kpis = $this->gscBody(2);
         $queries = $this->gscBody(3);
@@ -98,7 +109,7 @@ final class PageInsightsServiceTest extends UnitTestCase
     public function aMissingSourceDoesNotHideTheOther(): void
     {
         $this->configureMatomo();
-        $this->http->queue(FakeHttp::json([['nb_hits' => 7, 'entry_nb_visits' => 2]]));
+        $this->http->queue(FakeHttp::json([[['nb_hits' => 7, 'entry_nb_visits' => 2]], []]));
 
         $result = $this->service()->insights('alpha', self::URL);
 
@@ -119,7 +130,7 @@ final class PageInsightsServiceTest extends UnitTestCase
     public function matomoErrorsAreReportedPerSource(): void
     {
         $this->configureMatomo();
-        $this->http->queue(FakeHttp::json(['result' => 'error', 'message' => 'no access']));
+        $this->http->queue(FakeHttp::json([[], ['result' => 'error', 'message' => 'no access']]));
         $result = $this->service()->insights('alpha', self::URL);
         self::assertSame(502, $result['matomo']['status']);
         self::assertStringContainsString('no access', $result['matomo']['error']);
@@ -129,7 +140,7 @@ final class PageInsightsServiceTest extends UnitTestCase
     public function resultsAreCached(): void
     {
         $this->configureMatomo();
-        $this->http->queue(FakeHttp::json([['nb_hits' => 7]]));
+        $this->http->queue(FakeHttp::json([[['nb_hits' => 7]], []]));
         $this->service()->insights('alpha', self::URL);
         $this->service()->insights('alpha', self::URL);
         self::assertCount(1, $this->http->history);

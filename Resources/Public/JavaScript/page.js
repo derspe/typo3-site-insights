@@ -73,11 +73,11 @@ class SiteInsightsPage extends SiElement {
       const hint = source.status === 503 ? t('error.notConfigured') : t('page.unavailable');
       return statCard({ compact: true, label, value: '–', color: 'gray', icon: iconName, sub: html`<div class="xs dimmed truncate" title=${source.error}>${hint}</div>` });
     }
-    return statCard({ compact: true, label, value: fmt.int(source[key]), color, icon: iconName });
+    return statCard({ compact: true, label, value: fmt.int(source[key]), raw: source[key], compare: source.compare?.[key], color, icon: iconName });
   }
 
   footer(m, g) {
-    const parts = [t('widget.last28')];
+    const parts = [t('widget.last28'), t('widget.vsPrevious')];
     if (!m.error) {
       parts.push(`Matomo ${fmt.date(m.range.startDate)} – ${fmt.date(m.range.endDate)}`);
     }

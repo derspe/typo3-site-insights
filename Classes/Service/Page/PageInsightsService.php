@@ -17,7 +17,7 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 /**
  * Key figures of a single page for the page module: Matomo pageviews and entries,
  * Search Console clicks, impressions, top queries and the share of anonymized queries
- * of the last 28 days.
+ * of the last 28 days, each compared with the 28 days before.
  *
  * Each source is loaded on its own; a failing or unconfigured source only returns its error.
  */
@@ -79,18 +79,26 @@ final readonly class PageInsightsService
         if (!$this->matomo->isConfigured($site)) {
             throw new ApiException('Matomo is not configured', 503);
         }
-        $end = new \DateTimeImmutable('today');
-        $range = [
-            'startDate' => $end->modify('-' . (self::DAYS - 1) . ' days')->format('Y-m-d'),
-            'endDate' => $end->format('Y-m-d'),
+        // Full days only, otherwise the incomplete current day pulls the comparison down
+        $end = new \DateTimeImmutable('yesterday');
+        $start = $end->modify('-' . (self::DAYS - 1) . ' days');
+        $range = ['startDate' => $start->format('Y-m-d'), 'endDate' => $end->format('Y-m-d')];
+        $compareRange = [
+            'startDate' => $start->modify('-' . self::DAYS . ' days')->format('Y-m-d'),
+            'endDate' => $start->modify('-1 day')->format('Y-m-d'),
         ];
-        return $this->cache->remember([$site, 'page', 'matomo', $url, $range], function () use ($site, $url, $range): array {
-            $data = $this->matomo->call($site, 'Actions.getPageUrl', [
+        return $this->cache->remember([$site, 'page', 'matomo', 2, $url, $range], function () use ($site, $url, $range, $compareRange): array {
+            $call = static fn(array $r): array => ['Actions.getPageUrl', [
                 'pageUrl' => $url,
                 'period' => 'range',
-                'date' => $range['startDate'] . ',' . $range['endDate'],
-            ]);
-            return MatomoNormalizer::pageMetrics($data) + ['range' => $range];
+                'date' => $r['startDate'] . ',' . $r['endDate'],
+            ]];
+            [$main, $compare] = $this->matomo->bulk($site, [$call($range), $call($compareRange)]);
+            return MatomoNormalizer::pageMetrics($main) + [
+                'compare' => MatomoNormalizer::pageMetrics($compare),
+                'range' => $range,
+                'compareRange' => $compareRange,
+            ];
         }, self::MATOMO_LIFETIME);
     }
 
@@ -101,9 +109,10 @@ final readonly class PageInsightsService
     {
         $this->client->propertyUrl($site);
         $anchor = $this->gsc->latestDataDate($site);
-        return $this->cache->remember([$site, 'page', 'gsc', 2, $url, $anchor], function () use ($site, $url, $anchor): array {
+        return $this->cache->remember([$site, 'page', 'gsc', 3, $url, $anchor], function () use ($site, $url, $anchor): array {
             $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);
-            $body = static fn(array $dimensions, int $rowLimit): array => $range + [
+            $compareRange = GscDashboardService::compareRange($anchor, 'range', 'last' . self::DAYS, 'previous');
+            $body = static fn(array $dimensions, int $rowLimit, ?array $r = null): array => ($r ?? $range) + [
                 'dimensions' => $dimensions,
                 'type' => 'web',
                 'dimensionFilterGroups' => [['filters' => [
@@ -115,12 +124,15 @@ final readonly class PageInsightsService
                 'kpis' => $body([], 1),
                 'queries' => $body(['query'], self::TOP_QUERIES),
                 'allQueries' => $body(['query'], self::ALL_QUERIES),
+                'compareKpis' => $body([], 1, $compareRange),
             ]);
             $kpis = GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []);
             return $kpis + [
                 'queries' => GscNormalizer::topRows($r['queries']['rows'] ?? [], 'query'),
                 'anonymized' => GscNormalizer::anonymizedShare($kpis, $r['allQueries']['rows'] ?? []),
+                'compare' => GscNormalizer::kpisFromRows($r['compareKpis']['rows'] ?? []),
                 'range' => $range,
+                'compareRange' => $compareRange,
                 'dataDate' => $anchor,
             ];
         }, self::GSC_LIFETIME);
