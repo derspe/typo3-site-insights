@@ -186,6 +186,27 @@ final class GscNormalizer
     }
 
     /**
+     * Clicks and impressions of anonymized queries: the total minus the sum of all reported queries.
+     *
+     * @param array{clicks: int, impressions: int} $total
+     * @param list<array<string, mixed>> $queryRows raw rows with dimension "query"
+     * @return array{clicks: int, impressions: int}
+     */
+    public static function anonymizedShare(array $total, array $queryRows): array
+    {
+        $clicks = 0;
+        $impressions = 0;
+        foreach ($queryRows as $row) {
+            $clicks += (int)($row['clicks'] ?? 0);
+            $impressions += (int)($row['impressions'] ?? 0);
+        }
+        return [
+            'clicks' => max(0, $total['clicks'] - $clicks),
+            'impressions' => max(0, $total['impressions'] - $impressions),
+        ];
+    }
+
+    /**
      * RE2 pattern for the "page" dimension that matches a URL with and without trailing slash.
      * Search Console reports the canonical URL, TYPO3 may generate the other variant.
      */

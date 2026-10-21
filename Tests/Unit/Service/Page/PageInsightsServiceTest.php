@@ -67,6 +67,7 @@ final class PageInsightsServiceTest extends UnitTestCase
             FakeHttp::json(['rows' => [['keys' => ['2026-10-18']], ['keys' => ['2026-10-19']]]]),
             FakeHttp::json(['rows' => [['clicks' => 30, 'impressions' => 900, 'position' => 6.5]]]),
             FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 500, 'ctr' => 0.04, 'position' => 4.0]]]),
+            FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 500], ['keys' => ['licht'], 'clicks' => 0, 'impressions' => 150]]]),
         );
 
         $result = $this->service()->insights('alpha', self::URL);
@@ -80,6 +81,8 @@ final class PageInsightsServiceTest extends UnitTestCase
         self::assertSame(900, $result['gsc']['impressions']);
         self::assertSame(['startDate' => '2026-09-22', 'endDate' => '2026-10-19'], $result['gsc']['range']);
         self::assertSame('smart home', $result['gsc']['queries'][0]['query']);
+        self::assertSame(['clicks' => 10, 'impressions' => 250], $result['gsc']['anonymized']);
+        self::assertSame(25000, $this->gscBody(4)['rowLimit']);
 
         $kpis = $this->gscBody(2);
         $queries = $this->gscBody(3);

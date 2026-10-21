@@ -156,4 +156,21 @@ final class GscNormalizerTest extends TestCase
         self::assertMatchesRegularExpression($php, 'https://example.com');
         self::assertDoesNotMatchRegularExpression($php, 'https://example.com/about');
     }
+
+    #[Test]
+    public function anonymizedShareIsTheTotalMinusAllReportedQueries(): void
+    {
+        $share = GscNormalizer::anonymizedShare(['clicks' => 17, 'impressions' => 3491], [
+            ['keys' => ['typo3 agentur'], 'clicks' => 2, 'impressions' => 271],
+            ['keys' => ['typo3 agentur heidelberg'], 'clicks' => 2, 'impressions' => 120],
+        ]);
+        self::assertSame(['clicks' => 13, 'impressions' => 3100], $share);
+    }
+
+    #[Test]
+    public function anonymizedShareIsNeverNegative(): void
+    {
+        // Totals and query rows are aggregated differently and may not add up exactly
+        self::assertSame(['clicks' => 0, 'impressions' => 0], GscNormalizer::anonymizedShare(['clicks' => 3, 'impressions' => 10], [['clicks' => 4, 'impressions' => 12]]));
+    }
 }

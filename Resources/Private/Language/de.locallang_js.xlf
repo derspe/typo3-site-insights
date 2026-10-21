@@ -903,6 +903,10 @@
 				<source>Top {count} search queries (Google)</source>
 				<target>Top {count} Suchbegriffe (Google)</target>
 			</trans-unit>
+			<trans-unit id="page.anonymized" resname="page.anonymized">
+				<source>Anonymized queries: {clicks} clicks · {impressions} impressions</source>
+				<target>Anonymisierte Suchanfragen: {clicks} Klicks · {impressions} Impressionen</target>
+			</trans-unit>
 			<trans-unit id="page.anonymizedHint" resname="page.anonymizedHint">
 				<source>Google hides rare (anonymized) queries, so the queries add up to fewer clicks than the page total.</source>
 				<target>Google blendet seltene (anonymisierte) Suchanfragen aus – die Suchbegriffe ergeben daher in Summe weniger Klicks als die Seite insgesamt.</target>

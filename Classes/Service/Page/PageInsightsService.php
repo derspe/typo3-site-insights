@@ -16,7 +16,8 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 
 /**
  * Key figures of a single page for the page module: Matomo pageviews and entries,
- * Search Console clicks, impressions and top queries of the last 28 days.
+ * Search Console clicks, impressions, top queries and the share of anonymized queries
+ * of the last 28 days.
  *
  * Each source is loaded on its own; a failing or unconfigured source only returns its error.
  */
@@ -24,6 +25,8 @@ final readonly class PageInsightsService
 {
     public const DAYS = 28;
     public const TOP_QUERIES = 10;
+    // Maximum rows of one Search Analytics request
+    private const ALL_QUERIES = 25000;
     private const MATOMO_LIFETIME = 3600;
     // Search Console only adds data once a day
     private const GSC_LIFETIME = 21600;
@@ -98,7 +101,7 @@ final readonly class PageInsightsService
     {
         $this->client->propertyUrl($site);
         $anchor = $this->gsc->latestDataDate($site);
-        return $this->cache->remember([$site, 'page', 'gsc', $url, $anchor], function () use ($site, $url, $anchor): array {
+        return $this->cache->remember([$site, 'page', 'gsc', 2, $url, $anchor], function () use ($site, $url, $anchor): array {
             $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);
             $body = static fn(array $dimensions, int $rowLimit): array => $range + [
                 'dimensions' => $dimensions,
@@ -111,9 +114,12 @@ final readonly class PageInsightsService
             $r = $this->client->searchAnalyticsMany($site, [
                 'kpis' => $body([], 1),
                 'queries' => $body(['query'], self::TOP_QUERIES),
+                'allQueries' => $body(['query'], self::ALL_QUERIES),
             ]);
-            return GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []) + [
+            $kpis = GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []);
+            return $kpis + [
                 'queries' => GscNormalizer::topRows($r['queries']['rows'] ?? [], 'query'),
+                'anonymized' => GscNormalizer::anonymizedShare($kpis, $r['allQueries']['rows'] ?? []),
                 'range' => $range,
                 'dataDate' => $anchor,
             ];

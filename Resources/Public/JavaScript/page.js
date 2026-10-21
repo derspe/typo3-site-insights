@@ -100,6 +100,7 @@ class SiteInsightsPage extends SiElement {
             { key: 'ctr', label: t('metric.ctr'), align: 'right', render: (r) => fmt.pct(r.ctr) },
             { key: 'position', label: t('metric.positionShort'), align: 'right', render: (r) => fmt.dec(r.position) },
           ]}></si-table>`}
+        ${g.anonymized ? html`<div class="xs footer">${t('page.anonymized', { clicks: fmt.int(g.anonymized.clicks), impressions: fmt.int(g.anonymized.impressions) })}</div>` : nothing}
         <div class="xs dimmed footer">${t('page.anonymizedHint')}</div>
       </div>
     </details>`;
