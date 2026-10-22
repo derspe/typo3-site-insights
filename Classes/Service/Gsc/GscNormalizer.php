@@ -186,6 +186,19 @@ final class GscNormalizer
     }
 
     /**
+     * Top rows by clicks, ties broken by impressions (Search Console sorts ties alphabetically).
+     *
+     * @param list<array<string, mixed>> $rows raw rows
+     * @return list<array<string, mixed>>
+     */
+    public static function topRowsByClicks(array $rows, string $key, int $limit): array
+    {
+        usort($rows, static fn(array $a, array $b): int => [(int)($b['clicks'] ?? 0), (int)($b['impressions'] ?? 0)]
+            <=> [(int)($a['clicks'] ?? 0), (int)($a['impressions'] ?? 0)]);
+        return self::topRows(array_slice($rows, 0, $limit), $key);
+    }
+
+    /**
      * Clicks and impressions of anonymized queries: the total minus the sum of all reported queries.
      *
      * @param array{clicks: int, impressions: int} $total

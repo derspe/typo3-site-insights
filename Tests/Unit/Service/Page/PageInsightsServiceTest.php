@@ -66,8 +66,11 @@ final class PageInsightsServiceTest extends UnitTestCase
             FakeHttp::json([[['label' => '/smart-home', 'nb_hits' => 120, 'entry_nb_visits' => 45]], [['nb_hits' => 100, 'entry_nb_visits' => 50]]]),
             FakeHttp::json(['rows' => [['keys' => ['2026-10-18']], ['keys' => ['2026-10-19']]]]),
             FakeHttp::json(['rows' => [['clicks' => 30, 'impressions' => 900, 'position' => 6.5]]]),
-            FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 500, 'ctr' => 0.04, 'position' => 4.0]]]),
-            FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 500], ['keys' => ['licht'], 'clicks' => 0, 'impressions' => 150]]]),
+            FakeHttp::json(['rows' => [
+                ['keys' => ['smart home'], 'clicks' => 20, 'impressions' => 400, 'ctr' => 0.05, 'position' => 4.0],
+                ['keys' => ['alarm'], 'clicks' => 0, 'impressions' => 50],
+                ['keys' => ['licht'], 'clicks' => 0, 'impressions' => 200],
+            ]]),
             FakeHttp::json(['rows' => [['clicks' => 24, 'impressions' => 800, 'position' => 7.0]]]),
         );
 
@@ -88,18 +91,18 @@ final class PageInsightsServiceTest extends UnitTestCase
         self::assertSame(30, $result['gsc']['clicks']);
         self::assertSame(900, $result['gsc']['impressions']);
         self::assertSame(['startDate' => '2026-09-22', 'endDate' => '2026-10-19'], $result['gsc']['range']);
-        self::assertSame('smart home', $result['gsc']['queries'][0]['query']);
+        self::assertSame(['smart home', 'licht', 'alarm'], array_column($result['gsc']['queries'], 'query'), 'ties sorted by impressions');
         self::assertSame(['clicks' => 10, 'impressions' => 250], $result['gsc']['anonymized']);
-        self::assertSame(25000, $this->gscBody(4)['rowLimit']);
+        self::assertCount(5, $this->http->history, 'Matomo, latest date and three Search Console queries');
         self::assertSame(24, $result['gsc']['compare']['clicks']);
         self::assertSame(['startDate' => '2026-08-25', 'endDate' => '2026-09-21'], $result['gsc']['compareRange']);
-        self::assertSame(['startDate' => '2026-08-25', 'endDate' => '2026-09-21'], array_intersect_key($this->gscBody(5), ['startDate' => 1, 'endDate' => 1]));
+        self::assertSame(['startDate' => '2026-08-25', 'endDate' => '2026-09-21'], array_intersect_key($this->gscBody(4), ['startDate' => 1, 'endDate' => 1]));
 
         $kpis = $this->gscBody(2);
         $queries = $this->gscBody(3);
         self::assertSame([], $kpis['dimensions']);
         self::assertSame(['query'], $queries['dimensions']);
-        self::assertSame(PageInsightsService::TOP_QUERIES, $queries['rowLimit']);
+        self::assertSame(25000, $queries['rowLimit']);
         $filter = $queries['dimensionFilterGroups'][0]['filters'][0];
         self::assertSame(['page', 'includingRegex'], [$filter['dimension'], $filter['operator']]);
         self::assertStringEndsWith('smart\\-home/?$', $filter['expression']);

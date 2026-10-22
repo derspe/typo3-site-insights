@@ -109,7 +109,7 @@ final readonly class PageInsightsService
     {
         $this->client->propertyUrl($site);
         $anchor = $this->gsc->latestDataDate($site);
-        return $this->cache->remember([$site, 'page', 'gsc', 3, $url, $anchor], function () use ($site, $url, $anchor): array {
+        return $this->cache->remember([$site, 'page', 'gsc', 4, $url, $anchor], function () use ($site, $url, $anchor): array {
             $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);
             $compareRange = GscDashboardService::compareRange($anchor, 'range', 'last' . self::DAYS, 'previous');
             $body = static fn(array $dimensions, int $rowLimit, ?array $r = null): array => ($r ?? $range) + [
@@ -122,13 +122,12 @@ final readonly class PageInsightsService
             ];
             $r = $this->client->searchAnalyticsMany($site, [
                 'kpis' => $body([], 1),
-                'queries' => $body(['query'], self::TOP_QUERIES),
                 'allQueries' => $body(['query'], self::ALL_QUERIES),
                 'compareKpis' => $body([], 1, $compareRange),
             ]);
             $kpis = GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []);
             return $kpis + [
-                'queries' => GscNormalizer::topRows($r['queries']['rows'] ?? [], 'query'),
+                'queries' => GscNormalizer::topRowsByClicks($r['allQueries']['rows'] ?? [], 'query', self::TOP_QUERIES),
                 'anonymized' => GscNormalizer::anonymizedShare($kpis, $r['allQueries']['rows'] ?? []),
                 'compare' => GscNormalizer::kpisFromRows($r['compareKpis']['rows'] ?? []),
                 'range' => $range,

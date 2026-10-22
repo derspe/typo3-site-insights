@@ -21,6 +21,8 @@ final readonly class GscDashboardService
 {
     private const RANGE_DAYS = ['last7' => 7, 'last28' => 28, 'last90' => 90, 'last365' => 365];
     private const CANNIBALIZATION_MIN_IMPRESSIONS = 50;
+    // Maximum rows of one Search Analytics request
+    private const ALL_ROWS = 25000;
     public const TRACKER_DAYS = 28;
 
     public function __construct(
@@ -120,7 +122,7 @@ final readonly class GscDashboardService
         $topN = $this->displayTopN($site);
         $anchor = $this->latestDataDate($site);
 
-        return $this->cache->remember([$site, 'dashboard', $period, $date, $searchType, $country, $device, $compare, $topN, $anchor], function () use ($site, $period, $date, $searchType, $filter, $supportsQuery, $topN, $anchor, $compare): array {
+        return $this->cache->remember([$site, 'dashboard', 2, $period, $date, $searchType, $country, $device, $compare, $topN, $anchor], function () use ($site, $period, $date, $searchType, $filter, $supportsQuery, $topN, $anchor, $compare): array {
             $main = self::dateRange($anchor, $period, $date);
             $compareRange = self::compareRange($anchor, $period, $date, $compare);
             $body = static fn(array $range, array $dimensions, int $rowLimit): array => [
@@ -134,11 +136,11 @@ final readonly class GscDashboardService
             $bodies = [
                 'series' => $body($main, ['date'], 1000),
                 'kpis' => $body($main, [], 1),
-                'pages' => $body($main, ['page'], $topN),
+                // All rows, sorted here: Search Console orders ties in clicks alphabetically
+                'pages' => $body($main, ['page'], self::ALL_ROWS),
             ];
             if ($supportsQuery) {
-                $bodies['queries'] = $body($main, ['query'], $topN);
-                $bodies['allQueries'] = $body($main, ['query'], 25000);
+                $bodies['allQueries'] = $body($main, ['query'], self::ALL_ROWS);
             }
             if ($compareRange !== null) {
                 $bodies['cSeries'] = $body($compareRange, ['date'], 1000);
@@ -151,8 +153,8 @@ final readonly class GscDashboardService
             $r = $this->client->searchAnalyticsMany($site, $bodies);
 
             $series = GscNormalizer::dateSeries($r['series']['rows'] ?? []);
-            $topQueries = GscNormalizer::topRows($r['queries']['rows'] ?? [], 'query');
-            $topPages = GscNormalizer::topRows($r['pages']['rows'] ?? [], 'page');
+            $topQueries = GscNormalizer::topRowsByClicks($r['allQueries']['rows'] ?? [], 'query', $topN);
+            $topPages = GscNormalizer::topRowsByClicks($r['pages']['rows'] ?? [], 'page', $topN);
             $kpisCompare = null;
             if ($compareRange !== null) {
                 $kpisCompare = GscNormalizer::kpisFromRows($r['cKpis']['rows'] ?? []);

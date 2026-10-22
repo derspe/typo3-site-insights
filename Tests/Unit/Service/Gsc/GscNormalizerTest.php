@@ -173,4 +173,17 @@ final class GscNormalizerTest extends TestCase
         // Totals and query rows are aggregated differently and may not add up exactly
         self::assertSame(['clicks' => 0, 'impressions' => 0], GscNormalizer::anonymizedShare(['clicks' => 3, 'impressions' => 10], [['clicks' => 4, 'impressions' => 12]]));
     }
+
+    #[Test]
+    public function topRowsByClicksBreakTiesByImpressions(): void
+    {
+        $rows = GscNormalizer::topRowsByClicks([
+            ['keys' => ['abnuu'], 'clicks' => 0, 'impressions' => 3],
+            ['keys' => ['typo3 agentur'], 'clicks' => 2, 'impressions' => 271],
+            ['keys' => ['agentur technik'], 'clicks' => 0, 'impressions' => 19],
+            ['keys' => ['typo3 agentur heidelberg'], 'clicks' => 1, 'impressions' => 29],
+            ['keys' => ['agentur typo3'], 'clicks' => 0, 'impressions' => 3],
+        ], 'query', 4);
+        self::assertSame(['typo3 agentur', 'typo3 agentur heidelberg', 'agentur technik', 'abnuu'], array_column($rows, 'query'));
+    }
 }
