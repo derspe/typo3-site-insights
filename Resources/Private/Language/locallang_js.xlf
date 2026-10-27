@@ -714,9 +714,6 @@
 			<trans-unit id="news.filter.noImpressions" resname="news.filter.noImpressions">
 				<source>Without impressions</source>
 			</trans-unit>
-			<trans-unit id="news.filter.declining" resname="news.filter.declining">
-				<source>Declining</source>
-			</trans-unit>
 			<trans-unit id="news.search" resname="news.search">
 				<source>Search title</source>
 			</trans-unit>
@@ -752,6 +749,12 @@
 			</trans-unit>
 			<trans-unit id="settings.newsDetailPid.description" resname="settings.newsDetailPid.description">
 				<source>Page with the news detail view. Needed for the key figures of news records in the page and list module.</source>
+			</trans-unit>
+			<trans-unit id="news.list" resname="news.list">
+				<source>Individual news ({count})</source>
+			</trans-unit>
+			<trans-unit id="news.sortByChange" resname="news.sortByChange">
+				<source>Sort by change against the period before</source>
 			</trans-unit>
 		</body>
 	</file>

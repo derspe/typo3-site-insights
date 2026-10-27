@@ -951,10 +951,6 @@
 				<source>Without impressions</source>
 				<target>Ohne Impressionen</target>
 			</trans-unit>
-			<trans-unit id="news.filter.declining" resname="news.filter.declining">
-				<source>Declining</source>
-				<target>Absteiger</target>
-			</trans-unit>
 			<trans-unit id="news.search" resname="news.search">
 				<source>Search title</source>
 				<target>Titel suchen</target>
@@ -1002,6 +998,14 @@
 			<trans-unit id="settings.newsDetailPid.description" resname="settings.newsDetailPid.description">
 				<source>Page with the news detail view. Needed for the key figures of news records in the page and list module.</source>
 				<target>Seite mit der Detailansicht der News. Nötig für die Kennzahlen der News im Page- und List-Modul.</target>
+			</trans-unit>
+			<trans-unit id="news.list" resname="news.list">
+				<source>Individual news ({count})</source>
+				<target>Einzelne News ({count})</target>
+			</trans-unit>
+			<trans-unit id="news.sortByChange" resname="news.sortByChange">
+				<source>Sort by change against the period before</source>
+				<target>Nach Veränderung zum Vorzeitraum sortieren</target>
 			</trans-unit>
 		</body>
 	</file>

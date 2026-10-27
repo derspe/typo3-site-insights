@@ -1,19 +1,20 @@
 /**
  * <derspe-site-insights-news site="…" folder="…" language="…">: key figures of all news records of a
- * folder in the page and list module. A click on a row shows the search queries of the record.
+ * folder in the page and list module. The totals are always visible, the list of records can be
+ * expanded; a click on a row shows the search queries of the record.
  */
 import { css, html, nothing } from 'lit';
 import { SiElement, alertBox, delta, errorState, fmt, icon, loadMeta, segmented, skeleton, statCard, t } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/table.js';
 
-const STORAGE_KEY = 'derspe-site-insights-news';
+const STORAGE_KEY = 'derspe-site-insights-news-list';
 const PAGE_SIZE = 25;
 
 function readOpen() {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) !== 'closed';
+    return window.localStorage.getItem(STORAGE_KEY) === 'open';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -48,20 +49,25 @@ class SiteInsightsNews extends SiElement {
     css`
       :host { display: block; margin: 0 0 16px; font-size: 13px; }
       .box { background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); }
-      .head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; user-select: none; }
-      .head .chevron { display: inline-flex; margin-left: auto; transition: transform .15s; }
-      .box.open .head .chevron { transform: rotate(180deg); }
+      .head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
       .body { padding: 0 12px 12px; }
+      .list-toggle { display: flex; align-items: center; gap: 6px; width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--si-border);
+        border-radius: var(--si-radius); background: var(--si-surface-alt); color: var(--si-text-strong); font: inherit; font-weight: 600; cursor: pointer; }
+      .list-toggle:hover { background: var(--si-hover); }
+      .list-toggle .chevron { display: inline-flex; transition: transform .15s; }
+      .list-toggle.open .chevron { transform: rotate(180deg); }
       .grid-tight { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 8px; }
       .toolbar input { max-width: 260px; }
       .wrap { overflow-x: auto; }
       table { width: 100%; border-collapse: collapse; font-size: 12px; }
       th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--si-border); vertical-align: top; }
-      th { font-weight: 600; color: var(--si-text-strong); white-space: nowrap; cursor: pointer; user-select: none; }
-      th .inner { display: inline-flex; align-items: center; gap: 2px; }
-      th .icon { opacity: .4; }
-      th.active .icon { opacity: 1; }
+      th { font-weight: 600; color: var(--si-text-strong); white-space: nowrap; user-select: none; }
+      th .sort { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
+      th .sort + .sort { margin-left: 8px; font-weight: 500; color: var(--si-text); }
+      th .sort .icon { opacity: .4; }
+      th .sort.active { font-weight: 700; color: var(--si-text-strong); }
+      th .sort.active .icon { opacity: 1; }
       .right { text-align: right; }
       td.num { text-align: right; white-space: nowrap; }
       td.num .xs { display: block; }
@@ -114,15 +120,13 @@ class SiteInsightsNews extends SiElement {
 
   render() {
     const count = this.data?.records?.length;
-    return html`<div class="box ${this.open ? 'open' : ''}">
-      <div class="head" role="button" tabindex="0" aria-expanded=${this.open ? 'true' : 'false'}
-        @click=${() => this.toggle()} @keydown=${(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.toggle(); } }}>
+    return html`<div class="box">
+      <div class="head">
         ${icon('chartBar', 16, 'var(--si-primary)')}
         <span class="fw6">${t('news.title')}</span>
         ${count != null ? html`<span class="xs dimmed">${t('news.count', { count })} · ${t('widget.last28')}</span>` : nothing}
-        <span class="chevron">${icon('chevronDown', 14)}</span>
       </div>
-      ${this.open ? html`<div class="body">${this.content()}</div>` : nothing}
+      <div class="body">${this.content()}</div>
     </div>`;
   }
 
@@ -133,10 +137,7 @@ class SiteInsightsNews extends SiElement {
     const d = this.data;
     if (!d) {
       const cards = (this.matomo ? 2 : 0) + (this.gsc ? 3 : 0);
-      return html`<div class="stack-sm">
-        <div class="grid-tight">${Array.from({ length: cards }, () => html`<div class="stat compact">${skeleton(40)}</div>`)}</div>
-        ${skeleton(160)}
-      </div>`;
+      return html`<div class="grid-tight">${Array.from({ length: cards }, () => html`<div class="stat compact">${skeleton(40)}</div>`)}</div>`;
     }
     if (!d.detailPage) {
       return alertBox(t('news.noDetailPage'), { color: 'yellow' });
@@ -147,9 +148,13 @@ class SiteInsightsNews extends SiElement {
       ${m.error ? html`<div class="mb-sm">${alertBox(`Matomo: ${m.error}`)}</div>` : nothing}
       ${g.error ? html`<div class="mb-sm">${alertBox(`Search Console: ${g.error}`)}</div>` : nothing}
       ${this.totals(m, g)}
-      ${this.table(m, g)}
-      ${d.truncated ? html`<div class="xs dimmed footer">${t('news.truncated', { count: d.records.length })}</div>` : nothing}
-      <div class="xs dimmed footer">${this.footer(m, g)}</div>`;
+      <div class="xs dimmed footer">${this.footer(m, g)}</div>
+      <button type="button" class="list-toggle ${this.open ? 'open' : ''}" aria-expanded=${this.open ? 'true' : 'false'} @click=${() => this.toggle()}>
+        <span class="chevron">${icon('chevronDown', 14)}</span>${t('news.list', { count: d.records.length })}
+      </button>
+      ${this.open ? html`
+        ${this.table(m, g)}
+        ${d.truncated ? html`<div class="xs dimmed footer">${t('news.truncated', { count: d.records.length })}</div>` : nothing}` : nothing}`;
   }
 
   /**
@@ -212,32 +217,28 @@ class SiteInsightsNews extends SiElement {
     return columns;
   }
 
-  /**
-   * Main figure of the "declining" filter: clicks, or pageviews without Search Console.
-   */
-  trend(g) {
-    return g.ok
-      ? { value: (r) => r.gsc.clicks, compare: (r) => r.gsc.compare.clicks }
-      : { value: (r) => r.matomo.pageviews, compare: (r) => r.matomo.compare.pageviews };
-  }
-
-  filtered(m, g) {
+  filtered() {
     const term = this.search.trim().toLowerCase();
     let rows = this.data.records.filter((r) => !term || r.title.toLowerCase().includes(term));
-    const trend = this.trend(g);
     if (this.filter === 'noImpressions') {
       rows = rows.filter((r) => r.gsc && r.gsc.impressions === 0);
-    } else if (this.filter === 'declining') {
-      rows = rows.filter((r) => trend.value(r) < trend.compare(r));
     }
     return rows;
   }
 
-  sorted(rows, columns, g) {
-    if (this.filter === 'declining' && !this.sortKey) {
-      const trend = this.trend(g);
-      return [...rows].sort((a, b) => (trend.value(a) - trend.compare(a)) - (trend.value(b) - trend.compare(b)));
+  /**
+   * Absolute change against the period before; negative is always worse (a higher position is worse).
+   */
+  static change(column, row) {
+    const value = column.value(row);
+    const compare = column.compare(row);
+    if (value == null || compare == null) {
+      return null;
     }
+    return column.invert ? compare - value : value - compare;
+  }
+
+  sorted(rows, columns) {
     const dir = this.sortDir === 'asc' ? 1 : -1;
     if (this.sortKey === 'title') {
       return [...rows].sort((a, b) => a.title.localeCompare(b.title) * dir);
@@ -245,11 +246,21 @@ class SiteInsightsNews extends SiElement {
     if (this.sortKey === 'date') {
       return [...rows].sort((a, b) => (a.datetime - b.datetime) * dir);
     }
-    const column = columns.find((c) => c.key === this.sortKey);
+    const [key, mode] = this.sortKey.split(':');
+    const column = columns.find((c) => c.key === key);
     if (!column) {
       return rows;
     }
-    return [...rows].sort((a, b) => ((column.value(a) ?? -Infinity) - (column.value(b) ?? -Infinity) || 0) * dir);
+    const value = mode === 'change' ? (r) => SiteInsightsNews.change(column, r) : column.value;
+    // Records without a value are always last
+    return [...rows].sort((a, b) => {
+      const av = value(a);
+      const bv = value(b);
+      if (av == null || bv == null) {
+        return (av == null) - (bv == null);
+      }
+      return (av - bv) * dir;
+    });
   }
 
   sortBy(key) {
@@ -257,36 +268,32 @@ class SiteInsightsNews extends SiElement {
       this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortKey = key;
-      this.sortDir = key === 'title' ? 'asc' : 'desc';
+      // Changes start with the largest loss
+      this.sortDir = key === 'title' || key.endsWith(':change') ? 'asc' : 'desc';
     }
   }
 
   setFilter(filter) {
     this.filter = filter;
     this.showAll = false;
-    // "Declining" is sorted by the largest loss first
-    this.sortKey = filter === 'declining' ? '' : (this.sortKey || (this.source('gsc').ok ? 'clicks' : 'pageviews'));
   }
 
   table(m, g) {
     const columns = this.columns(m, g);
     const all = this.data.records;
-    const trend = this.trend(g);
     const filters = [{ value: 'all', label: `${t('news.filter.all')} (${all.length})` }];
     if (g.ok) {
       filters.push({ value: 'noImpressions', label: `${t('news.filter.noImpressions')} (${all.filter((r) => r.gsc.impressions === 0).length})` });
     }
-    if (m.ok || g.ok) {
-      filters.push({ value: 'declining', label: `${t('news.filter.declining')} (${all.filter((r) => trend.value(r) < trend.compare(r)).length})` });
-    }
-    const rows = this.sorted(this.filtered(m, g), columns, g);
+    const rows = this.sorted(this.filtered(), columns);
     const limited = this.showAll ? rows : rows.slice(0, PAGE_SIZE);
-    const header = (key, label, right = false) => {
-      const active = key === this.sortKey;
-      const sortIcon = active ? (this.sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'selector';
-      return html`<th class="${right ? 'right' : ''} ${active ? 'active' : ''}" @click=${() => this.sortBy(key)}>
-        <span class="inner">${label}${icon(sortIcon, 11)}</span></th>`;
-    };
+    const sortIcon = (key) => icon(key === this.sortKey ? (this.sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'selector', 11);
+    const target = (key, content, title = nothing) => html`<span class="inner sort ${key === this.sortKey ? 'active' : ''}" title=${title}
+      @click=${() => this.sortBy(key)}>${content}${sortIcon(key)}</span>`;
+    const header = (key, label, right = false) => html`<th class=${right ? 'right' : ''}>
+      ${target(key, label)}
+      ${right ? target(`${key}:change`, 'Δ', t('news.sortByChange')) : nothing}
+    </th>`;
     return html`
       <div class="toolbar">
         ${filters.length > 1 ? segmented(filters.map((f) => ({ ...f, active: f.value === this.filter })), (f) => this.setFilter(f.value)) : nothing}
