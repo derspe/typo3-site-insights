@@ -4,7 +4,7 @@
 import { css, html, nothing } from 'lit';
 import {
   SiElement, alertBox, badge, checkbox, errorState, fmt, icon, segmented, selectInput, skeleton,
-  spinnerButton, statCard, statusColor, t, deltaText, getMeta,
+  spinnerButton, statCard, statusColor, t, deltaText, getMeta, showsNewsSetting,
 } from '@derspe/site-insights/core.js';
 import { JobRunner, jobProgressText } from '@derspe/site-insights/jobs.js';
 import '@derspe/site-insights/table.js';
@@ -783,6 +783,7 @@ class SiGscSettings extends SiElement {
         gsc_sitemap_url: v.gsc_sitemap_url ?? '',
         gsc_extra_source_urls: (v.gsc_extra_source_urls ?? []).join(', '),
         gsc_extra_include: v.gsc_extra_include ?? '',
+        ...(showsNewsSetting('gsc') ? { news_detail_pid: v.news_detail_pid || '' } : {}),
       };
     } catch (e) {
       this.error = e;
@@ -952,6 +953,7 @@ class SiGscSettings extends SiElement {
         ${this.field('gsc_sitemap_url', t('gsc.settings.sitemap'), { description: t('gsc.settings.sitemap.description'), placeholder: this.values.gsc_sitemap_url_default || 'https://example.com/sitemap.xml' })}
         ${this.field('gsc_extra_source_urls', t('gsc.settings.extraSources'), { description: t('gsc.settings.extraSources.description'), placeholder: 'https://example.com/products' })}
         ${this.field('gsc_extra_include', t('gsc.settings.extraInclude'), { description: t('gsc.settings.extraInclude.description'), placeholder: '/products/' })}
+        ${showsNewsSetting('gsc') ? this.field('news_detail_pid', t('settings.newsDetailPid'), { type: 'number', description: t('settings.newsDetailPid.description') }) : nothing}
         <div>${spinnerButton(this.saved ? t('settings.saved') : t('settings.save'), {
           loading: this.saving, color: this.saved ? 'success' : '', onClick: () => this.save(),
         })}</div>

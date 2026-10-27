@@ -19,6 +19,7 @@ final class SettingsValidator
     public const TYPE_LIST = 'list';
     public const TYPE_URL_LIST = 'url-list';
     public const TYPE_SERVICE_ACCOUNT_KEY = 'service-account-key';
+    public const TYPE_PAGE_ID = 'page-id';
 
     /** Settings that can be edited in the module */
     public const KEYS = [
@@ -34,6 +35,7 @@ final class SettingsValidator
         'gsc_sitemap_url' => self::TYPE_URL,
         'gsc_extra_source_urls' => self::TYPE_URL_LIST,
         'gsc_extra_include' => self::TYPE_STRING,
+        'news_detail_pid' => self::TYPE_PAGE_ID,
     ];
 
     private const INT_RANGE = [10, 1000];
@@ -85,6 +87,13 @@ final class SettingsValidator
                         throw new ApiException(sprintf('"%s" must be between %d and %d', $key, ...self::INT_RANGE), 400);
                     }
                     $changes[$key] = $int;
+                    break;
+                case self::TYPE_PAGE_ID:
+                    $id = trim(is_scalar($value) ? (string)$value : '');
+                    if ($id !== '' && $id !== '0' && preg_match('/^[1-9]\d{0,9}$/', $id) !== 1) {
+                        throw new ApiException(sprintf('"%s" must be a page ID', $key), 400);
+                    }
+                    $changes[$key] = $id === '' || $id === '0' ? null : (int)$id;
                     break;
                 case self::TYPE_LIST:
                 case self::TYPE_URL_LIST:

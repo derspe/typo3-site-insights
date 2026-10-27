@@ -37,6 +37,18 @@ service, no long-running processes. It works on ordinary shared hosting.
 - Shown to users with access to the Site Insights module; data is loaded in the
   background and cached (Matomo 1 hour, Search Console 6 hours)
 
+**News records** (EXT:news)
+
+- Folders with news show the key figures of all their records above the page module
+  and the list module: Matomo pageviews and entries, Search Console clicks,
+  impressions and average position of the last 28 days, compared with the 28 days
+  before, plus totals
+- Sort by any figure, search by title, filter news without impressions or with
+  declining clicks; a click on a row shows its search queries
+- Set the news detail page per site in the settings; the URLs come from the route
+  enhancers of the site. All records of a folder are loaded with one Search Console
+  query and one Matomo report per period
+
 **Dashboard widgets** (group "Site Insights")
 
 - Search Console: key figures, clicks & impressions, top queries, visibility index

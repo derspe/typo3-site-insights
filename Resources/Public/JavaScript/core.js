@@ -59,7 +59,7 @@ export async function api(endpoint, { site = '', params = {}, method = 'GET', bo
 }
 
 let metaPromise = null;
-let meta = { sites: [], isAdmin: false, canConfigure: false, sources: { matomo: true, gsc: true }, locale: 'en', labels: {} };
+let meta = { sites: [], isAdmin: false, canConfigure: false, sources: { matomo: true, gsc: true }, news: false, locale: 'en', labels: {} };
 
 export function loadMeta() {
   metaPromise ??= api('meta').then((data) => {
@@ -71,6 +71,14 @@ export function loadMeta() {
 
 export function getMeta() {
   return meta;
+}
+
+/**
+ * The news detail page is part of the Search Console settings, or of the Matomo settings
+ * when Search Console is disabled.
+ */
+export function showsNewsSetting(area) {
+  return meta.news === true && (area === 'gsc') === (meta.sources?.gsc !== false);
 }
 
 // ---------------------------------------------------------------------------

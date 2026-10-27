@@ -17,6 +17,8 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\News\NewsInsightsService;
+use Derspe\SiteInsights\Service\News\NewsRepository;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\Sources;
@@ -30,6 +32,7 @@ use TYPO3\CMS\Core\Http\JsonResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Site\Entity\Site;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Single AJAX entry point of the backend module and the dashboard widgets.
@@ -60,6 +63,8 @@ final readonly class ApiController
         private LoggerInterface $logger,
         private PageInsightsService $pageInsights,
         private Sources $sources,
+        private NewsInsightsService $newsInsights,
+        private NewsRepository $news,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -145,6 +150,18 @@ final readonly class ApiController
             $endpoint === 'job/step' => $this->stepJob($site, (int)($body['id'] ?? 0)),
 
             $endpoint === 'page/insights' => $this->pageInsights($site, $query, $user),
+            $endpoint === 'news/overview' => $this->newsInsights->overview(
+                $site,
+                $this->newsFolder($query, $user),
+                max(0, (int)($query['language'] ?? 0)),
+                GeneralUtility::sanitizeLocalUrl((string)($query['returnUrl'] ?? ''))
+            ),
+            $endpoint === 'news/queries' => $this->newsInsights->queries(
+                $site,
+                $this->newsFolder($query, $user),
+                (int)($query['uid'] ?? 0),
+                max(0, (int)($query['language'] ?? 0))
+            ),
 
             default => throw new ApiException('Unknown endpoint', 404),
         };
@@ -165,6 +182,26 @@ final readonly class ApiController
         }
         $url = $this->pageInsights->pageUrl($site, $pageId, max(0, (int)($query['language'] ?? 0)));
         return $this->pageInsights->insights($site, $url);
+    }
+
+    /**
+     * Folder with news records the user may see.
+     *
+     * @param array<string, mixed> $query
+     */
+    private function newsFolder(array $query, BackendUserAuthentication $user): int
+    {
+        $folder = (int)($query['folder'] ?? 0);
+        if ($folder <= 0) {
+            throw new ApiException('Parameter "folder" missing', 400);
+        }
+        if (!$this->news->isAvailable() || !$user->check('tables_select', NewsRepository::TABLE)) {
+            throw new ApiException('Access to news records denied', 403);
+        }
+        if (!$user->isAdmin() && BackendUtility::readPageAccess($folder, $user->getPagePermsClause(Permission::PAGE_SHOW)) === false) {
+            throw new ApiException('Access to this page denied', 403);
+        }
+        return $folder;
     }
 
     /**
@@ -199,6 +236,7 @@ final readonly class ApiController
             'isAdmin' => $user->isAdmin(),
             'canConfigure' => $user->isSystemMaintainer(),
             'sources' => $this->sources->toArray(),
+            'news' => $this->news->isAvailable(),
             'locale' => (string)($this->languageService()->getLocale() ?? 'en'),
             'labels' => $labels,
         ];
@@ -229,6 +267,9 @@ final readonly class ApiController
     private function writeSettings(string $site, array $values): array
     {
         $changes = $this->validator->validate($values);
+        if (isset($changes['news_detail_pid'])) {
+            $this->newsInsights->assertDetailPage($site, $changes['news_detail_pid']);
+        }
         // The Matomo token must never be sent to a different host than the one it was entered for
         if (array_key_exists('matomo_url', $changes)
             && !array_key_exists('matomo_token', $changes)

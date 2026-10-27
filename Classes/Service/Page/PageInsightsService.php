@@ -95,18 +95,40 @@ final readonly class PageInsightsService
     }
 
     /**
+     * Matomo period and the period before; full days only, otherwise the incomplete current day
+     * pulls the comparison down.
+     *
+     * @return array{array{startDate: string, endDate: string}, array{startDate: string, endDate: string}}
+     */
+    public static function matomoRanges(): array
+    {
+        $end = new \DateTimeImmutable('yesterday');
+        $start = $end->modify('-' . (self::DAYS - 1) . ' days');
+        return [
+            ['startDate' => $start->format('Y-m-d'), 'endDate' => $end->format('Y-m-d')],
+            [
+                'startDate' => $start->modify('-' . self::DAYS . ' days')->format('Y-m-d'),
+                'endDate' => $start->modify('-1 day')->format('Y-m-d'),
+            ],
+        ];
+    }
+
+    /**
+     * Search Console figures and top queries of one URL.
+     *
+     * @return array<string, mixed>
+     */
+    public function gscPage(string $site, string $url): array
+    {
+        return $this->gscMetrics($site, $url);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function matomoMetrics(string $site, string $url): array
     {
-        // Full days only, otherwise the incomplete current day pulls the comparison down
-        $end = new \DateTimeImmutable('yesterday');
-        $start = $end->modify('-' . (self::DAYS - 1) . ' days');
-        $range = ['startDate' => $start->format('Y-m-d'), 'endDate' => $end->format('Y-m-d')];
-        $compareRange = [
-            'startDate' => $start->modify('-' . self::DAYS . ' days')->format('Y-m-d'),
-            'endDate' => $start->modify('-1 day')->format('Y-m-d'),
-        ];
+        [$range, $compareRange] = self::matomoRanges();
         return $this->cache->remember([$site, 'page', 'matomo', 2, $url, $range], function () use ($site, $url, $range, $compareRange): array {
             $call = static fn(array $r): array => ['Actions.getPageUrl', [
                 'pageUrl' => $url,

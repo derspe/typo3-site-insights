@@ -702,6 +702,57 @@
 			<trans-unit id="widget.vsPrevious" resname="widget.vsPrevious">
 				<source>vs. previous period</source>
 			</trans-unit>
+			<trans-unit id="news.title" resname="news.title">
+				<source>News key figures</source>
+			</trans-unit>
+			<trans-unit id="news.count" resname="news.count">
+				<source>{count} news</source>
+			</trans-unit>
+			<trans-unit id="news.filter.all" resname="news.filter.all">
+				<source>All</source>
+			</trans-unit>
+			<trans-unit id="news.filter.noImpressions" resname="news.filter.noImpressions">
+				<source>Without impressions</source>
+			</trans-unit>
+			<trans-unit id="news.filter.declining" resname="news.filter.declining">
+				<source>Declining</source>
+			</trans-unit>
+			<trans-unit id="news.search" resname="news.search">
+				<source>Search title</source>
+			</trans-unit>
+			<trans-unit id="news.column.title" resname="news.column.title">
+				<source>News</source>
+			</trans-unit>
+			<trans-unit id="news.column.date" resname="news.column.date">
+				<source>Date</source>
+			</trans-unit>
+			<trans-unit id="news.edit" resname="news.edit">
+				<source>Edit record</source>
+			</trans-unit>
+			<trans-unit id="news.view" resname="news.view">
+				<source>Open page</source>
+			</trans-unit>
+			<trans-unit id="news.noUrl" resname="news.noUrl">
+				<source>No URL</source>
+			</trans-unit>
+			<trans-unit id="news.noDetailPage" resname="news.noDetailPage">
+				<source>No news detail page is set for this site. A system maintainer can set it in Site Insights → Settings.</source>
+			</trans-unit>
+			<trans-unit id="news.truncated" resname="news.truncated">
+				<source>Only the newest {count} news are shown.</source>
+			</trans-unit>
+			<trans-unit id="news.empty" resname="news.empty">
+				<source>No news match the filter.</source>
+			</trans-unit>
+			<trans-unit id="news.queriesHint" resname="news.queriesHint">
+				<source>Click a row to show its search queries.</source>
+			</trans-unit>
+			<trans-unit id="settings.newsDetailPid" resname="settings.newsDetailPid">
+				<source>News detail page (page ID)</source>
+			</trans-unit>
+			<trans-unit id="settings.newsDetailPid.description" resname="settings.newsDetailPid.description">
+				<source>Page with the news detail view. Needed for the key figures of news records in the page and list module.</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

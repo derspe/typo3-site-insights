@@ -87,6 +87,16 @@ final class SettingsValidatorTest extends TestCase
     }
 
     #[Test]
+    public function pageIdsArePositiveIntegers(): void
+    {
+        self::assertSame(['news_detail_pid' => 12], $this->validator->validate(['news_detail_pid' => ' 12 ']));
+        self::assertSame(['news_detail_pid' => null], $this->validator->validate(['news_detail_pid' => '']));
+        self::assertSame(['news_detail_pid' => null], $this->validator->validate(['news_detail_pid' => 0]));
+        $this->expectException(ApiException::class);
+        $this->validator->validate(['news_detail_pid' => '-3']);
+    }
+
+    #[Test]
     public function listsAreTrimmedDeduplicatedAndLimited(): void
     {
         self::assertSame(['gsc_brand_terms' => ['acme', 'acme shop']], $this->validator->validate(['gsc_brand_terms' => 'acme, acme shop ,acme,']));

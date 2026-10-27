@@ -34,6 +34,8 @@ final class AccessPolicy
         'gsc/auth/status',
         'job/active',
         'page/insights',
+        'news/overview',
+        'news/queries',
     ];
 
     private const MAINTAINER_POST_ENDPOINTS = [

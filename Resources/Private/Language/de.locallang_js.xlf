@@ -935,6 +935,74 @@
 				<source>vs. previous period</source>
 				<target>ggü. Vorperiode</target>
 			</trans-unit>
+			<trans-unit id="news.title" resname="news.title">
+				<source>News key figures</source>
+				<target>News-Kennzahlen</target>
+			</trans-unit>
+			<trans-unit id="news.count" resname="news.count">
+				<source>{count} news</source>
+				<target>{count} News</target>
+			</trans-unit>
+			<trans-unit id="news.filter.all" resname="news.filter.all">
+				<source>All</source>
+				<target>Alle</target>
+			</trans-unit>
+			<trans-unit id="news.filter.noImpressions" resname="news.filter.noImpressions">
+				<source>Without impressions</source>
+				<target>Ohne Impressionen</target>
+			</trans-unit>
+			<trans-unit id="news.filter.declining" resname="news.filter.declining">
+				<source>Declining</source>
+				<target>Absteiger</target>
+			</trans-unit>
+			<trans-unit id="news.search" resname="news.search">
+				<source>Search title</source>
+				<target>Titel suchen</target>
+			</trans-unit>
+			<trans-unit id="news.column.title" resname="news.column.title">
+				<source>News</source>
+				<target>News</target>
+			</trans-unit>
+			<trans-unit id="news.column.date" resname="news.column.date">
+				<source>Date</source>
+				<target>Datum</target>
+			</trans-unit>
+			<trans-unit id="news.edit" resname="news.edit">
+				<source>Edit record</source>
+				<target>Datensatz bearbeiten</target>
+			</trans-unit>
+			<trans-unit id="news.view" resname="news.view">
+				<source>Open page</source>
+				<target>Seite öffnen</target>
+			</trans-unit>
+			<trans-unit id="news.noUrl" resname="news.noUrl">
+				<source>No URL</source>
+				<target>Keine URL</target>
+			</trans-unit>
+			<trans-unit id="news.noDetailPage" resname="news.noDetailPage">
+				<source>No news detail page is set for this site. A system maintainer can set it in Site Insights → Settings.</source>
+				<target>Für diese Site ist keine News-Detailseite eingestellt. Ein System-Maintainer kann sie unter Site Insights → Einstellungen festlegen.</target>
+			</trans-unit>
+			<trans-unit id="news.truncated" resname="news.truncated">
+				<source>Only the newest {count} news are shown.</source>
+				<target>Es werden nur die neuesten {count} News angezeigt.</target>
+			</trans-unit>
+			<trans-unit id="news.empty" resname="news.empty">
+				<source>No news match the filter.</source>
+				<target>Keine News passen zum Filter.</target>
+			</trans-unit>
+			<trans-unit id="news.queriesHint" resname="news.queriesHint">
+				<source>Click a row to show its search queries.</source>
+				<target>Klick auf eine Zeile zeigt die Suchbegriffe.</target>
+			</trans-unit>
+			<trans-unit id="settings.newsDetailPid" resname="settings.newsDetailPid">
+				<source>News detail page (page ID)</source>
+				<target>News-Detailseite (Seiten-ID)</target>
+			</trans-unit>
+			<trans-unit id="settings.newsDetailPid.description" resname="settings.newsDetailPid.description">
+				<source>Page with the news detail view. Needed for the key figures of news records in the page and list module.</source>
+				<target>Seite mit der Detailansicht der News. Nötig für die Kennzahlen der News im Page- und List-Modul.</target>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

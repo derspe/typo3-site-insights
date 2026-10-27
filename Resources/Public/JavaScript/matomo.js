@@ -4,7 +4,7 @@
 import { html, nothing } from 'lit';
 import {
   SiElement, alertBox, checkbox, deltaText, errorState, fmt, getMeta, icon, segmented, selectInput,
-  skeleton, spinnerButton, statCard, t, PALETTE,
+  showsNewsSetting, skeleton, spinnerButton, statCard, t, PALETTE,
 } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
@@ -304,6 +304,7 @@ class SiMatomoSettings extends SiElement {
         matomo_token: '',
         matomo_site_id: v.matomo_site_id ?? '',
         matomo_goal_ids: (v.matomo_goal_ids ?? []).map(String),
+        ...(showsNewsSetting('matomo') ? { news_detail_pid: v.news_detail_pid || '' } : {}),
       };
     } catch (e) {
       this.error = e;
@@ -374,6 +375,7 @@ class SiMatomoSettings extends SiElement {
                 .checked=${this.form.matomo_goal_ids.includes(g.id)} @change=${(e) => this.toggleGoal(g.id, e.target.checked)}>${g.name} (#${g.id})</label>`)}
           </div>
         </div>
+        ${showsNewsSetting('matomo') ? input('news_detail_pid', t('settings.newsDetailPid'), { type: 'number', description: t('settings.newsDetailPid.description') }) : nothing}
         ${isAdmin ? html`<div>${spinnerButton(this.saved ? t('settings.saved') : t('settings.save'), {
           loading: this.saving, color: this.saved ? 'success' : '', onClick: () => this.save(),
         })}</div>` : nothing}

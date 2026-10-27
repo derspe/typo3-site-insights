@@ -16,6 +16,8 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\News\NewsInsightsService;
+use Derspe\SiteInsights\Service\News\NewsRepository;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\Sources;
@@ -71,6 +73,8 @@ final class ApiControllerTest extends UnitTestCase
             new NullLogger(),
             self::unused(PageInsightsService::class),
             new Sources(new ExtensionConfiguration()),
+            self::unused(NewsInsightsService::class),
+            new NewsRepository($this->db->connectionPool()),
         );
     }
 
@@ -268,6 +272,19 @@ final class ApiControllerTest extends UnitTestCase
         $this->settings()->set('alpha', 'matomo_token', 'old');
         $this->call(['endpoint' => 'settings', 'site' => 'alpha'], ['values' => ['matomo_url' => 'https://new.example', 'matomo_token' => 'new']]);
         self::assertSame('new', $this->settings()->getString('alpha', 'matomo_token'));
+    }
+
+    #[Test]
+    public function newsEndpointsNeedTheNewsTableAndAFolder(): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
+        [$status] = $this->call(['endpoint' => 'news/overview', 'site' => 'alpha']);
+        self::assertSame(400, $status);
+        [$status, $data] = $this->call(['endpoint' => 'news/overview', 'site' => 'alpha', 'folder' => 5]);
+        self::assertSame(403, $status, 'EXT:news not installed');
+        self::assertSame('Access to news records denied', $data['error']);
+        [, $meta] = $this->call(['endpoint' => 'meta']);
+        self::assertFalse($meta['news']);
     }
 
     #[Test]

@@ -24,6 +24,9 @@ final class AccessPolicyTest extends TestCase
         yield 'auth status' => ['gsc/auth/status', false, [], AccessPolicy::USER];
         yield 'page insights' => ['page/insights', false, [], AccessPolicy::USER];
         yield 'page insights via POST' => ['page/insights', true, [], null];
+        yield 'news overview' => ['news/overview', false, [], AccessPolicy::USER];
+        yield 'news queries' => ['news/queries', false, [], AccessPolicy::USER];
+        yield 'news overview via POST' => ['news/overview', true, [], null];
         yield 'job step' => ['job/step', true, [], AccessPolicy::USER];
         // Quota friendly actions: module users
         yield 'inspect cached' => ['gsc/inspect', true, [], AccessPolicy::USER];

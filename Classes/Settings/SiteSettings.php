@@ -37,6 +37,7 @@ final class SiteSettings
         'gsc_sitemap_url' => '',
         'gsc_extra_source_urls' => [],
         'gsc_extra_include' => '',
+        'news_detail_pid' => 0,
     ];
 
     /** @var array<string, array<string, mixed>> */
