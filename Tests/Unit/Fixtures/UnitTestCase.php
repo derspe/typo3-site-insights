@@ -31,6 +31,7 @@ abstract class UnitTestCase extends TestCase
             'LANG' => $GLOBALS['LANG'] ?? null,
         ];
         $GLOBALS['TYPO3_CONF_VARS']['SYS']['encryptionKey'] = str_repeat('k', 96);
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['derspe_site_insights']['sources'] = 'both';
         $this->db = new InMemoryDatabase($this);
         $this->cacheStore = [];
     }
@@ -93,12 +94,14 @@ abstract class UnitTestCase extends TestCase
 
     /**
      * @param list<int> $mountedRootPages page ids inside the user's DB mounts
+     * @param bool|null $maintainer system maintainer; null = every administrator is one
      */
-    protected function backendUser(bool $admin, bool $moduleAccess = true, array $mountedRootPages = [], int $uid = 7): BackendUserAuthentication
+    protected function backendUser(bool $admin, bool $moduleAccess = true, array $mountedRootPages = [], int $uid = 7, ?bool $maintainer = null): BackendUserAuthentication
     {
         $user = $this->createMock(BackendUserAuthentication::class);
         $user->user = ['uid' => $uid];
         $user->method('isAdmin')->willReturn($admin);
+        $user->method('isSystemMaintainer')->willReturn($admin && ($maintainer ?? true));
         $user->method('check')->willReturn($moduleAccess);
         $user->method('isInWebMount')->willReturnCallback(fn($id): ?int => in_array((int)$id, $mountedRootPages, true) ? (int)$id : null);
         return $user;

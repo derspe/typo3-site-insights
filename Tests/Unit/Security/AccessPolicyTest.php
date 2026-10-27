@@ -28,16 +28,17 @@ final class AccessPolicyTest extends TestCase
         // Quota friendly actions: module users
         yield 'inspect cached' => ['gsc/inspect', true, [], AccessPolicy::USER];
         yield 'index scan' => ['job/start', true, ['type' => 'index_scan'], AccessPolicy::USER];
-        // Configuration, connection and on-demand quota: administrators
-        yield 'settings read' => ['settings', false, [], AccessPolicy::ADMIN];
-        yield 'settings write' => ['settings', true, [], AccessPolicy::ADMIN];
-        yield 'remove service account key' => ['gsc/auth/remove', true, [], AccessPolicy::ADMIN];
+        // Settings: system maintainers
+        yield 'settings read' => ['settings', false, [], AccessPolicy::MAINTAINER];
+        yield 'settings write' => ['settings', true, [], AccessPolicy::MAINTAINER];
+        yield 'remove service account key' => ['gsc/auth/remove', true, [], AccessPolicy::MAINTAINER];
+        yield 'backfill' => ['job/start', true, ['type' => 'backfill'], AccessPolicy::MAINTAINER];
+        // On-demand quota: administrators
         yield 'snapshot run' => ['gsc/snapshot/run', true, [], AccessPolicy::ADMIN];
         yield 'visibility rebuild' => ['gsc/visibility/rebuild', true, [], AccessPolicy::ADMIN];
         yield 'inspect forced' => ['gsc/inspect', true, ['force' => true], AccessPolicy::ADMIN];
         yield 'inspect forced as string' => ['gsc/inspect', true, ['force' => '1'], AccessPolicy::ADMIN];
         yield 'index scan forced' => ['job/start', true, ['type' => 'index_scan', 'force' => true], AccessPolicy::ADMIN];
-        yield 'backfill' => ['job/start', true, ['type' => 'backfill'], AccessPolicy::ADMIN];
         yield 'unknown job type' => ['job/start', true, ['type' => 'whatever'], AccessPolicy::ADMIN];
         // Wrong method or unknown endpoint
         yield 'write endpoint via GET' => ['gsc/auth/remove', false, [], null];

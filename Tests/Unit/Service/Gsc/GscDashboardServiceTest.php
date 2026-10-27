@@ -9,9 +9,11 @@ use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\SearchConsoleClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
+use Derspe\SiteInsights\Settings\Sources;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 
 final class GscDashboardServiceTest extends UnitTestCase
 {
@@ -25,7 +27,7 @@ final class GscDashboardServiceTest extends UnitTestCase
         $account = $this->createMock(GoogleServiceAccount::class);
         $account->method('accessToken')->willReturn('token');
         $client = new SearchConsoleClient($account, $settings, $http->factory());
-        $service = new GscDashboardService($client, $settings, $this->cache(), new SnapshotRepository($this->db->connectionPool()), new MatomoClient($settings, $http->factory()));
+        $service = new GscDashboardService($client, $settings, $this->cache(), new SnapshotRepository($this->db->connectionPool()), new MatomoClient($settings, $http->factory()), new Sources(new ExtensionConfiguration()));
 
         $http->queue(
             FakeHttp::json(['rows' => [['keys' => ['2026-10-19']]]]),

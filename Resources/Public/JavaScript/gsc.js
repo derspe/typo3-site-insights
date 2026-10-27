@@ -144,7 +144,7 @@ export class SiGsc extends SiElement {
       ['tracker', 'bookmarks', t('gsc.tab.tracker')],
       ['index', 'clipboardCheck', t('gsc.tab.index')],
       ['settings', 'settings', t('tab.settings')],
-    ];
+    ].filter(([key]) => key !== 'settings' || getMeta().canConfigure);
     return html`
       <div class="tabs" role="tablist">
         ${tabs.map(([key, iconName, label]) => html`<button type="button" role="tab" class="tab ${this.tab === key ? 'active' : ''}"
@@ -762,7 +762,7 @@ class SiGscSettings extends SiElement {
   }
 
   willUpdate(changed) {
-    if (changed.has('site') && this.site && getMeta().isAdmin) {
+    if (changed.has('site') && this.site && getMeta().canConfigure) {
       this.load();
       this.runner?.stop();
       this.runner = new JobRunner(this.site, (job) => { this.job = job; });
@@ -917,8 +917,8 @@ class SiGscSettings extends SiElement {
   }
 
   render() {
-    if (!getMeta().isAdmin) {
-      return html`<div class="paper" style="max-width:860px">${alertBox(t('settings.adminOnly'), { color: 'yellow' })}</div>`;
+    if (!getMeta().canConfigure) {
+      return html`<div class="paper" style="max-width:860px">${alertBox(t('settings.maintainerOnly'), { color: 'yellow' })}</div>`;
     }
     if (!this.form) {
       return this.error ? errorState(this.error) : skeleton(400);

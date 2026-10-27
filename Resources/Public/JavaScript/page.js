@@ -9,6 +9,8 @@ class SiteInsightsPage extends SiElement {
   static properties = {
     page: { type: Number },
     language: { type: Number },
+    matomo: { type: Boolean },
+    gsc: { type: Boolean },
     data: { state: true },
     error: { state: true },
   };
@@ -16,11 +18,8 @@ class SiteInsightsPage extends SiElement {
   static styles = [
     ...SiElement.styles,
     css`
-      :host { display: block; margin: 0 0 16px; font-size: 13px; container-type: inline-size; }
-      .grid-tight { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-      @container (max-width: 640px) {
-        .grid-tight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      }
+      :host { display: block; margin: 0 0 16px; font-size: 13px; }
+      .grid-tight { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .footer { margin-top: 6px; }
       details { margin-top: 10px; background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); }
       summary { cursor: pointer; padding: 8px 12px; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 6px; }
@@ -35,6 +34,8 @@ class SiteInsightsPage extends SiElement {
     super();
     this.page = 0;
     this.language = 0;
+    this.matomo = false;
+    this.gsc = false;
     this.data = null;
     this.error = null;
   }
@@ -53,35 +54,67 @@ class SiteInsightsPage extends SiElement {
     }
     const d = this.data;
     if (!d) {
-      return html`<div class="grid-tight">${[0, 1, 2, 3].map(() => html`<div class="stat compact">${skeleton(40)}</div>`)}</div>`;
+      const count = (this.matomo ? 2 : 0) + (this.gsc ? 3 : 0);
+      return this.grid(Array.from({ length: count }, () => html`<div class="stat compact">${skeleton(40)}</div>`));
     }
     const m = d.matomo;
     const g = d.gsc;
+    const cards = [];
+    if (m.configured !== false) {
+      cards.push(
+        this.card(m, 'pageviews', t('matomo.pageviews'), 'indigo', 'eye'),
+        this.card(m, 'entries', t('page.entries'), 'orange', 'targetArrow'),
+      );
+    }
+    if (g.configured !== false) {
+      cards.push(
+        this.card(g, 'clicks', t('metric.clicks'), 'green', 'mouse'),
+        this.card(g, 'impressions', t('metric.impressions'), 'blue', 'search'),
+        this.positionCard(g),
+      );
+    }
+    if (cards.length === 0) {
+      return nothing;
+    }
     return html`
-      <div class="grid-tight">
-        ${this.card(m, 'pageviews', t('matomo.pageviews'), 'indigo', 'eye')}
-        ${this.card(m, 'entries', t('page.entries'), 'orange', 'targetArrow')}
-        ${this.card(g, 'clicks', t('metric.clicks'), 'green', 'mouse')}
-        ${this.card(g, 'impressions', t('metric.impressions'), 'blue', 'search')}
-      </div>
+      ${this.grid(cards)}
       <div class="xs dimmed footer">${this.footer(m, g)}</div>
-      ${g.error ? nothing : this.queries(g)}`;
+      ${g.configured === false || g.error ? nothing : this.queries(g)}`;
+  }
+
+  grid(cards) {
+    return html`<div class="grid-tight">${cards}</div>`;
+  }
+
+  unavailable(source, label, iconName) {
+    return statCard({ compact: true, label, value: '–', color: 'gray', icon: iconName,
+      sub: html`<div class="xs dimmed truncate" title=${source.error}>${t('page.unavailable')}</div>` });
   }
 
   card(source, key, label, color, iconName) {
     if (source.error) {
-      const hint = source.status === 503 ? t('error.notConfigured') : t('page.unavailable');
-      return statCard({ compact: true, label, value: '–', color: 'gray', icon: iconName, sub: html`<div class="xs dimmed truncate" title=${source.error}>${hint}</div>` });
+      return this.unavailable(source, label, iconName);
     }
     return statCard({ compact: true, label, value: fmt.int(source[key]), raw: source[key], compare: source.compare?.[key], color, icon: iconName });
   }
 
+  positionCard(g) {
+    const label = t('metric.avgPosition');
+    if (g.error) {
+      return this.unavailable(g, label, 'number');
+    }
+    // Without impressions there is no position
+    const position = g.impressions > 0 ? g.position : null;
+    const compare = g.compare?.impressions > 0 ? g.compare.position : null;
+    return statCard({ compact: true, label, value: fmt.dec(position), raw: position, compare, invert: true, color: 'teal', icon: 'number' });
+  }
+
   footer(m, g) {
     const parts = [t('widget.last28'), t('widget.vsPrevious')];
-    if (!m.error) {
+    if (m.configured !== false && !m.error) {
       parts.push(`Matomo ${fmt.date(m.range.startDate)} – ${fmt.date(m.range.endDate)}`);
     }
-    if (!g.error) {
+    if (g.configured !== false && !g.error) {
       parts.push(`Search Console ${fmt.date(g.range.startDate)} – ${fmt.date(g.range.endDate)}`);
     }
     return parts.join(' · ');

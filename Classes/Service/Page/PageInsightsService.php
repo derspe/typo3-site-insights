@@ -6,11 +6,14 @@ namespace Derspe\SiteInsights\Service\Page;
 
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
+use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\GscNormalizer;
 use Derspe\SiteInsights\Service\Gsc\SearchConsoleClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoNormalizer;
+use Derspe\SiteInsights\Settings\SiteSettings;
+use Derspe\SiteInsights\Settings\Sources;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -19,7 +22,8 @@ use TYPO3\CMS\Core\Site\SiteFinder;
  * Search Console clicks, impressions, top queries and the share of anonymized queries
  * of the last 28 days, each compared with the 28 days before.
  *
- * Each source is loaded on its own; a failing or unconfigured source only returns its error.
+ * Each source is loaded on its own: an unconfigured source is reported as such, a failing one
+ * only returns its error.
  */
 final readonly class PageInsightsService
 {
@@ -37,7 +41,26 @@ final readonly class PageInsightsService
         private SearchConsoleClient $client,
         private GscDashboardService $gsc,
         private ApiCache $cache,
+        private GoogleServiceAccount $serviceAccount,
+        private SiteSettings $settings,
+        private Sources $sources,
     ) {}
+
+    /**
+     * Enabled in the extension configuration and set up for the site.
+     */
+    public function matomoConfigured(string $site): bool
+    {
+        return $this->sources->matomo() && $this->matomo->isConfigured($site);
+    }
+
+    /**
+     * Enabled in the extension configuration and set up for the site.
+     */
+    public function gscConfigured(string $site): bool
+    {
+        return $this->sources->gsc() && $this->settings->isSet($site, 'gsc_site_url') && $this->serviceAccount->isConfigured($site);
+    }
 
     /**
      * Absolute frontend URL of the page; the page must belong to the given site.
@@ -66,8 +89,8 @@ final readonly class PageInsightsService
     {
         return [
             'url' => $url,
-            'matomo' => self::guarded(fn(): array => $this->matomoMetrics($site, $url)),
-            'gsc' => self::guarded(fn(): array => $this->gscMetrics($site, $url)),
+            'matomo' => $this->matomoConfigured($site) ? self::guarded(fn(): array => $this->matomoMetrics($site, $url)) : ['configured' => false],
+            'gsc' => $this->gscConfigured($site) ? self::guarded(fn(): array => $this->gscMetrics($site, $url)) : ['configured' => false],
         ];
     }
 
@@ -76,9 +99,6 @@ final readonly class PageInsightsService
      */
     private function matomoMetrics(string $site, string $url): array
     {
-        if (!$this->matomo->isConfigured($site)) {
-            throw new ApiException('Matomo is not configured', 503);
-        }
         // Full days only, otherwise the incomplete current day pulls the comparison down
         $end = new \DateTimeImmutable('yesterday');
         $start = $end->modify('-' . (self::DAYS - 1) . ' days');
@@ -107,7 +127,6 @@ final readonly class PageInsightsService
      */
     private function gscMetrics(string $site, string $url): array
     {
-        $this->client->propertyUrl($site);
         $anchor = $this->gsc->latestDataDate($site);
         return $this->cache->remember([$site, 'page', 'gsc', 4, $url, $anchor], function () use ($site, $url, $anchor): array {
             $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);

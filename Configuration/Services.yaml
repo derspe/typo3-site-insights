@@ -12,6 +12,7 @@ services:
       - '../Classes/Service/Matomo/MatomoNormalizer.php'
       - '../Classes/Widgets/InsightsWidget.php'
       - '../Classes/Security/AccessPolicy.php'
+      - '../Classes/DependencyInjection/*'
 
   cache.derspe_site_insights:
     class: TYPO3\CMS\Core\Cache\Frontend\FrontendInterface

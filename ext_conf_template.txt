@@ -1,0 +1,2 @@
+# cat=basic; type=options[Matomo and Search Console=both,Search Console only=gsc,Matomo only=matomo]; label=Data sources: Which reports the module, the page module and the dashboard widgets show. Flush all caches after changing it, so the dashboard widgets of a disabled source disappear.
+sources = both

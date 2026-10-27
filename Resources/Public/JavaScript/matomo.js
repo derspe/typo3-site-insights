@@ -130,7 +130,8 @@ export class SiMatomo extends SiElement {
   }
 
   render() {
-    const tabs = [['dashboard', 'chartBar', t('matomo.tab.dashboard')], ['settings', 'settings', t('tab.settings')]];
+    const tabs = [['dashboard', 'chartBar', t('matomo.tab.dashboard')], ['settings', 'settings', t('tab.settings')]]
+      .filter(([key]) => key !== 'settings' || getMeta().canConfigure);
     return html`
       <div class="tabs" role="tablist">
         ${tabs.map(([key, iconName, label]) => html`<button type="button" role="tab" class="tab ${this.tab === key ? 'active' : ''}"
@@ -289,7 +290,7 @@ class SiMatomoSettings extends SiElement {
   }
 
   willUpdate(changed) {
-    if (changed.has('site') && this.site && getMeta().isAdmin) {
+    if (changed.has('site') && this.site && getMeta().canConfigure) {
       this.load();
     }
   }
@@ -340,8 +341,8 @@ class SiMatomoSettings extends SiElement {
   }
 
   render() {
-    if (!getMeta().isAdmin) {
-      return html`<div class="paper" style="max-width:860px">${alertBox(t('settings.adminOnly'), { color: 'yellow' })}</div>`;
+    if (!getMeta().canConfigure) {
+      return html`<div class="paper" style="max-width:860px">${alertBox(t('settings.maintainerOnly'), { color: 'yellow' })}</div>`;
     }
     if (!this.form) {
       return this.error ? errorState(this.error) : skeleton(300);

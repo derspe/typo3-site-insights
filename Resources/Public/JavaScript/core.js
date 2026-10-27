@@ -59,7 +59,7 @@ export async function api(endpoint, { site = '', params = {}, method = 'GET', bo
 }
 
 let metaPromise = null;
-let meta = { sites: [], isAdmin: false, locale: 'en', labels: {} };
+let meta = { sites: [], isAdmin: false, canConfigure: false, sources: { matomo: true, gsc: true }, locale: 'en', labels: {} };
 
 export function loadMeta() {
   metaPromise ??= api('meta').then((data) => {
@@ -487,6 +487,7 @@ export function spinnerButton(label, { loading = false, disabled = false, onClic
 
 /**
  * Shows a configuration hint for "not configured / not connected" errors (HTTP 503).
+ * Only system maintainers get the button to the settings.
  */
 export function errorState(error, onOpenSettings) {
   if (!error) {
@@ -496,7 +497,9 @@ export function errorState(error, onOpenSettings) {
     return alertBox(error.message, {
       color: 'yellow',
       title: t('error.notConfigured'),
-      action: html`<div><button type="button" class="btn xs light" @click=${onOpenSettings}>${icon('settings', 14)}${t('action.openSettings')}</button></div>`,
+      action: meta.canConfigure
+        ? html`<div><button type="button" class="btn xs light" @click=${onOpenSettings}>${icon('settings', 14)}${t('action.openSettings')}</button></div>`
+        : nothing,
     });
   }
   return alertBox(error.message ?? String(error));

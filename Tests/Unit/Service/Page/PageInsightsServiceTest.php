@@ -11,9 +11,11 @@ use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\SearchConsoleClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
+use Derspe\SiteInsights\Settings\Sources;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
 use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -22,6 +24,7 @@ final class PageInsightsServiceTest extends UnitTestCase
     private const URL = 'https://alpha.example/smart-home/';
 
     private FakeHttp $http;
+    private bool $gscKey = true;
 
     protected function setUp(): void
     {
@@ -41,12 +44,14 @@ final class PageInsightsServiceTest extends UnitTestCase
     {
         $settings = $this->settings();
         $cache = $this->cache();
+        $sources = new Sources(new ExtensionConfiguration());
         $account = $this->createMock(GoogleServiceAccount::class);
         $account->method('accessToken')->willReturn('token');
+        $account->method('isConfigured')->willReturn($this->gscKey);
         $client = new SearchConsoleClient($account, $settings, $this->http->factory());
         $matomo = new MatomoClient($settings, $this->http->factory());
-        $gsc = new GscDashboardService($client, $settings, $cache, new SnapshotRepository($this->db->connectionPool()), $matomo);
-        return new PageInsightsService($siteFinder ?? $this->siteFinder([]), $matomo, $client, $gsc, $cache);
+        $gsc = new GscDashboardService($client, $settings, $cache, new SnapshotRepository($this->db->connectionPool()), $matomo, $sources);
+        return new PageInsightsService($siteFinder ?? $this->siteFinder([]), $matomo, $client, $gsc, $cache, $account, $settings, $sources);
     }
 
     /**
@@ -117,7 +122,7 @@ final class PageInsightsServiceTest extends UnitTestCase
         $result = $this->service()->insights('alpha', self::URL);
 
         self::assertSame(7, $result['matomo']['pageviews']);
-        self::assertSame(503, $result['gsc']['status']);
+        self::assertSame(['configured' => false], $result['gsc']);
         self::assertCount(1, $this->http->history, 'no Search Console request without property');
     }
 
@@ -125,7 +130,7 @@ final class PageInsightsServiceTest extends UnitTestCase
     public function unconfiguredMatomoIsReportedAsNotConfigured(): void
     {
         $result = $this->service()->insights('alpha', self::URL);
-        self::assertSame(503, $result['matomo']['status']);
+        self::assertSame(['configured' => false], $result['matomo']);
         self::assertSame([], $this->http->history);
     }
 
@@ -166,5 +171,41 @@ final class PageInsightsServiceTest extends UnitTestCase
         $finder->method('getSiteByPageId')->willThrowException(new SiteNotFoundException('none', 1));
         $this->expectExceptionCode(404);
         $this->service($finder)->pageUrl('alpha', 5, 0);
+    }
+
+    #[Test]
+    public function searchConsoleNeedsPropertyAndKey(): void
+    {
+        $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
+        $this->gscKey = false;
+        self::assertFalse($this->service()->gscConfigured('alpha'));
+        self::assertSame(['configured' => false], $this->service()->insights('alpha', self::URL)['gsc']);
+        $this->gscKey = true;
+        self::assertTrue($this->service()->gscConfigured('alpha'));
+        self::assertFalse($this->service()->gscConfigured('beta'), 'key without property');
+    }
+
+    #[Test]
+    public function searchConsoleErrorsStayVisible(): void
+    {
+        // Configured, but Google rejects the request: an error, not "not configured"
+        $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
+        $this->http->queue(FakeHttp::json(['error' => ['message' => 'User does not have sufficient permission']], 403));
+        $gsc = $this->service()->insights('alpha', self::URL)['gsc'];
+        self::assertArrayNotHasKey('configured', $gsc);
+        self::assertArrayHasKey('error', $gsc);
+    }
+
+    #[Test]
+    public function sourcesDisabledInTheExtensionConfigurationCountAsNotConfigured(): void
+    {
+        $this->configureMatomo();
+        $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['derspe_site_insights']['sources'] = 'gsc';
+        self::assertFalse($this->service()->matomoConfigured('alpha'));
+        self::assertTrue($this->service()->gscConfigured('alpha'));
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['derspe_site_insights']['sources'] = 'matomo';
+        self::assertTrue($this->service()->matomoConfigured('alpha'));
+        self::assertFalse($this->service()->gscConfigured('alpha'));
     }
 }

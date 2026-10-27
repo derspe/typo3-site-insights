@@ -6,6 +6,7 @@ namespace Derspe\SiteInsights\EventListener;
 
 use Derspe\SiteInsights\Controller\Backend\ApiController;
 use Derspe\SiteInsights\Security\SiteAccess;
+use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use TYPO3\CMS\Backend\Context\PageContext;
 use TYPO3\CMS\Backend\Controller\Event\ModifyPageLayoutContentEvent;
 use TYPO3\CMS\Core\Attribute\AsEventListener;
@@ -34,6 +35,7 @@ final readonly class PageLayoutInsights
     public function __construct(
         private SiteAccess $siteAccess,
         private PageRenderer $pageRenderer,
+        private PageInsightsService $pageInsights,
     ) {}
 
     public function __invoke(ModifyPageLayoutContentEvent $event): void
@@ -51,12 +53,20 @@ final readonly class PageLayoutInsights
         ) {
             return;
         }
+        $site = $context->site->getIdentifier();
+        $matomo = $this->pageInsights->matomoConfigured($site);
+        $gsc = $this->pageInsights->gscConfigured($site);
+        if (!$matomo && !$gsc) {
+            return;
+        }
         $this->pageRenderer->loadJavaScriptModule('@derspe/site-insights/page.js');
         $event->addHeaderContent(sprintf(
-            '<derspe-site-insights-page site="%s" page="%d" language="%d"></derspe-site-insights-page>',
-            htmlspecialchars($context->site->getIdentifier(), ENT_QUOTES),
+            '<derspe-site-insights-page site="%s" page="%d" language="%d"%s%s></derspe-site-insights-page>',
+            htmlspecialchars($site, ENT_QUOTES),
             $context->pageId,
-            $context->getPrimaryLanguageId()
+            $context->getPrimaryLanguageId(),
+            $matomo ? ' matomo' : '',
+            $gsc ? ' gsc' : ''
         ));
     }
 }

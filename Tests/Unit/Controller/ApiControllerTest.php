@@ -18,12 +18,14 @@ use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
+use Derspe\SiteInsights\Settings\Sources;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\KeyFile;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Log\NullLogger;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Http\Stream;
 use TYPO3\CMS\Core\Localization\LanguageService;
@@ -68,6 +70,7 @@ final class ApiControllerTest extends UnitTestCase
             self::unused(JobService::class),
             new NullLogger(),
             self::unused(PageInsightsService::class),
+            new Sources(new ExtensionConfiguration()),
         );
     }
 
@@ -146,6 +149,59 @@ final class ApiControllerTest extends UnitTestCase
         self::assertSame(200, $status);
         self::assertSame(['beta'], array_column($data['sites'], 'identifier'));
         self::assertFalse($data['isAdmin']);
+        self::assertFalse($data['canConfigure']);
+        self::assertSame(['matomo' => true, 'gsc' => true], $data['sources']);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, ?array<string, mixed>}>
+     */
+    public static function maintainerOnlyRequests(): iterable
+    {
+        yield 'read settings' => [['endpoint' => 'settings'], null];
+        yield 'write settings' => [['endpoint' => 'settings'], ['values' => ['matomo_url' => 'https://evil.example']]];
+        yield 'remove service account key' => [['endpoint' => 'gsc/auth/remove'], []];
+        yield 'backfill' => [['endpoint' => 'job/start'], ['type' => 'backfill', 'days' => 90]];
+    }
+
+    /**
+     * @param array<string, mixed> $query
+     * @param array<string, mixed>|null $body
+     */
+    #[Test]
+    #[DataProvider('maintainerOnlyRequests')]
+    public function administratorsWithoutSystemMaintainerRightsCannotConfigure(array $query, ?array $body): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true, true, [], 7, false);
+        $this->db->failWith = new \RuntimeException('must not be reached');
+        [$status, $data] = $this->call($query + ['site' => 'alpha'], $body);
+        self::assertSame(403, $status);
+        self::assertSame('Only system maintainers can do this', $data['error']);
+    }
+
+    #[Test]
+    public function metaTellsWhoMayConfigure(): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true, true, [], 7, false);
+        self::assertFalse($this->call(['endpoint' => 'meta'])[1]['canConfigure']);
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
+        self::assertTrue($this->call(['endpoint' => 'meta'])[1]['canConfigure']);
+    }
+
+    #[Test]
+    public function endpointsOfDisabledSourcesDoNotExist(): void
+    {
+        $GLOBALS['BE_USER'] = $this->backendUser(true);
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['derspe_site_insights']['sources'] = 'gsc';
+        $this->db->failWith = new \RuntimeException('must not be reached');
+        [$status, $data] = $this->call(['endpoint' => 'matomo/dashboard', 'site' => 'alpha']);
+        self::assertSame(404, $status);
+        self::assertStringContainsString('disabled', $data['error']);
+        self::assertSame(['matomo' => false, 'gsc' => true], $this->call(['endpoint' => 'meta'])[1]['sources']);
+
+        $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['derspe_site_insights']['sources'] = 'matomo';
+        self::assertSame(404, $this->call(['endpoint' => 'gsc/snapshot/status', 'site' => 'alpha'])[0]);
+        self::assertSame(404, $this->call(['endpoint' => 'job/active', 'site' => 'alpha'])[0]);
     }
 
     #[Test]
@@ -224,7 +280,7 @@ final class ApiControllerTest extends UnitTestCase
     }
 
     #[Test]
-    public function editorsOnlySeeTheConfiguredProperty(): void
+    public function onlySystemMaintainersSeeAllPropertiesAndTheServiceAccount(): void
     {
         $this->settings()->set('alpha', 'gsc_service_account_key', GoogleServiceAccount::parseKey(KeyFile::json()));
         $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
@@ -234,16 +290,16 @@ final class ApiControllerTest extends UnitTestCase
         ]];
         $this->http->queue(FakeHttp::json($properties), FakeHttp::json($properties));
 
-        $GLOBALS['BE_USER'] = $this->backendUser(false, true, [1]);
+        $GLOBALS['BE_USER'] = $this->backendUser(true, true, [], 7, false);
         [, $editor] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
         self::assertSame(['sc-domain:alpha.example'], array_column($editor['sites'], 'siteUrl'));
         self::assertSame('', $editor['clientEmail']);
         self::assertTrue($editor['propertyAccessible']);
 
         $GLOBALS['BE_USER'] = $this->backendUser(true);
-        [, $admin] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
-        self::assertCount(2, $admin['sites']);
-        self::assertSame(KeyFile::email(), $admin['clientEmail']);
+        [, $maintainer] = $this->call(['endpoint' => 'gsc/auth/status', 'site' => 'alpha']);
+        self::assertCount(2, $maintainer['sites']);
+        self::assertSame(KeyFile::email(), $maintainer['clientEmail']);
     }
 
     #[Test]

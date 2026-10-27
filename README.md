@@ -31,7 +31,8 @@ service, no long-running processes. It works on ordinary shared hosting.
 **Page module**
 
 - Key figures of the current page above the content: Matomo pageviews and entries,
-  Search Console clicks and impressions of the last 28 days
+  Search Console clicks, impressions and average position of the last 28 days,
+  compared with the 28 days before; only configured sources are shown
 - Collapsible box with the top 10 search queries of the page
 - Shown to users with access to the Site Insights module; data is loaded in the
   background and cached (Matomo 1 hour, Search Console 6 hours)
@@ -72,11 +73,22 @@ vendor/bin/typo3 extension:setup
 
 Open **Sites → Site Insights**. Each site configuration has its own settings.
 
+### Data sources
+
+Customers often use only one of the two services. In **Admin Tools → Settings →
+Extension Configuration → derspe_site_insights** choose the data sources: Matomo and
+Search Console (default), Search Console only or Matomo only. A disabled source
+disappears from the module, the page module and the API right away. Its dashboard
+widgets disappear after flushing all caches, because TYPO3 only rebuilds the service
+container then.
+
 ## Security
 
-- Only administrators can see and change settings, store the service account key, run
-  snapshots and backfills or force re-inspections. Other users need access to the module and only see
-  sites whose root page is inside their DB mounts.
+- Only system maintainers see and change the settings (Matomo access, service account
+  key, backfill). Other administrators may run snapshots and force re-inspections. All
+  other users need access to the module and only see sites whose root page is inside
+  their DB mounts. Note that in the Development context TYPO3 treats every
+  administrator as system maintainer.
 - Secrets (Matomo token, Google service account key, cached access tokens) are
   encrypted with a key derived from the instance `encryptionKey` and never sent to the
   browser. Changing the Matomo host removes the stored token.

@@ -19,6 +19,7 @@ use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
+use Derspe\SiteInsights\Settings\Sources;
 use Derspe\SiteInsights\Settings\SiteSettings;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -58,6 +59,7 @@ final readonly class ApiController
         private JobService $jobs,
         private LoggerInterface $logger,
         private PageInsightsService $pageInsights,
+        private Sources $sources,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -78,6 +80,10 @@ final readonly class ApiController
             if ($level === AccessPolicy::ADMIN && !$user->isAdmin()) {
                 throw new ApiException('Only administrators can do this', 403);
             }
+            if ($level === AccessPolicy::MAINTAINER && !$user->isSystemMaintainer()) {
+                throw new ApiException('Only system maintainers can do this', 403);
+            }
+            $this->assertSourceEnabled($endpoint);
             if ($endpoint === 'meta') {
                 return new JsonResponse($this->meta($user));
             }
@@ -131,7 +137,7 @@ final readonly class ApiController
             $endpoint === 'gsc/inspect' && !$isPost => InspectRepository::toDto($this->inspectCached($site, (string)($query['url'] ?? '')), true),
             $endpoint === 'gsc/inspect' => $this->inspectNow($site, (string)($body['url'] ?? ''), (bool)($body['force'] ?? false)),
             $endpoint === 'gsc/index/pages' => $this->inspect->pages($site),
-            $endpoint === 'gsc/auth/status' => $this->authStatus($site, $user->isAdmin()),
+            $endpoint === 'gsc/auth/status' => $this->authStatus($site, $user->isSystemMaintainer()),
             $endpoint === 'gsc/auth/remove' => $this->authRemove($site),
 
             $endpoint === 'job/start' => $this->startJob($site, $body),
@@ -162,6 +168,22 @@ final readonly class ApiController
     }
 
     /**
+     * Endpoints of a source disabled in the extension configuration do not exist.
+     */
+    private function assertSourceEnabled(string $endpoint): void
+    {
+        $source = match (true) {
+            str_starts_with($endpoint, 'matomo/') => Sources::MATOMO,
+            // Jobs only exist for Search Console (index scan, backfill)
+            str_starts_with($endpoint, 'gsc/'), str_starts_with($endpoint, 'job/') => Sources::GSC,
+            default => null,
+        };
+        if ($source === Sources::MATOMO && !$this->sources->matomo() || $source === Sources::GSC && !$this->sources->gsc()) {
+            throw new ApiException('This data source is disabled in the extension configuration', 404);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function meta(BackendUserAuthentication $user): array
@@ -175,6 +197,8 @@ final readonly class ApiController
         return [
             'sites' => $sites,
             'isAdmin' => $user->isAdmin(),
+            'canConfigure' => $user->isSystemMaintainer(),
+            'sources' => $this->sources->toArray(),
             'locale' => (string)($this->languageService()->getLocale() ?? 'en'),
             'labels' => $labels,
         ];
@@ -264,15 +288,15 @@ final readonly class ApiController
      *
      * @return array<string, mixed>
      */
-    private function authStatus(string $site, bool $isAdmin): array
+    private function authStatus(string $site, bool $canConfigure): array
     {
         $configured = $this->serviceAccount->isConfigured($site);
         $property = $this->settings->getString($site, 'gsc_site_url');
         $status = [
             'configured' => $configured,
             'connected' => false,
-            // Only administrators need the address (to add it in Search Console)
-            'clientEmail' => $isAdmin ? $this->serviceAccount->clientEmail($site) : '',
+            // Only system maintainers need the address (to add it in Search Console)
+            'clientEmail' => $canConfigure ? $this->serviceAccount->clientEmail($site) : '',
             'property' => $property,
             'propertyAccessible' => false,
             'sites' => [],
@@ -286,7 +310,7 @@ final readonly class ApiController
             $status['connected'] = true;
             $status['propertyAccessible'] = in_array($property, array_column($properties, 'siteUrl'), true);
             // Editors only see the configured property, not every property of the service account
-            if (!$isAdmin) {
+            if (!$canConfigure) {
                 $properties = array_values(array_filter($properties, static fn(array $p): bool => $p['siteUrl'] === $property));
             }
             $status['sites'] = $properties;

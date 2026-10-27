@@ -10,6 +10,7 @@ use Derspe\SiteInsights\Service\ApiCache;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoNormalizer;
 use Derspe\SiteInsights\Settings\SiteSettings;
+use Derspe\SiteInsights\Settings\Sources;
 
 /**
  * Live Search Console reports: performance dashboard, drilldown, cannibalization,
@@ -31,6 +32,7 @@ final readonly class GscDashboardService
         private ApiCache $cache,
         private SnapshotRepository $snapshots,
         private MatomoClient $matomo,
+        private Sources $sources,
     ) {}
 
     public function latestDataDate(string $site): string
@@ -164,7 +166,7 @@ final readonly class GscDashboardService
             }
 
             // Matomo pageviews for exactly the same window (optional)
-            if ($this->matomo->isConfigured($site)) {
+            if ($this->sources->matomo() && $this->matomo->isConfigured($site)) {
                 try {
                     $params = $period === 'day'
                         ? ['period' => 'day', 'date' => $main['startDate']]

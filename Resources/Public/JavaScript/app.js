@@ -80,6 +80,9 @@ class SiteInsightsApp extends SiElement {
   connectedCallback() {
     super.connectedCallback();
     loadMeta().then((meta) => {
+      if (meta.sources?.[this.area] === false) {
+        this.area = this.area === 'gsc' ? 'matomo' : 'gsc';
+      }
       this.meta = meta;
       if (!meta.sites.some((s) => s.identifier === this.site)) {
         this.site = meta.sites[0]?.identifier ?? '';
@@ -101,18 +104,23 @@ class SiteInsightsApp extends SiElement {
     if (this.meta.sites.length === 0) {
       return html`<div class="empty">${t('app.noSites')}</div>`;
     }
-    const areas = [['gsc', 'trendingUp', t('app.area.gsc')], ['matomo', 'chartLine', t('app.area.matomo')]];
+    // Sources disabled in the extension configuration are not shown at all
+    const areas = [['gsc', 'trendingUp', t('app.area.gsc')], ['matomo', 'chartLine', t('app.area.matomo')]]
+      .filter(([key]) => this.meta.sources?.[key] !== false);
+    const area = areas.some(([key]) => key === this.area) ? this.area : areas[0][0];
+    // A remembered settings tab falls back to the default tab for users who may not configure
+    const tab = (current, fallback) => (current === 'settings' && !this.meta.canConfigure ? fallback : current);
     return html`
       <header>
         <div class="brand">
           <span class="logo">${icon('chartBar', 20)}</span>
           <h2 class="title">${t('app.title')}</h2>
         </div>
-        <nav aria-label=${t('app.title')}>
-          ${areas.map(([key, iconName, label]) => html`<button type="button" class=${this.area === key ? 'active' : ''}
-            aria-current=${this.area === key ? 'page' : nothing}
+        ${areas.length > 1 ? html`<nav aria-label=${t('app.title')}>
+          ${areas.map(([key, iconName, label]) => html`<button type="button" class=${area === key ? 'active' : ''}
+            aria-current=${area === key ? 'page' : nothing}
             @click=${() => { this.area = key; this.persist(); }}>${icon(iconName, 16)}${label}</button>`)}
-        </nav>
+        </nav>` : nothing}
         ${this.meta.sites.length > 1 ? html`<div class="ml-auto">${selectInput(
           this.meta.sites.map((s) => ({ value: s.identifier, label: s.title })),
           this.site,
@@ -120,9 +128,9 @@ class SiteInsightsApp extends SiElement {
           { size: '', minWidth: 220, label: t('app.site') },
         )}</div>` : nothing}
       </header>
-      ${this.area === 'gsc'
-        ? html`<si-gsc .site=${this.site} .tab=${this.gscTab}></si-gsc>`
-        : html`<si-matomo .site=${this.site} .tab=${this.matomoTab}></si-matomo>`}
+      ${area === 'gsc'
+        ? html`<si-gsc .site=${this.site} .tab=${tab(this.gscTab, 'performance')}></si-gsc>`
+        : html`<si-matomo .site=${this.site} .tab=${tab(this.matomoTab, 'dashboard')}></si-matomo>`}
     `;
   }
 }

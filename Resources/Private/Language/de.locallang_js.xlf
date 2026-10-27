@@ -131,9 +131,9 @@
 				<source>•••••••• (stored – leave empty to keep)</source>
 				<target>•••••••• (gespeichert – leer lassen, um beizubehalten)</target>
 			</trans-unit>
-			<trans-unit id="settings.adminOnly" resname="settings.adminOnly">
-				<source>Only administrators can change these settings.</source>
-				<target>Nur Administratoren können diese Einstellungen ändern.</target>
+			<trans-unit id="settings.maintainerOnly" resname="settings.maintainerOnly">
+				<source>Only system maintainers can see and change these settings.</source>
+				<target>Nur System-Maintainer können diese Einstellungen sehen und ändern.</target>
 			</trans-unit>
 			<trans-unit id="settings.commaSeparated" resname="settings.commaSeparated">
 				<source>comma separated</source>
