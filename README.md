@@ -143,6 +143,11 @@ Add both as *Execute console commands* tasks. The tracker and the visibility
 index need snapshots; use **Settings → Snapshot backfill** once to fetch up to 90
 days immediately.
 
+API responses are cached in the database tables `cache_derspe_site_insights` and
+`cache_derspe_site_insights_tags`. TYPO3 does not delete expired entries on its
+own: add the task *Caching framework garbage collection* (e.g. daily) and select
+the backend `Typo3DatabaseBackend`, otherwise the tables keep growing.
+
 ## How long running work is handled
 
 Shared hosting allows neither background processes nor long requests. Index scans
