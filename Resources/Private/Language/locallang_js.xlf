@@ -756,6 +756,72 @@
 			<trans-unit id="news.sortByChange" resname="news.sortByChange">
 				<source>Sort by change against the period before</source>
 			</trans-unit>
+			<trans-unit id="transitions.title" resname="transitions.title">
+				<source>Visitor paths (Matomo)</source>
+			</trans-unit>
+			<trans-unit id="transitions.before" resname="transitions.before">
+				<source>Before</source>
+			</trans-unit>
+			<trans-unit id="transitions.after" resname="transitions.after">
+				<source>After</source>
+			</trans-unit>
+			<trans-unit id="transitions.referrers" resname="transitions.referrers">
+				<source>Entries from outside</source>
+			</trans-unit>
+			<trans-unit id="transitions.previousPages" resname="transitions.previousPages">
+				<source>Internal pages</source>
+			</trans-unit>
+			<trans-unit id="transitions.previousSearches" resname="transitions.previousSearches">
+				<source>Site search</source>
+			</trans-unit>
+			<trans-unit id="transitions.followingPages" resname="transitions.followingPages">
+				<source>Internal pages</source>
+			</trans-unit>
+			<trans-unit id="transitions.followingSearches" resname="transitions.followingSearches">
+				<source>Site search</source>
+			</trans-unit>
+			<trans-unit id="transitions.outlinks" resname="transitions.outlinks">
+				<source>Outlinks</source>
+			</trans-unit>
+			<trans-unit id="transitions.downloads" resname="transitions.downloads">
+				<source>Downloads</source>
+			</trans-unit>
+			<trans-unit id="transitions.exits" resname="transitions.exits">
+				<source>Exits</source>
+			</trans-unit>
+			<trans-unit id="transitions.loops" resname="transitions.loops">
+				<source>Reloads</source>
+			</trans-unit>
+			<trans-unit id="transitions.loops.hint" resname="transitions.loops.hint">
+				<source>Pageviews directly after a pageview of the same page</source>
+			</trans-unit>
+			<trans-unit id="transitions.noData" resname="transitions.noData">
+				<source>Matomo has no pageviews of this page in the period.</source>
+			</trans-unit>
+			<trans-unit id="transitions.notConfigured" resname="transitions.notConfigured">
+				<source>Matomo is not set up for this site.</source>
+			</trans-unit>
+			<trans-unit id="transitions.hint" resname="transitions.hint">
+				<source>{start} – {end} · Shares refer to the pageviews of the page. Matomo computes transitions from its raw data, they are cached for a day.</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.queries" resname="pageDetail.queries">
+				<source>Search queries (Google)</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.noQueries" resname="pageDetail.noQueries">
+				<source>This search type has no queries.</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.close" resname="pageDetail.close">
+				<source>Close</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.hint" resname="pageDetail.hint">
+				<source>Click a page to see its search queries and visitor paths.</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.hint.gsc" resname="pageDetail.hint.gsc">
+				<source>Click a page to see its search queries.</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.hint.matomo" resname="pageDetail.hint.matomo">
+				<source>Click a page to see its visitor paths.</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

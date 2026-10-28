@@ -17,6 +17,7 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Matomo\TransitionsService;
 use Derspe\SiteInsights\Service\News\NewsInsightsService;
 use Derspe\SiteInsights\Service\News\NewsRepository;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
@@ -65,6 +66,7 @@ final readonly class ApiController
         private Sources $sources,
         private NewsInsightsService $newsInsights,
         private NewsRepository $news,
+        private TransitionsService $transitions,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -121,6 +123,7 @@ final readonly class ApiController
 
             $endpoint === 'matomo/segments' => $this->matomo->segments($site),
             $endpoint === 'matomo/goals' => $this->matomo->goals($site),
+            $endpoint === 'matomo/transitions' => $this->matomo->transitions($site, $query),
             $endpoint === 'matomo/dashboard' => $this->matomo->dashboard(
                 $site,
                 (string)($query['period'] ?? 'range'),
@@ -131,6 +134,7 @@ final readonly class ApiController
 
             $endpoint === 'gsc/dashboard' => $this->gsc->dashboard($site, $query),
             $endpoint === 'gsc/drilldown' => $this->gsc->drilldown($site, $query),
+            $endpoint === 'gsc/page' => $this->gsc->page($site, $query),
             $endpoint === 'gsc/cannibalization' => $this->gsc->cannibalization($site, $query),
             $endpoint === 'gsc/appearance' => $this->gsc->appearance($site, $query),
             $endpoint === 'gsc/visibility' => $this->gsc->visibility($site, $query),
@@ -150,6 +154,7 @@ final readonly class ApiController
             $endpoint === 'job/step' => $this->stepJob($site, (int)($body['id'] ?? 0)),
 
             $endpoint === 'page/insights' => $this->pageInsights($site, $query, $user),
+            $endpoint === 'page/transitions' => $this->pageTransitions($site, $query, $user),
             $endpoint === 'news/overview' => $this->newsInsights->overview(
                 $site,
                 $this->newsFolder($query, $user),
@@ -173,6 +178,32 @@ final readonly class ApiController
      */
     private function pageInsights(string $site, array $query, BackendUserAuthentication $user): array
     {
+        return $this->pageInsights->insights($site, $this->pageUrl($site, $query, $user));
+    }
+
+    /**
+     * Matomo transitions of the page in the page module (last 28 days).
+     *
+     * @param array<string, mixed> $query
+     * @return array<string, mixed>
+     */
+    private function pageTransitions(string $site, array $query, BackendUserAuthentication $user): array
+    {
+        $url = $this->pageUrl($site, $query, $user);
+        if (!$this->pageInsights->matomoConfigured($site)) {
+            return ['configured' => false];
+        }
+        [$range] = PageInsightsService::matomoRanges();
+        return $this->transitions->forUrl($site, $url, $range['startDate'], $range['endDate']);
+    }
+
+    /**
+     * Frontend URL of a page the user may see.
+     *
+     * @param array<string, mixed> $query
+     */
+    private function pageUrl(string $site, array $query, BackendUserAuthentication $user): string
+    {
         $pageId = (int)($query['page'] ?? 0);
         if ($pageId <= 0) {
             throw new ApiException('Parameter "page" missing', 400);
@@ -180,8 +211,7 @@ final readonly class ApiController
         if (!$user->isAdmin() && BackendUtility::readPageAccess($pageId, $user->getPagePermsClause(Permission::PAGE_SHOW)) === false) {
             throw new ApiException('Access to this page denied', 403);
         }
-        $url = $this->pageInsights->pageUrl($site, $pageId, max(0, (int)($query['language'] ?? 0)));
-        return $this->pageInsights->insights($site, $url);
+        return $this->pageInsights->pageUrl($site, $pageId, max(0, (int)($query['language'] ?? 0)));
     }
 
     /**

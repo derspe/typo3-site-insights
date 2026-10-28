@@ -4,6 +4,7 @@
 import { css, html, nothing } from 'lit';
 import { SiElement, errorState, fmt, icon, loadMeta, skeleton, statCard, t } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/table.js';
+import '@derspe/site-insights/page-detail.js';
 
 class SiteInsightsPage extends SiElement {
   static properties = {
@@ -13,6 +14,7 @@ class SiteInsightsPage extends SiElement {
     gsc: { type: Boolean },
     data: { state: true },
     error: { state: true },
+    transitionsOpen: { state: true },
   };
 
   static styles = [
@@ -26,7 +28,7 @@ class SiteInsightsPage extends SiElement {
       summary::-webkit-details-marker { display: none; }
       summary .chevron { display: inline-flex; transition: transform .15s; }
       details[open] summary .chevron { transform: rotate(180deg); }
-      .queries { padding: 0 12px 10px; }
+      .queries, .transitions { padding: 0 12px 10px; }
     `,
   ];
 
@@ -38,6 +40,7 @@ class SiteInsightsPage extends SiElement {
     this.gsc = false;
     this.data = null;
     this.error = null;
+    this.transitionsOpen = false;
   }
 
   connectedCallback() {
@@ -79,7 +82,8 @@ class SiteInsightsPage extends SiElement {
     return html`
       ${this.grid(cards)}
       <div class="xs dimmed footer">${this.footer(m, g)}</div>
-      ${g.configured === false || g.error ? nothing : this.queries(g)}`;
+      ${g.configured === false || g.error ? nothing : this.queries(g)}
+      ${m.configured === false || m.error ? nothing : this.transitions()}`;
   }
 
   grid(cards) {
@@ -118,6 +122,19 @@ class SiteInsightsPage extends SiElement {
       parts.push(`Search Console ${fmt.date(g.range.startDate)} – ${fmt.date(g.range.endDate)}`);
     }
     return parts.join(' · ');
+  }
+
+  /**
+   * Matomo computes transitions from its raw data on every request: only loaded once opened.
+   */
+  transitions() {
+    return html`<details @toggle=${(e) => { this.transitionsOpen ||= e.target.open; }}>
+      <summary><span class="chevron">${icon('chevronDown', 14)}</span>${t('transitions.title')}</summary>
+      <div class="transitions">
+        ${this.transitionsOpen ? html`<si-transitions .site=${this.site} endpoint="page/transitions"
+          .params=${{ page: this.page, language: this.language }}></si-transitions>` : nothing}
+      </div>
+    </details>`;
   }
 
   queries(g) {

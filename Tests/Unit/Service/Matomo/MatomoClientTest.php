@@ -7,6 +7,7 @@ namespace Derspe\SiteInsights\Tests\Unit\Service\Matomo;
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Matomo\TransitionsService;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -29,6 +30,11 @@ final class MatomoClientTest extends UnitTestCase
     private function client(): MatomoClient
     {
         return new MatomoClient($this->settings(), $this->http->factory());
+    }
+
+    private function dashboardService(): MatomoDashboardService
+    {
+        return new MatomoDashboardService($this->client(), $this->settings(), $this->cache(), new TransitionsService($this->client(), $this->cache()));
     }
 
     #[Test]
@@ -96,7 +102,7 @@ final class MatomoClientTest extends UnitTestCase
     public function unknownSegmentIsRejectedBeforeAnyReportRequest(): void
     {
         $this->http->queue(FakeHttp::json([['idsegment' => 1, 'name' => 'Mobile', 'definition' => 'deviceType==smartphone']]));
-        $service = new MatomoDashboardService($this->client(), $this->settings(), $this->cache());
+        $service = $this->dashboardService();
         try {
             $service->dashboard('alpha', 'range', 'last30', 'pageUrl=@secret', '');
             self::fail('Exception expected');
@@ -113,7 +119,7 @@ final class MatomoClientTest extends UnitTestCase
     {
         $bulk = FakeHttp::json([[], [], [], []]);
         $this->http->queue($bulk);
-        $service = new MatomoDashboardService($this->client(), $this->settings(), $this->cache());
+        $service = $this->dashboardService();
         $service->dashboard('alpha', 'range', 'last30', '', '');
         $service->dashboard('alpha', 'range', 'last30', '', '');
         self::assertCount(1, $this->http->history);
@@ -136,7 +142,7 @@ final class MatomoClientTest extends UnitTestCase
         $from = (new \DateTimeImmutable('today'))->modify('-40 days');
         $to = $from->modify('+9 days');
         $this->http->queue(FakeHttp::json(array_fill(0, 8, [])));
-        $service = new MatomoDashboardService($this->client(), $this->settings(), $this->cache());
+        $service = $this->dashboardService();
         $result = $service->dashboard('alpha', 'range', $from->format('Y-m-d') . ',' . $to->format('Y-m-d'), '', 'previous');
 
         $range = $from->format('Y-m-d') . ',' . $to->format('Y-m-d');
@@ -151,7 +157,7 @@ final class MatomoClientTest extends UnitTestCase
         $this->http->queue(FakeHttp::json(array_fill(0, 8, [])));
         $from = (new \DateTimeImmutable('today'))->modify('-20 days');
         $date = $from->format('Y-m-d') . ',' . $from->modify('+5 days')->format('Y-m-d');
-        $service = new MatomoDashboardService($this->client(), $this->settings(), $this->cache());
+        $service = $this->dashboardService();
         $service->dashboard('alpha', 'range', $date, '', 'year');
         self::assertSame($from->modify('-1 year')->format('Y-m-d') . ',' . $from->modify('+5 days')->modify('-1 year')->format('Y-m-d'), $this->bulkDates()[4]);
     }
@@ -159,7 +165,7 @@ final class MatomoClientTest extends UnitTestCase
     #[Test]
     public function invalidCustomRangeIsRejectedWithoutRequest(): void
     {
-        $service = new MatomoDashboardService($this->client(), $this->settings(), $this->cache());
+        $service = $this->dashboardService();
         try {
             $service->dashboard('alpha', 'range', '2020-01-01,2020-02-01', '', '');
             self::fail('Exception expected');
@@ -173,7 +179,7 @@ final class MatomoClientTest extends UnitTestCase
     public function presetsKeepTheirComparison(): void
     {
         $this->http->queue(FakeHttp::json(array_fill(0, 8, [])));
-        $service = new MatomoDashboardService($this->client(), $this->settings(), $this->cache());
+        $service = $this->dashboardService();
         $service->dashboard('alpha', 'range', 'last30', '', 'previous');
         $today = new \DateTimeImmutable('today');
         self::assertSame($today->modify('-29 days')->format('Y-m-d') . ',' . $today->format('Y-m-d'), $this->bulkDates()[0]);

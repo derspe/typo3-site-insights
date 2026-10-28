@@ -28,12 +28,28 @@ service, no long-running processes. It works on ordinary shared hosting.
 - Segments, goals (selectable) with conversions and chart
 - Visits over time, most viewed pages, traffic sources
 
+**Page details**
+
+- A click on a page in the top pages of Search Console or Matomo opens its details for
+  the period of the report: Search Console figures and top queries, and the visitor
+  paths from Matomo Transitions – entries from outside (search engines, websites,
+  campaigns, direct), previous and following pages, site searches, outlinks, downloads
+  and exits
+- Matomo computes transitions from its raw log data on every request, so they are only
+  loaded on demand and cached for a day. They need the raw data of the period (see the
+  Matomo setting for deleting old raw data); `[Transitions] max_period_allowed` in the
+  Matomo configuration may limit the period
+- Matomo finds a page by its full URL: URLs of a host Matomo does not know (e.g. a
+  development environment) are looked up with the main URL of the Matomo site
+
 **Page module**
 
 - Key figures of the current page above the content: Matomo pageviews and entries,
   Search Console clicks, impressions and average position of the last 28 days,
   compared with the 28 days before; only configured sources are shown
 - Collapsible box with the top 10 search queries of the page
+- Collapsible box with the visitor paths of the page (Matomo Transitions, loaded when
+  opened)
 - Search Console rows are matched by path, not by host, so the figures also appear in
   development environments with another domain
 - Shown to users with access to the Site Insights module; data is loaded in the

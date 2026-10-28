@@ -21,9 +21,11 @@ final class AccessPolicy
     private const READ_ENDPOINTS = [
         'matomo/segments',
         'matomo/goals',
+        'matomo/transitions',
         'matomo/dashboard',
         'gsc/dashboard',
         'gsc/drilldown',
+        'gsc/page',
         'gsc/cannibalization',
         'gsc/appearance',
         'gsc/visibility',
@@ -34,6 +36,7 @@ final class AccessPolicy
         'gsc/auth/status',
         'job/active',
         'page/insights',
+        'page/transitions',
         'news/overview',
         'news/queries',
     ];

@@ -8,6 +8,7 @@ import {
 } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
+import { pageDetailHint } from '@derspe/site-insights/page-detail.js';
 
 export const MATOMO_DEFAULT_RANGE = { period: 'range', date: 'last30', segment: '', compare: '' };
 
@@ -76,11 +77,13 @@ export class SiMatomo extends SiElement {
     segments: { state: true },
     data: { state: true },
     error: { state: true },
+    detailPage: { state: true },
   };
 
   constructor() {
     super();
     this.tab = 'dashboard';
+    this.detailPage = null;
     this.range = { ...MATOMO_DEFAULT_RANGE };
     this.customFrom = '';
     this.customTo = '';
@@ -91,6 +94,9 @@ export class SiMatomo extends SiElement {
   }
 
   willUpdate(changed) {
+    if (changed.has('site')) {
+      this.detailPage = null;
+    }
     if (changed.has('site') && this.site) {
       this.segments = [];
       this.api('matomo/segments').then((s) => { this.segments = Array.isArray(s) ? s : []; }).catch(() => {});
@@ -204,8 +210,12 @@ export class SiMatomo extends SiElement {
       </div>
       <div class="grid cols-2">
         <div class="paper">
-          <h4 class="card-title">${t('matomo.topPages')}</h4>
-          ${!d ? skeleton(160) : html`<si-table sort-key="pageviews" .rows=${d.topPages} .columns=${[
+          <h4 class="card-title tight">${t('matomo.topPages')}</h4>
+          ${pageDetailHint()}
+          ${!d ? skeleton(160) : html`<si-table sort-key="pageviews" .rows=${d.topPages} clickable row-key="url"
+            .selected=${this.detailPage?.key ?? ''}
+            @row-click=${(e) => { this.detailPage = e.detail.key === this.detailPage?.key ? null : { key: e.detail.key, url: e.detail.row.pageUrl || e.detail.row.url }; }}
+            .columns=${[
             { key: 'url', label: t('matomo.url'), maxWidth: 280 },
             { key: 'pageviews', label: t('matomo.pageviews'), align: 'right', render: (r) => fmt.int(r.pageviews) },
             ...(d.topPages.some((p) => p.pageviewsCompare != null) ? [
@@ -223,7 +233,10 @@ export class SiMatomo extends SiElement {
             { key: 'percent', label: t('matomo.share'), align: 'right', sortable: false },
           ]}></si-table>`}
         </div>
-      </div>`;
+      </div>
+      ${d && this.detailPage ? html`<div class="mt"><si-page-detail .site=${this.site} url=${this.detailPage.url}
+        start=${d.dateRange.start} end=${d.dateRange.end} segment=${this.range.segment}
+        @close=${() => { this.detailPage = null; }}></si-page-detail></div>` : nothing}`;
   }
 
   renderGoalKpis(d, loading) {

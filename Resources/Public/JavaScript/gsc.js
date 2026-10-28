@@ -7,6 +7,7 @@ import {
   spinnerButton, statCard, statusColor, t, deltaText, getMeta, showsNewsSetting,
 } from '@derspe/site-insights/core.js';
 import { JobRunner, jobProgressText } from '@derspe/site-insights/jobs.js';
+import { pageDetailHint } from '@derspe/site-insights/page-detail.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
 
@@ -96,6 +97,7 @@ export class SiGsc extends SiElement {
     trackerKind: { state: true },
     selectedQuery: { state: true },
     selectedPage: { state: true },
+    detailPage: { state: true },
   };
 
   constructor() {
@@ -107,10 +109,14 @@ export class SiGsc extends SiElement {
     this.trackerKind = 'query';
     this.selectedQuery = '';
     this.selectedPage = '';
+    this.detailPage = '';
     this.requestId = 0;
   }
 
   willUpdate(changed) {
+    if (changed.has('site')) {
+      this.detailPage = '';
+    }
     if ((changed.has('site') || changed.has('range')) && this.site) {
       this.load();
     }
@@ -180,12 +186,17 @@ export class SiGsc extends SiElement {
             <si-table .columns=${metricColumns('query', t('metric.query'), { compare: !!d.compare, compareText: cmp })} .rows=${d.topQueries} sort-key="clicks"></si-table>`}
         </div>
         <div class="paper">
-          <h4 class="card-title">${t('gsc.topPages')}</h4>
+          <h4 class="card-title tight">${t('gsc.topPages')}</h4>
+          ${pageDetailHint()}
           ${!d ? skeleton(160) : d.topPages.length === 0 ? html`<div class="empty">${t('empty.noData')}</div>` : html`
             <si-table .columns=${metricColumns('page', t('metric.page'), { compare: !!d.compare, compareText: cmp, matomo: d.topPages.some((r) => r.matomoVisits != null) })}
-              .rows=${d.topPages} sort-key="clicks"></si-table>`}
+              .rows=${d.topPages} sort-key="clicks" clickable row-key="page" .selected=${this.detailPage}
+              @row-click=${(e) => { this.detailPage = e.detail.key === this.detailPage ? '' : e.detail.key; }}></si-table>`}
         </div>
       </div>
+      ${d && this.detailPage ? html`<div class="mb"><si-page-detail .site=${this.site} url=${this.detailPage}
+        start=${d.range.startDate} end=${d.range.endDate} search-type=${this.range.searchType}
+        @close=${() => { this.detailPage = ''; }}></si-page-detail></div>` : nothing}
       <div class="grid cols-2">
         <si-gsc-cannibalization .site=${this.site} .range=${this.range}></si-gsc-cannibalization>
         ${this.renderBrandSplit(d)}

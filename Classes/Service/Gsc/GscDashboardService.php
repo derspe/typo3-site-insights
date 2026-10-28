@@ -9,18 +9,22 @@ use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoNormalizer;
+use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\SiteSettings;
 use Derspe\SiteInsights\Settings\Sources;
 
 /**
  * Live Search Console reports: performance dashboard, drilldown, cannibalization,
- * search appearance, tracker and visibility.
+ * search appearance, tracker, visibility and the figures of a single page.
  *
  * All dates are UTC and anchored at the latest day with data (Search Console has ~2 days latency).
  */
 final readonly class GscDashboardService
 {
     private const RANGE_DAYS = ['last7' => 7, 'last28' => 28, 'last90' => 90, 'last365' => 365];
+    // Search Console keeps 16 months of data
+    private const MAX_MONTHS = 16;
+    public const PAGE_QUERIES = 20;
     private const CANNIBALIZATION_MIN_IMPRESSIONS = 50;
     // Maximum rows of one Search Analytics request
     private const ALL_ROWS = 25000;
@@ -194,6 +198,70 @@ final readonly class GscDashboardService
                 'dataDate' => $anchor,
             ];
         });
+    }
+
+    /**
+     * Figures and top queries of one page ("url", "start" and "end" as YYYY-MM-DD, "searchType").
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function page(string $site, array $q): array
+    {
+        $url = trim((string)($q['url'] ?? ''));
+        if (!SettingsValidator::isPageUrlOrPath($url)) {
+            throw new ApiException('Parameter "url" must be a URL or a path', 400);
+        }
+        $range = self::explicitRange((string)($q['start'] ?? ''), (string)($q['end'] ?? ''), new \DateTimeImmutable('today', new \DateTimeZone('UTC')));
+        if ($range === null) {
+            throw new ApiException(sprintf('Invalid date range: dates must lie within the last %d months', self::MAX_MONTHS), 400);
+        }
+        [, , $searchType] = $this->normalizeQuery($q);
+        $supportsQuery = !in_array($searchType, ['discover', 'googleNews'], true);
+        $regex = GscNormalizer::pageRegex($url);
+        return $this->cache->remember([$site, 'page', 1, $regex, $range, $searchType], function () use ($site, $range, $searchType, $supportsQuery, $regex): array {
+            $body = static fn(array $dimensions, int $rowLimit): array => $range + [
+                'dimensions' => $dimensions,
+                'type' => $searchType,
+                'dimensionFilterGroups' => [['filters' => [['dimension' => 'page', 'operator' => 'includingRegex', 'expression' => $regex]]]],
+                'rowLimit' => $rowLimit,
+            ];
+            $bodies = ['kpis' => $body([], 1)];
+            if ($supportsQuery) {
+                $bodies['allQueries'] = $body(['query'], self::ALL_ROWS);
+            }
+            $r = $this->client->searchAnalyticsMany($site, $bodies);
+            $kpis = GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []);
+            $queries = $r['allQueries']['rows'] ?? [];
+            return $kpis + [
+                'queries' => GscNormalizer::topRowsByClicks($queries, 'query', self::PAGE_QUERIES),
+                'anonymized' => $supportsQuery ? GscNormalizer::anonymizedShare($kpis, $queries) : null,
+                'supportsQuery' => $supportsQuery,
+                'range' => $range,
+            ];
+        });
+    }
+
+    /**
+     * Validates an explicit range "YYYY-MM-DD" – "YYYY-MM-DD" inside the data Search Console keeps.
+     *
+     * @return array{startDate: string, endDate: string}|null
+     */
+    public static function explicitRange(string $start, string $end, \DateTimeImmutable $today): ?array
+    {
+        $days = [];
+        foreach ([$start, $end] as $value) {
+            $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $value, $today->getTimezone());
+            if ($day === false || $day->format('Y-m-d') !== $value) {
+                return null;
+            }
+            $days[] = $day;
+        }
+        // One day of tolerance: the backend may already be a day ahead of UTC
+        if ($days[0] > $days[1] || $days[1] > $today->modify('+1 day') || $days[0] < $today->modify('-' . self::MAX_MONTHS . ' months')) {
+            return null;
+        }
+        return ['startDate' => $start, 'endDate' => $end];
     }
 
     /**

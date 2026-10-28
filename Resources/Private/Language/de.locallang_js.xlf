@@ -1007,6 +1007,94 @@
 				<source>Sort by change against the period before</source>
 				<target>Nach Veränderung zum Vorzeitraum sortieren</target>
 			</trans-unit>
+			<trans-unit id="transitions.title" resname="transitions.title">
+				<source>Visitor paths (Matomo)</source>
+				<target>Besucherwege (Matomo)</target>
+			</trans-unit>
+			<trans-unit id="transitions.before" resname="transitions.before">
+				<source>Before</source>
+				<target>Davor</target>
+			</trans-unit>
+			<trans-unit id="transitions.after" resname="transitions.after">
+				<source>After</source>
+				<target>Danach</target>
+			</trans-unit>
+			<trans-unit id="transitions.referrers" resname="transitions.referrers">
+				<source>Entries from outside</source>
+				<target>Einstiege von außen</target>
+			</trans-unit>
+			<trans-unit id="transitions.previousPages" resname="transitions.previousPages">
+				<source>Internal pages</source>
+				<target>Interne Seiten</target>
+			</trans-unit>
+			<trans-unit id="transitions.previousSearches" resname="transitions.previousSearches">
+				<source>Site search</source>
+				<target>Interne Suche</target>
+			</trans-unit>
+			<trans-unit id="transitions.followingPages" resname="transitions.followingPages">
+				<source>Internal pages</source>
+				<target>Interne Seiten</target>
+			</trans-unit>
+			<trans-unit id="transitions.followingSearches" resname="transitions.followingSearches">
+				<source>Site search</source>
+				<target>Interne Suche</target>
+			</trans-unit>
+			<trans-unit id="transitions.outlinks" resname="transitions.outlinks">
+				<source>Outlinks</source>
+				<target>Ausgehende Links</target>
+			</trans-unit>
+			<trans-unit id="transitions.downloads" resname="transitions.downloads">
+				<source>Downloads</source>
+				<target>Downloads</target>
+			</trans-unit>
+			<trans-unit id="transitions.exits" resname="transitions.exits">
+				<source>Exits</source>
+				<target>Ausstiege</target>
+			</trans-unit>
+			<trans-unit id="transitions.loops" resname="transitions.loops">
+				<source>Reloads</source>
+				<target>Neu geladen</target>
+			</trans-unit>
+			<trans-unit id="transitions.loops.hint" resname="transitions.loops.hint">
+				<source>Pageviews directly after a pageview of the same page</source>
+				<target>Aufrufe direkt nach einem Aufruf derselben Seite</target>
+			</trans-unit>
+			<trans-unit id="transitions.noData" resname="transitions.noData">
+				<source>Matomo has no pageviews of this page in the period.</source>
+				<target>Matomo hat im Zeitraum keine Aufrufe dieser Seite.</target>
+			</trans-unit>
+			<trans-unit id="transitions.notConfigured" resname="transitions.notConfigured">
+				<source>Matomo is not set up for this site.</source>
+				<target>Matomo ist für diese Site nicht eingerichtet.</target>
+			</trans-unit>
+			<trans-unit id="transitions.hint" resname="transitions.hint">
+				<source>{start} – {end} · Shares refer to the pageviews of the page. Matomo computes transitions from its raw data, they are cached for a day.</source>
+				<target>{start} – {end} · Anteile bezogen auf die Seitenaufrufe. Matomo berechnet die Übergänge aus seinen Rohdaten, sie werden einen Tag zwischengespeichert.</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.queries" resname="pageDetail.queries">
+				<source>Search queries (Google)</source>
+				<target>Suchbegriffe (Google)</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.noQueries" resname="pageDetail.noQueries">
+				<source>This search type has no queries.</source>
+				<target>Dieser Suchtyp kennt keine Suchbegriffe.</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.close" resname="pageDetail.close">
+				<source>Close</source>
+				<target>Schließen</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.hint" resname="pageDetail.hint">
+				<source>Click a page to see its search queries and visitor paths.</source>
+				<target>Klick auf eine Seite zeigt ihre Suchbegriffe und Besucherwege.</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.hint.gsc" resname="pageDetail.hint.gsc">
+				<source>Click a page to see its search queries.</source>
+				<target>Klick auf eine Seite zeigt ihre Suchbegriffe.</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.hint.matomo" resname="pageDetail.hint.matomo">
+				<source>Click a page to see its visitor paths.</source>
+				<target>Klick auf eine Seite zeigt ihre Besucherwege.</target>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

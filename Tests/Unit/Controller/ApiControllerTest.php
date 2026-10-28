@@ -16,6 +16,7 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Matomo\TransitionsService;
 use Derspe\SiteInsights\Service\News\NewsInsightsService;
 use Derspe\SiteInsights\Service\News\NewsRepository;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
@@ -75,6 +76,7 @@ final class ApiControllerTest extends UnitTestCase
             new Sources(new ExtensionConfiguration()),
             self::unused(NewsInsightsService::class),
             new NewsRepository($this->db->connectionPool()),
+            self::unused(TransitionsService::class),
         );
     }
 

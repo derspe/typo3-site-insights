@@ -112,6 +112,14 @@ final class SettingsValidator
         return $changes;
     }
 
+    /**
+     * Absolute http(s) URL or path of a page as the reports contain it (may be unencoded).
+     */
+    public static function isPageUrlOrPath(string $url): bool
+    {
+        return preg_match('#^(https?://[^/\s?\#]+(/|$)|/)#i', $url) === 1 && !preg_match('/\s/', $url);
+    }
+
     public static function isHttpUrl(string $url): bool
     {
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {

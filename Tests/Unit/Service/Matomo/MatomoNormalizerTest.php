@@ -53,10 +53,34 @@ final class MatomoNormalizerTest extends TestCase
     public function topPagesAreMapped(): void
     {
         self::assertSame(
-            [['url' => '/foo', 'pageviews' => 10, 'uniquePageviews' => 7]],
-            MatomoNormalizer::topPages([['label' => '/foo', 'nb_hits' => 10, 'nb_uniq_visitors' => 7]])
+            [['url' => '/foo', 'pageUrl' => 'https://a.example/foo', 'pageviews' => 10, 'uniquePageviews' => 7]],
+            MatomoNormalizer::topPages([['label' => '/foo', 'url' => 'https://a.example/foo', 'nb_hits' => 10, 'nb_uniq_visitors' => 7]])
         );
         self::assertSame([], MatomoNormalizer::topPages(['label' => '/foo']));
+    }
+
+    #[Test]
+    public function transitionsAreSortedAndEmptyRowsDropped(): void
+    {
+        $result = MatomoNormalizer::transitions([
+            'date' => 'Oct 2026',
+            'pageMetrics' => ['loops' => 2, 'pageviews' => 100, 'entries' => 40, 'exits' => 30],
+            'previousPages' => [['label' => 'a.example/x', 'referrals' => 5], ['label' => 'a.example/y', 'referrals' => 9]],
+            'previousSiteSearches' => [],
+            'followingPages' => [['label' => 'a.example/z', 'referrals' => 0], ['label' => 'Others', 'referrals' => 3]],
+            'outlinks' => [['label' => 'https://other.example/', 'referrals' => 1]],
+            'referrers' => [
+                ['label' => 'Direct Entry', 'shortName' => 'direct', 'visits' => 0],
+                ['label' => 'From search engines', 'shortName' => 'search', 'visits' => 40, 'details' => [['label' => 'Google', 'referrals' => 38], ['label' => 'Bing', 'referrals' => 2]]],
+            ],
+        ]);
+
+        self::assertSame([100, 40, 30, 2], [$result['pageviews'], $result['entries'], $result['exits'], $result['loops']]);
+        self::assertSame(['a.example/y', 'a.example/x'], array_column($result['previousPages'], 'label'));
+        self::assertSame([['label' => 'Others', 'count' => 3]], $result['followingPages']);
+        self::assertSame([['label' => 'From search engines', 'count' => 40, 'details' => [['label' => 'Google', 'count' => 38], ['label' => 'Bing', 'count' => 2]]]], $result['referrers']);
+        self::assertSame([], $result['downloads']);
+        self::assertSame(0, MatomoNormalizer::transitions('error')['pageviews']);
     }
 
     #[Test]

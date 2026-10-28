@@ -6,10 +6,11 @@ namespace Derspe\SiteInsights\Service\Matomo;
 
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
+use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\SiteSettings;
 
 /**
- * Matomo endpoints of the backend module: segments, goals and the dashboard.
+ * Matomo endpoints of the backend module: segments, goals, the dashboard and page transitions.
  */
 final readonly class MatomoDashboardService
 {
@@ -21,6 +22,7 @@ final readonly class MatomoDashboardService
         private MatomoClient $client,
         private SiteSettings $settings,
         private ApiCache $cache,
+        private TransitionsService $transitions,
     ) {}
 
     /**
@@ -81,6 +83,35 @@ final readonly class MatomoDashboardService
             [$site, 'matomo', 'dashboard', $period, $date, $segment, $compare, $goalIds, date('Y-m-d')],
             fn(): array => $this->buildDashboard($site, $period, $date, $segment, $compare, $goalIds)
         );
+    }
+
+    /**
+     * Transitions of one page of the dashboard ("start" and "end" as YYYY-MM-DD).
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function transitions(string $site, array $q): array
+    {
+        $url = trim((string)($q['url'] ?? ''));
+        if (!SettingsValidator::isPageUrlOrPath($url)) {
+            throw new ApiException('Parameter "url" must be a URL or a path', 400);
+        }
+        // Search Console ranges may start a few days before the window of custom ranges
+        $start = (string)($q['start'] ?? '');
+        $earliest = $this->today()->modify('-' . self::CUSTOM_MAX_MONTHS . ' months')->format('Y-m-d');
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) === 1 && $start < $earliest && $start >= (new \DateTimeImmutable($earliest))->modify('-14 days')->format('Y-m-d')) {
+            $start = $earliest;
+        }
+        $bounds = self::customRange($start . ',' . (string)($q['end'] ?? ''), $this->today());
+        if ($bounds === null) {
+            throw new ApiException(sprintf('Invalid date range: dates must lie within the last %d months', self::CUSTOM_MAX_MONTHS), 400);
+        }
+        $segment = (string)($q['segment'] ?? '');
+        if ($segment !== '' && !in_array($segment, array_column($this->segments($site), 'definition'), true)) {
+            throw new ApiException('Unknown segment', 400);
+        }
+        return $this->transitions->forUrl($site, $url, $bounds[0]->format('Y-m-d'), $bounds[1]->format('Y-m-d'), $segment);
     }
 
     /**

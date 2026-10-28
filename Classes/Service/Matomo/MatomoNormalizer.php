@@ -63,7 +63,7 @@ final class MatomoNormalizer
     }
 
     /**
-     * @return list<array{url: string, pageviews: int, uniquePageviews: int}>
+     * @return list<array{url: string, pageUrl: string, pageviews: int, uniquePageviews: int}>
      */
     public static function topPages(mixed $data): array
     {
@@ -72,9 +72,63 @@ final class MatomoNormalizer
         }
         return array_map(static fn(array $p): array => [
             'url' => (string)($p['label'] ?? ''),
+            // Absolute URL of the page (flat reports only)
+            'pageUrl' => (string)($p['url'] ?? ''),
             'pageviews' => (int)($p['nb_hits'] ?? 0),
             'uniquePageviews' => (int)($p['nb_uniq_pageviews'] ?? $p['nb_uniq_visitors'] ?? 0),
         ], $data);
+    }
+
+    /**
+     * Transitions.getTransitionsForPageUrl: where visitors came from and where they went next.
+     * Exits are the pageviews without a following page or site search, loops are reloads.
+     *
+     * @return array<string, mixed>
+     */
+    public static function transitions(mixed $data): array
+    {
+        $data = is_array($data) ? $data : [];
+        $metrics = is_array($data['pageMetrics'] ?? null) ? $data['pageMetrics'] : [];
+        $referrers = [];
+        foreach (is_array($data['referrers'] ?? null) ? $data['referrers'] : [] as $row) {
+            if (is_array($row) && (int)($row['visits'] ?? 0) > 0) {
+                $referrers[] = [
+                    'label' => (string)($row['label'] ?? ''),
+                    'count' => (int)$row['visits'],
+                    'details' => self::transitionRows($row['details'] ?? null),
+                ];
+            }
+        }
+        usort($referrers, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+        return [
+            'pageviews' => (int)($metrics['pageviews'] ?? 0),
+            'entries' => (int)($metrics['entries'] ?? 0),
+            'exits' => max(0, (int)($metrics['exits'] ?? 0)),
+            'loops' => (int)($metrics['loops'] ?? 0),
+            'referrers' => $referrers,
+            'previousPages' => self::transitionRows($data['previousPages'] ?? null),
+            'previousSiteSearches' => self::transitionRows($data['previousSiteSearches'] ?? null),
+            'followingPages' => self::transitionRows($data['followingPages'] ?? null),
+            'followingSiteSearches' => self::transitionRows($data['followingSiteSearches'] ?? null),
+            'outlinks' => self::transitionRows($data['outlinks'] ?? null),
+            'downloads' => self::transitionRows($data['downloads'] ?? null),
+        ];
+    }
+
+    /**
+     * @return list<array{label: string, count: int}>
+     */
+    private static function transitionRows(mixed $rows): array
+    {
+        $result = [];
+        foreach (is_array($rows) ? $rows : [] as $row) {
+            $count = is_array($row) ? (int)($row['referrals'] ?? $row['nb_actions'] ?? 0) : 0;
+            if ($count > 0) {
+                $result[] = ['label' => (string)($row['label'] ?? ''), 'count' => $count];
+            }
+        }
+        usort($result, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+        return $result;
     }
 
     /**
