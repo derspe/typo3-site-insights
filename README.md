@@ -34,6 +34,8 @@ service, no long-running processes. It works on ordinary shared hosting.
   Search Console clicks, impressions and average position of the last 28 days,
   compared with the 28 days before; only configured sources are shown
 - Collapsible box with the top 10 search queries of the page
+- Search Console rows are matched by path, not by host, so the figures also appear in
+  development environments with another domain
 - Shown to users with access to the Site Insights module; data is loaded in the
   background and cached (Matomo 1 hour, Search Console 6 hours)
 

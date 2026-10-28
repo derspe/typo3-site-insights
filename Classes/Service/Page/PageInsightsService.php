@@ -150,7 +150,7 @@ final readonly class PageInsightsService
     private function gscMetrics(string $site, string $url): array
     {
         $anchor = $this->gsc->latestDataDate($site);
-        return $this->cache->remember([$site, 'page', 'gsc', 4, $url, $anchor], function () use ($site, $url, $anchor): array {
+        return $this->cache->remember([$site, 'page', 'gsc', 5, $url, $anchor], function () use ($site, $url, $anchor): array {
             $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);
             $compareRange = GscDashboardService::compareRange($anchor, 'range', 'last' . self::DAYS, 'previous');
             $body = static fn(array $dimensions, int $rowLimit, ?array $r = null): array => ($r ?? $range) + [

@@ -220,12 +220,14 @@ final class GscNormalizer
     }
 
     /**
-     * RE2 pattern for the "page" dimension that matches a URL with and without trailing slash.
-     * Search Console reports the canonical URL, TYPO3 may generate the other variant.
+     * RE2 pattern for the "page" dimension that matches the path of a URL with and without
+     * trailing slash on any host. Search Console reports the canonical URL, TYPO3 may generate
+     * the other variant – or another host, e.g. in a development environment.
      */
     public static function pageRegex(string $url): string
     {
-        return '^' . preg_quote(rtrim($url, '/')) . '/?$';
+        $path = (string)(parse_url($url, PHP_URL_PATH) ?? '');
+        return '^https?://[^/]+' . preg_quote(rtrim($path, '/')) . '/?$';
     }
 
     /**
