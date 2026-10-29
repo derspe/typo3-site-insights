@@ -907,10 +907,6 @@
 				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
 				<target>Keine Ziele geladen. URL, Token und Site-ID speichern – danach erscheinen die Ziele hier.</target>
 			</trans-unit>
-			<trans-unit id="page.title" resname="page.title">
-				<source>Page figures</source>
-				<target>Seitenkennzahlen</target>
-			</trans-unit>
 			<trans-unit id="page.entries" resname="page.entries">
 				<source>Entries</source>
 				<target>Einstiege</target>

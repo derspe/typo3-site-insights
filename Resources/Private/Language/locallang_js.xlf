@@ -681,9 +681,6 @@
 			<trans-unit id="matomo.settings.goals.empty" resname="matomo.settings.goals.empty">
 				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
 			</trans-unit>
-			<trans-unit id="page.title" resname="page.title">
-				<source>Page figures</source>
-			</trans-unit>
 			<trans-unit id="page.entries" resname="page.entries">
 				<source>Entries</source>
 			</trans-unit>

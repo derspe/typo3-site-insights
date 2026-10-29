@@ -24,10 +24,6 @@ class SiteInsightsPage extends SiElement {
     ...SiElement.styles,
     css`
       :host { display: block; margin: 0 0 16px; font-size: 13px; }
-      /* Same box as the news figures of a folder */
-      .box { background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); }
-      .head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
-      .body { padding: 0 12px 12px; }
       .grid-tight { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .footer { margin-top: 10px; display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; }
       .footer .range { flex: 1 1 220px; }
@@ -69,17 +65,6 @@ class SiteInsightsPage extends SiElement {
   }
 
   render() {
-    const content = this.content();
-    if (content === nothing) {
-      return nothing;
-    }
-    return html`<div class="box">
-      <div class="head">${icon('chartBar', 16, 'var(--si-primary)')}<span class="fw6">${t('page.title')}</span></div>
-      <div class="body">${content}</div>
-    </div>`;
-  }
-
-  content() {
     if (this.error) {
       return errorState(this.error);
     }
