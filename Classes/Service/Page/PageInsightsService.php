@@ -19,8 +19,8 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 
 /**
  * Key figures of a single page for the page module: Matomo pageviews and entries,
- * Search Console clicks, impressions, top queries and the share of anonymized queries
- * of the last 28 days, each compared with the 28 days before.
+ * Search Console clicks, impressions and average position of the last 28 days, each compared
+ * with the 28 days before. Queries and transitions are loaded by the page details modal.
  *
  * Each source is loaded on its own: an unconfigured source is reported as such, a failing one
  * only returns its error.
@@ -28,9 +28,6 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 final readonly class PageInsightsService
 {
     public const DAYS = 28;
-    public const TOP_QUERIES = 10;
-    // Maximum rows of one Search Analytics request
-    private const ALL_QUERIES = 25000;
     private const MATOMO_LIFETIME = 3600;
     // Search Console only adds data once a day
     private const GSC_LIFETIME = 21600;
@@ -140,7 +137,7 @@ final readonly class PageInsightsService
     private function gscMetrics(string $site, string $url): array
     {
         $anchor = $this->gsc->latestDataDate($site);
-        return $this->cache->remember([$site, 'page', 'gsc', 5, $url, $anchor], function () use ($site, $url, $anchor): array {
+        return $this->cache->remember([$site, 'page', 'gsc', 6, $url, $anchor], function () use ($site, $url, $anchor): array {
             $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);
             $compareRange = GscDashboardService::compareRange($anchor, 'range', 'last' . self::DAYS, 'previous');
             $body = static fn(array $dimensions, int $rowLimit, ?array $r = null): array => ($r ?? $range) + [
@@ -153,13 +150,9 @@ final readonly class PageInsightsService
             ];
             $r = $this->client->searchAnalyticsMany($site, [
                 'kpis' => $body([], 1),
-                'allQueries' => $body(['query'], self::ALL_QUERIES),
                 'compareKpis' => $body([], 1, $compareRange),
             ]);
-            $kpis = GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []);
-            return $kpis + [
-                'queries' => GscNormalizer::topRowsByClicks($r['allQueries']['rows'] ?? [], 'query', self::TOP_QUERIES),
-                'anonymized' => GscNormalizer::anonymizedShare($kpis, $r['allQueries']['rows'] ?? []),
+            return GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []) + [
                 'compare' => GscNormalizer::kpisFromRows($r['compareKpis']['rows'] ?? []),
                 'range' => $range,
                 'compareRange' => $compareRange,

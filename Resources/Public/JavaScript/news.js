@@ -346,7 +346,7 @@ class SiteInsightsNews extends SiElement {
     }
     const gscRange = g.range ?? m.range;
     const matomoRange = m.range ?? g.range;
-    return html`<si-page-detail .site=${this.site} url=${r.url} heading=${r.title} primary=${g.ok ? 'gsc' : 'matomo'}
+    return html`<si-page-detail .site=${this.site} url=${r.url} heading=${r.title}
       start=${gscRange.startDate} end=${gscRange.endDate} matomo-start=${matomoRange.startDate} matomo-end=${matomoRange.endDate}
       ?no-gsc=${!g.ok} ?no-matomo=${!m.ok} @close=${() => { this.detail = null; }}></si-page-detail>`;
   }

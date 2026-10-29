@@ -1,9 +1,9 @@
 /**
- * <derspe-site-insights-page site="…" page="…" language="…">: key figures of one page in the page module.
+ * <derspe-site-insights-page site="…" page="…" language="…">: key figures of one page in the page module,
+ * with a button that opens the page details (visitor paths and search queries).
  */
 import { css, html, nothing } from 'lit';
 import { SiElement, errorState, fmt, icon, loadMeta, skeleton, statCard, t } from '@derspe/site-insights/core.js';
-import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/page-detail.js';
 
 class SiteInsightsPage extends SiElement {
@@ -14,7 +14,7 @@ class SiteInsightsPage extends SiElement {
     gsc: { type: Boolean },
     data: { state: true },
     error: { state: true },
-    transitionsOpen: { state: true },
+    detailOpen: { state: true },
   };
 
   static styles = [
@@ -22,13 +22,7 @@ class SiteInsightsPage extends SiElement {
     css`
       :host { display: block; margin: 0 0 16px; font-size: 13px; }
       .grid-tight { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-      .footer { margin-top: 6px; }
-      details { margin-top: 10px; background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); }
-      summary { cursor: pointer; padding: 8px 12px; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 6px; }
-      summary::-webkit-details-marker { display: none; }
-      summary .chevron { display: inline-flex; transition: transform .15s; }
-      details[open] summary .chevron { transform: rotate(180deg); }
-      .queries, .transitions { padding: 0 12px 10px; }
+      .footer { margin-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     `,
   ];
 
@@ -40,7 +34,7 @@ class SiteInsightsPage extends SiElement {
     this.gsc = false;
     this.data = null;
     this.error = null;
-    this.transitionsOpen = false;
+    this.detailOpen = false;
   }
 
   connectedCallback() {
@@ -79,11 +73,15 @@ class SiteInsightsPage extends SiElement {
     if (cards.length === 0) {
       return nothing;
     }
+    const detail = (m.configured !== false && !m.error) || (g.configured !== false && !g.error);
     return html`
       ${this.grid(cards)}
-      <div class="xs dimmed footer">${this.footer(m, g)}</div>
-      ${g.configured === false || g.error ? nothing : this.queries(g)}
-      ${m.configured === false || m.error ? nothing : this.transitions()}`;
+      <div class="footer">
+        ${detail ? html`<button type="button" class="btn light" @click=${() => { this.detailOpen = true; }}>
+          ${icon('route', 16)}${t('pageDetail.open')}</button>` : nothing}
+        <span class="xs dimmed">${this.footer(m, g)}</span>
+      </div>
+      ${detail && this.detailOpen ? this.detail(m, g) : nothing}`;
   }
 
   grid(cards) {
@@ -125,35 +123,16 @@ class SiteInsightsPage extends SiElement {
   }
 
   /**
-   * Matomo computes transitions from its raw data on every request: only loaded once opened.
+   * Page details of the page in the periods of the key figures; a source with an error is left out.
    */
-  transitions() {
-    return html`<details @toggle=${(e) => { this.transitionsOpen ||= e.target.open; }}>
-      <summary><span class="chevron">${icon('chevronDown', 14)}</span>${t('transitions.title')}</summary>
-      <div class="transitions">
-        ${this.transitionsOpen ? html`<si-transitions .site=${this.site} endpoint="page/transitions"
-          .params=${{ page: this.page, language: this.language }}></si-transitions>` : nothing}
-      </div>
-    </details>`;
-  }
-
-  queries(g) {
-    return html`<details>
-      <summary><span class="chevron">${icon('chevronDown', 14)}</span>${t('page.topQueries', { count: g.queries.length })}</summary>
-      <div class="queries">
-        ${g.queries.length === 0
-          ? html`<div class="xs dimmed">${t('empty.noData')}</div>`
-          : html`<si-table sort-key="clicks" .rows=${g.queries} .columns=${[
-            { key: 'query', label: t('metric.query') },
-            { key: 'clicks', label: t('metric.clicks'), align: 'right', render: (r) => fmt.int(r.clicks) },
-            { key: 'impressions', label: t('metric.impressions'), align: 'right', render: (r) => fmt.int(r.impressions) },
-            { key: 'ctr', label: t('metric.ctr'), align: 'right', render: (r) => fmt.pct(r.ctr) },
-            { key: 'position', label: t('metric.positionShort'), align: 'right', render: (r) => fmt.dec(r.position) },
-          ]}></si-table>`}
-        ${g.anonymized ? html`<div class="xs footer">${t('page.anonymized', { clicks: fmt.int(g.anonymized.clicks), impressions: fmt.int(g.anonymized.impressions) })}</div>` : nothing}
-        <div class="xs dimmed footer">${t('page.anonymizedHint')}</div>
-      </div>
-    </details>`;
+  detail(m, g) {
+    const gscOk = g.configured !== false && !g.error;
+    const matomoOk = m.configured !== false && !m.error;
+    const gscRange = gscOk ? g.range : m.range;
+    const matomoRange = matomoOk ? m.range : g.range;
+    return html`<si-page-detail .site=${this.site} url=${this.data.url}
+      start=${gscRange.startDate} end=${gscRange.endDate} matomo-start=${matomoRange.startDate} matomo-end=${matomoRange.endDate}
+      ?no-gsc=${!gscOk} ?no-matomo=${!matomoOk} @close=${() => { this.detailOpen = false; }}></si-page-detail>`;
   }
 }
 

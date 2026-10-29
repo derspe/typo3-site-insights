@@ -911,17 +911,9 @@
 				<source>Not available</source>
 				<target>Nicht verfügbar</target>
 			</trans-unit>
-			<trans-unit id="page.topQueries" resname="page.topQueries">
-				<source>Top {count} search queries (Google)</source>
-				<target>Top {count} Suchbegriffe (Google)</target>
-			</trans-unit>
 			<trans-unit id="page.anonymized" resname="page.anonymized">
 				<source>Anonymized queries: {clicks} clicks · {impressions} impressions</source>
 				<target>Anonymisierte Suchanfragen: {clicks} Klicks · {impressions} Impressionen</target>
-			</trans-unit>
-			<trans-unit id="page.anonymizedHint" resname="page.anonymizedHint">
-				<source>Google hides rare (anonymized) queries, so the queries add up to fewer clicks than the page total.</source>
-				<target>Google blendet seltene (anonymisierte) Suchanfragen aus – die Suchbegriffe ergeben daher in Summe weniger Klicks als die Seite insgesamt.</target>
 			</trans-unit>
 			<trans-unit id="widget.last28" resname="widget.last28">
 				<source>Last 28 days</source>
@@ -1110,6 +1102,14 @@
 			<trans-unit id="pageDetail.back" resname="pageDetail.back">
 				<source>Back</source>
 				<target>Zurück</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.open" resname="pageDetail.open">
+				<source>Page details</source>
+				<target>Seitendetails</target>
+			</trans-unit>
+			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
+				<source>No meta description</source>
+				<target>Keine Meta-Description hinterlegt</target>
 			</trans-unit>
 			<trans-unit id="transitions.avgTimeOnPage" resname="transitions.avgTimeOnPage">
 				<source>Avg. time on page</source>

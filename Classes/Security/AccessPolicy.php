@@ -36,7 +36,7 @@ final class AccessPolicy
         'gsc/auth/status',
         'job/active',
         'page/insights',
-        'page/transitions',
+        'page/snippet',
         'news/overview',
     ];
 

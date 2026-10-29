@@ -17,10 +17,10 @@ use Derspe\SiteInsights\Service\Gsc\SnapshotService;
 use Derspe\SiteInsights\Service\Gsc\UrlCollector;
 use Derspe\SiteInsights\Service\Job\JobService;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
-use Derspe\SiteInsights\Service\Matomo\TransitionsService;
 use Derspe\SiteInsights\Service\News\NewsInsightsService;
 use Derspe\SiteInsights\Service\News\NewsRepository;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
+use Derspe\SiteInsights\Service\Page\PageSnippetService;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\Sources;
 use Derspe\SiteInsights\Settings\SiteSettings;
@@ -66,7 +66,7 @@ final readonly class ApiController
         private Sources $sources,
         private NewsInsightsService $newsInsights,
         private NewsRepository $news,
-        private TransitionsService $transitions,
+        private PageSnippetService $snippets,
     ) {}
 
     public function handle(ServerRequestInterface $request): ResponseInterface
@@ -154,7 +154,7 @@ final readonly class ApiController
             $endpoint === 'job/step' => $this->stepJob($site, (int)($body['id'] ?? 0)),
 
             $endpoint === 'page/insights' => $this->pageInsights($site, $query, $user),
-            $endpoint === 'page/transitions' => $this->pageTransitions($site, $query, $user),
+            $endpoint === 'page/snippet' => $this->snippets->forUrl($site, (string)($query['url'] ?? '')),
             $endpoint === 'news/overview' => $this->newsInsights->overview(
                 $site,
                 $this->newsFolder($query, $user),
@@ -173,22 +173,6 @@ final readonly class ApiController
     private function pageInsights(string $site, array $query, BackendUserAuthentication $user): array
     {
         return $this->pageInsights->insights($site, $this->pageUrl($site, $query, $user));
-    }
-
-    /**
-     * Matomo transitions of the page in the page module (last 28 days).
-     *
-     * @param array<string, mixed> $query
-     * @return array<string, mixed>
-     */
-    private function pageTransitions(string $site, array $query, BackendUserAuthentication $user): array
-    {
-        $url = $this->pageUrl($site, $query, $user);
-        if (!$this->pageInsights->matomoConfigured($site)) {
-            return ['configured' => false];
-        }
-        [$range] = PageInsightsService::matomoRanges();
-        return $this->transitions->forUrl($site, $url, $range['startDate'], $range['endDate']);
     }
 
     /**

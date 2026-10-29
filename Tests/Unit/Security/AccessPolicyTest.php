@@ -22,9 +22,9 @@ final class AccessPolicyTest extends TestCase
         yield 'matomo dashboard' => ['matomo/dashboard', false, [], AccessPolicy::USER];
         yield 'index pages' => ['gsc/index/pages', false, [], AccessPolicy::USER];
         yield 'auth status' => ['gsc/auth/status', false, [], AccessPolicy::USER];
+        yield 'page snippet' => ['page/snippet', false, [], AccessPolicy::USER];
         yield 'page insights' => ['page/insights', false, [], AccessPolicy::USER];
         yield 'page insights via POST' => ['page/insights', true, [], null];
-        yield 'page transitions' => ['page/transitions', false, [], AccessPolicy::USER];
         yield 'matomo transitions' => ['matomo/transitions', false, [], AccessPolicy::USER];
         yield 'gsc page' => ['gsc/page', false, [], AccessPolicy::USER];
         yield 'news overview' => ['news/overview', false, [], AccessPolicy::USER];

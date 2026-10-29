@@ -684,14 +684,8 @@
 			<trans-unit id="page.unavailable" resname="page.unavailable">
 				<source>Not available</source>
 			</trans-unit>
-			<trans-unit id="page.topQueries" resname="page.topQueries">
-				<source>Top {count} search queries (Google)</source>
-			</trans-unit>
 			<trans-unit id="page.anonymized" resname="page.anonymized">
 				<source>Anonymized queries: {clicks} clicks · {impressions} impressions</source>
-			</trans-unit>
-			<trans-unit id="page.anonymizedHint" resname="page.anonymizedHint">
-				<source>Google hides rare (anonymized) queries, so the queries add up to fewer clicks than the page total.</source>
 			</trans-unit>
 			<trans-unit id="widget.last28" resname="widget.last28">
 				<source>Last 28 days</source>
@@ -833,6 +827,12 @@
 			</trans-unit>
 			<trans-unit id="pageDetail.back" resname="pageDetail.back">
 				<source>Back</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.open" resname="pageDetail.open">
+				<source>Page details</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
+				<source>No meta description</source>
 			</trans-unit>
 			<trans-unit id="transitions.avgTimeOnPage" resname="transitions.avgTimeOnPage">
 				<source>Avg. time on page</source>

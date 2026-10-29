@@ -31,11 +31,17 @@ service, no long-running processes. It works on ordinary shared hosting.
 **Page details**
 
 - A click on a page in the top pages of Search Console or Matomo opens its details for
-  the period of the report as a modal: Search Console figures and top queries, the
-  average time on page and bounce rate from Matomo, and the visitor paths from Matomo
-  Transitions as a flow – entries from outside (search engines, websites,
-  campaigns, direct), previous and following pages, site searches, outlinks, downloads
-  and exits
+  the period of the report as a modal: first the visitor paths from Matomo Transitions
+  as a flow – entries from outside (search engines, websites, campaigns, direct),
+  previous and following pages, site searches, outlinks, downloads and exits – with the
+  average time on page and bounce rate, then the Search Console figures and top queries.
+  The page module and the news folders open the same modal
+- At the top the modal shows title and description of the page:
+  SEO title (or title) and description of the page, or alternative title (or title) and
+  description (or the teaser, cut to 280 characters) of the news record for news detail URLs,
+  with a warning if the description is missing. The URL is resolved with the routing of the site (incl. route
+  enhancers) on the host of the site base, so URLs of the production host work in
+  development environments too
 - Matomo computes transitions from its raw log data on every request, so they are only
   loaded on demand and cached for a day. They need the raw data of the period (see the
   Matomo setting for deleting old raw data); `[Transitions] max_period_allowed` in the
@@ -49,9 +55,8 @@ service, no long-running processes. It works on ordinary shared hosting.
   Search Console clicks, impressions and average position of the last 28 days,
   compared with the 28 days before; only configured sources are shown, each tile
   carries the small mark of its source (Matomo or Google)
-- Collapsible box with the top 10 search queries of the page
-- Collapsible box with the visitor paths of the page (Matomo Transitions, loaded when
-  opened)
+- The button "Page details" opens the page details of the page for the same period
+  (visitor paths, time on page, search queries)
 - Search Console rows are matched by path, not by host, so the figures also appear in
   development environments with another domain
 - Shown to users with access to the Site Insights module; data is loaded in the

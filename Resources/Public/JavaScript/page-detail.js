@@ -2,6 +2,7 @@
  * Details of one page:
  * <si-transitions>: Matomo transitions as a flow – where visitors came from and where they went next.
  * <si-page-queries>: Search Console figures and top queries.
+ * <si-page-snippet>: title, description and URL of the page or news record as the head of the modal.
  * <si-page-detail>: modal of the backend module with both, for a page clicked in a report.
  *
  * The first two load their data themselves from "endpoint" with "params"; a change of either reloads.
@@ -330,13 +331,67 @@ class SiPageQueries extends SiLoading {
 }
 
 // ---------------------------------------------------------------------------
+// Snippet
+// ---------------------------------------------------------------------------
+
+/**
+ * Title and description as entered by the editors; "fallback" is shown as title when the URL
+ * has no record (e.g. a page of another system) or while loading.
+ */
+class SiPageSnippet extends SiLoading {
+  static properties = {
+    ...SiLoading.properties,
+    url: { type: String },
+    fallback: { type: String },
+  };
+
+  static styles = [
+    ...SiElement.styles,
+    css`
+      .snippet { max-width: 600px; padding-top: 2px; }
+      .headline { margin: 0; color: var(--si-text-strong); font-size: 18px; font-weight: 600; line-height: 1.35; letter-spacing: -.005em;
+        text-wrap: balance; overflow-wrap: anywhere; }
+      .desc { margin: 6px 0 0; color: var(--si-text); font-size: 14px; line-height: 1.55; text-wrap: pretty; overflow-wrap: anywhere; }
+      .warn { display: inline-flex; align-items: center; gap: 6px; color: var(--si-orange-6); font-size: 13px; }
+      .url { margin-top: 6px; color: var(--si-dimmed); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+    `,
+  ];
+
+  constructor() {
+    super();
+    this.url = '';
+    this.fallback = '';
+    this.endpoint = 'page/snippet';
+  }
+
+  willUpdate(changed) {
+    if (changed.has('url')) {
+      this.params = { url: this.url };
+    }
+    super.willUpdate(changed);
+  }
+
+  render() {
+    const d = this.data;
+    const loading = !d && !this.error;
+    return html`<div class="snippet">
+      <h2 class="headline">${d?.title || this.fallback || fmt.path(this.url)}</h2>
+      ${loading ? html`<div class="desc">${skeleton(14)}</div>`
+        : d ? html`<p class="desc">${d.description || html`<span class="warn">${icon('alertCircle', 14)}${t('pageDetail.noDescription')}</span>`}</p>`
+        : nothing}
+      <div class="url">${this.url}</div>
+    </div>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Modal
 // ---------------------------------------------------------------------------
 
 /**
- * Modal with the Search Console queries and the Matomo transitions of a page in the period of
- * the report it was opened from. "url" may be an absolute URL or a path; "primary" ("gsc" or
- * "matomo") comes first. "matomo-start"/"matomo-end" give Matomo its own period, "no-gsc" and
+ * Modal with the Matomo transitions and the Search Console queries of a page in the period of
+ * the report it was opened from; Matomo always comes first. "url" may be an absolute URL or a
+ * path. "matomo-start"/"matomo-end" give Matomo its own period, "no-gsc" and
  * "no-matomo" hide a source that is not set up, "heading" replaces the path as title.
  * A click on an internal page in the flow opens that page.
  */
@@ -347,7 +402,6 @@ class SiPageDetail extends SiElement {
     end: { type: String },
     searchType: { type: String, attribute: 'search-type' },
     segment: { type: String },
-    primary: { type: String },
     matomoStart: { type: String, attribute: 'matomo-start' },
     matomoEnd: { type: String, attribute: 'matomo-end' },
     noGsc: { type: Boolean, attribute: 'no-gsc' },
@@ -363,9 +417,9 @@ class SiPageDetail extends SiElement {
         border: 1px solid var(--si-border); border-radius: var(--si-radius); background: var(--si-surface); color: var(--si-text);
         box-shadow: 0 12px 48px rgba(0, 0, 0, .3); }
       dialog::backdrop { background: rgba(0, 0, 0, .45); }
-      .head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+      .head { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px;
         background: var(--si-surface); border-bottom: 1px solid var(--si-border); }
-      .head a { color: var(--si-dimmed); display: inline-flex; }
+      .head a { color: var(--si-dimmed); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
       .body { padding: 16px; }
       section + section { margin-top: 24px; }
       .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; flex-shrink: 0;
@@ -382,7 +436,6 @@ class SiPageDetail extends SiElement {
     this.end = '';
     this.searchType = 'web';
     this.segment = '';
-    this.primary = 'gsc';
     this.matomoStart = '';
     this.matomoEnd = '';
     this.noGsc = false;
@@ -412,24 +465,19 @@ class SiPageDetail extends SiElement {
   render() {
     const sources = getMeta().sources ?? {};
     const sections = [];
+    if (sources.matomo !== false && !this.noMatomo) {
+      sections.push(html`<section>
+        <div class="section-head">${icon('route', 15, 'var(--si-indigo-6)')}${t('transitions.title')}</div>
+        <si-transitions .site=${this.site} endpoint="matomo/transitions" navigable @si-navigate=${(e) => this.open(e.detail.url)}
+          .params=${{ url: this.url, start: this.matomoStart || this.start, end: this.matomoEnd || this.end, segment: this.segment }}></si-transitions>
+      </section>`);
+    }
     if (sources.gsc !== false && !this.noGsc) {
       sections.push(html`<section>
         <div class="section-head">${icon('google', 15, 'var(--si-blue-6)')}${t('pageDetail.queries')}</div>
         <si-page-queries .site=${this.site} endpoint="gsc/page"
           .params=${{ url: this.url, start: this.start, end: this.end, searchType: this.searchType }}></si-page-queries>
       </section>`);
-    }
-    if (sources.matomo !== false && !this.noMatomo) {
-      const transitions = html`<section>
-        <div class="section-head">${icon('route', 15, 'var(--si-indigo-6)')}${t('transitions.title')}</div>
-        <si-transitions .site=${this.site} endpoint="matomo/transitions" navigable @si-navigate=${(e) => this.open(e.detail.url)}
-          .params=${{ url: this.url, start: this.matomoStart || this.start, end: this.matomoEnd || this.end, segment: this.segment }}></si-transitions>
-      </section>`;
-      if (this.primary === 'matomo') {
-        sections.unshift(transitions);
-      } else {
-        sections.push(transitions);
-      }
     }
     const absolute = /^https?:\/\//.test(this.url);
     return html`<dialog aria-label=${this.heading || fmt.path(this.url)}
@@ -438,10 +486,8 @@ class SiPageDetail extends SiElement {
       <div class="head">
         ${this.trail.length ? html`<button type="button" class="icon-btn" title=${t('pageDetail.back')} aria-label=${t('pageDetail.back')}
           @click=${() => this.back()}><span class="back">${icon('chevronDown', 16)}</span></button>` : nothing}
-        <span class="grow" style="min-width:0">
-          <span class="fw7 truncate" style="display:block" title=${this.url}>${this.heading && !this.trail.length ? this.heading : fmt.path(this.url)}</span>
-          ${this.heading && !this.trail.length ? html`<span class="xs dimmed truncate" style="display:block">${fmt.path(this.url)}</span>` : nothing}
-        </span>
+        <si-page-snippet class="grow" style="min-width:0" .site=${this.site} url=${this.url}
+          fallback=${this.heading && !this.trail.length ? this.heading : ''}></si-page-snippet>
         ${absolute ? html`<a href=${this.url} target="_blank" rel="noopener noreferrer" title=${t('news.view')}>${icon('externalLink', 14)}</a>` : nothing}
         <button type="button" class="icon-btn" title=${t('pageDetail.close')} aria-label=${t('pageDetail.close')}
           @click=${() => this.close()}>${icon('x', 16)}</button>
@@ -462,4 +508,5 @@ export function pageDetailHint() {
 
 customElements.define('si-transitions', SiTransitions);
 customElements.define('si-page-queries', SiPageQueries);
+customElements.define('si-page-snippet', SiPageSnippet);
 customElements.define('si-page-detail', SiPageDetail);
