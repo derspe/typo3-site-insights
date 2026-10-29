@@ -20,6 +20,9 @@ final readonly class TransitionsService
     // Rows per list, Matomo groups the rest as "Others"
     public const LIMIT = 10;
     private const LIFETIME = 86400;
+    // Archived reports change with every archiving run
+    private const SERIES_LIFETIME = 3600;
+    public const WEEKLY_FROM = 92;
 
     public function __construct(
         private MatomoClient $client,
@@ -66,6 +69,38 @@ final readonly class TransitionsService
             $result['compareRange'] = $compareRange;
         }
         return $result;
+    }
+
+    /**
+     * Pageviews per day, or per week for periods longer than WEEKLY_FROM days; the compare
+     * series is aligned by position.
+     *
+     * @param array{startDate: string, endDate: string} $range
+     * @param array{startDate: string, endDate: string}|null $compareRange
+     * @return array{period: string, series: list<array{date: string, value: int, compare?: int}>, range: array{startDate: string, endDate: string}, compareRange?: array{startDate: string, endDate: string}}
+     */
+    public function series(string $site, string $url, array $range, string $segment = '', ?array $compareRange = null): array
+    {
+        $url = $this->matomoUrl($site, $url);
+        $days = (int)(new \DateTimeImmutable($range['startDate']))->diff(new \DateTimeImmutable($range['endDate']))->days + 1;
+        $period = $days > self::WEEKLY_FROM ? 'week' : 'day';
+        return $this->cache->remember([$site, 'matomo', 'pageSeries', 1, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange, $period): array {
+            $call = static fn(array $r): array => ['Actions.getPageUrl', [
+                'pageUrl' => $url,
+                'period' => $period,
+                'date' => $r['startDate'] . ',' . $r['endDate'],
+            ] + ($segment !== '' ? ['segment' => $segment] : [])];
+            $results = $this->client->bulk($site, $compareRange !== null ? [$call($range), $call($compareRange)] : [$call($range)]);
+            $series = MatomoNormalizer::pageSeries($results[0]);
+            if ($compareRange !== null) {
+                foreach (MatomoNormalizer::pageSeries($results[1] ?? []) as $i => $point) {
+                    if (isset($series[$i])) {
+                        $series[$i]['compare'] = $point['value'];
+                    }
+                }
+            }
+            return ['period' => $period, 'series' => $series, 'range' => $range] + ($compareRange !== null ? ['compareRange' => $compareRange] : []);
+        }, self::SERIES_LIFETIME);
     }
 
     /**

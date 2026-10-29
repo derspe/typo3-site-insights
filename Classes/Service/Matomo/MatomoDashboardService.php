@@ -94,6 +94,30 @@ final readonly class MatomoDashboardService
      */
     public function transitions(string $site, array $q): array
     {
+        [$url, $range, $segment, $compareRange] = $this->pageQuery($site, $q);
+        return $this->transitions->forUrl($site, $url, $range['startDate'], $range['endDate'], $segment, $compareRange);
+    }
+
+    /**
+     * Pageviews of one page per day (per week for more than 90 days), parameters as for transitions.
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function pageSeries(string $site, array $q): array
+    {
+        [$url, $range, $segment, $compareRange] = $this->pageQuery($site, $q);
+        return $this->transitions->series($site, $url, $range, $segment, $compareRange);
+    }
+
+    /**
+     * Validated URL, range, segment and compare range ("compare=1": the period of the same length before).
+     *
+     * @param array<string, mixed> $q
+     * @return array{string, array{startDate: string, endDate: string}, string, array{startDate: string, endDate: string}|null}
+     */
+    private function pageQuery(string $site, array $q): array
+    {
         $url = trim((string)($q['url'] ?? ''));
         if (!SettingsValidator::isPageUrlOrPath($url)) {
             throw new ApiException('Parameter "url" must be a URL or a path', 400);
@@ -113,9 +137,7 @@ final readonly class MatomoDashboardService
             throw new ApiException('Unknown segment', 400);
         }
         $range = ['startDate' => $bounds[0]->format('Y-m-d'), 'endDate' => $bounds[1]->format('Y-m-d')];
-        // "compare=1": figures of the period of the same length before
-        $compareRange = (string)($q['compare'] ?? '') === '1' ? PreviousRange::of($range) : null;
-        return $this->transitions->forUrl($site, $url, $range['startDate'], $range['endDate'], $segment, $compareRange);
+        return [$url, $range, $segment, (string)($q['compare'] ?? '') === '1' ? PreviousRange::of($range) : null];
     }
 
     /**

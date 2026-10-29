@@ -494,7 +494,7 @@ export function checkbox(label, checked, onChange, size = 'xs') {
 }
 
 // Periods of the page module, the news folders and the page details (PagePeriod in PHP)
-export const PAGE_PERIODS = ['7d', '28d', '90d', '3m', '1y'];
+export const PAGE_PERIODS = ['7d', '28d', '90d', '6m', '1y'];
 const PAGE_PERIOD_KEY = 'derspe-site-insights-page-period';
 
 /**
@@ -538,7 +538,7 @@ export function periodStart(end, period) {
 }
 
 /**
- * Buttons for the period (7, 28, 90 days, 3 months, a year) and a checkbox for the comparison
+ * Buttons for the period (7, 28, 90 days, 6 months, a year) and a checkbox for the comparison
  * with the period before; an empty "period" marks no button (a range given by a report).
  */
 export function periodControls({ period, compare }, onChange) {

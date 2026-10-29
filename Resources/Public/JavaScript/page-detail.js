@@ -2,6 +2,7 @@
  * Details of one page:
  * <si-transitions>: Matomo transitions as a flow – where visitors came from and where they went next.
  * <si-page-queries>: Search Console figures and top queries.
+ * <si-page-views>: Matomo pageviews of the page over time.
  * <si-page-snippet>: title, description and URL of the page or news record as the head of the modal.
  * <si-page-detail>: modal of the backend module with both, for a page clicked in a report.
  *
@@ -10,6 +11,7 @@
 import { css, html, nothing, svg } from 'lit';
 import { SiElement, delta, errorState, fmt, getMeta, icon, periodControls, periodStart, skeleton, t } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/table.js';
+import '@derspe/site-insights/chart.js';
 
 /**
  * While other params load, the data shown so far stays (dimmed), so the modal keeps its height;
@@ -353,6 +355,41 @@ class SiPageQueries extends SiLoading {
 }
 
 // ---------------------------------------------------------------------------
+// Pageviews over time
+// ---------------------------------------------------------------------------
+
+class SiPageViews extends SiLoading {
+  static styles = [
+    ...SiElement.styles,
+    css`
+      :host { display: block; font-size: 12px; transition: opacity .15s; }
+      :host([reloading]) { opacity: .55; }
+    `,
+  ];
+
+  render() {
+    if (this.error) {
+      return softError(this.error);
+    }
+    const d = this.data;
+    if (!d) {
+      return skeleton(200);
+    }
+    if (d.series.length === 0) {
+      return html`<div class="dimmed">${t('empty.noData')}</div>`;
+    }
+    const label = t('matomo.pageviews');
+    const series = [{ key: 'value', label, color: 'indigo' }];
+    if (d.compareRange) {
+      series.push({ key: 'compare', label: `${label} ${t('compare.previousPeriod')}`, color: 'indigo', shade: 3 });
+    }
+    return html`
+      <si-chart type="area" height="200" .data=${d.series} .series=${series} ?legend=${!!d.compareRange} ?dots=${d.series.length <= 31}></si-chart>
+      ${d.period === 'week' ? html`<div class="xs dimmed" style="margin-top:4px">${t('pageDetail.perWeek')}</div>` : nothing}`;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Snippet
 // ---------------------------------------------------------------------------
 
@@ -413,7 +450,7 @@ class SiPageSnippet extends SiLoading {
 /**
  * Modal with the Matomo transitions and the Search Console queries of a page in the period of
  * the report it was opened from; Matomo always comes first. "url" may be an absolute URL or a
- * path. "period" (7d, 28d, 90d, 3m, 1y) selects a period ending with the given end dates, empty
+ * path. "period" (7d, 28d, 90d, 6m, 1y) selects a period ending with the given end dates, empty
  * keeps the given range; "compare" compares the figures with the period before; both can be
  * changed in the modal. "matomo-start"/"matomo-end" give Matomo its own period, "no-gsc" and
  * "no-matomo" hide a source that is not set up, "heading" replaces the path as title.
@@ -521,6 +558,11 @@ class SiPageDetail extends SiElement {
         <si-transitions .site=${this.site} endpoint="matomo/transitions" navigable @si-navigate=${(e) => this.open(e.detail.url)}
           .params=${{ url: this.url, start: ranges.matomo[0], end: ranges.matomo[1], segment: this.segment, compare }}></si-transitions>
       </section>`);
+      sections.push(html`<section>
+        <div class="section-head">${icon('chartLine', 15, 'var(--si-indigo-6)')}${t('pageDetail.pageviews')}</div>
+        <si-page-views .site=${this.site} endpoint="matomo/page-series"
+          .params=${{ url: this.url, start: ranges.matomo[0], end: ranges.matomo[1], segment: this.segment, compare }}></si-page-views>
+      </section>`);
     }
     if (sources.gsc !== false && !this.noGsc) {
       sections.push(html`<section>
@@ -563,5 +605,6 @@ export function pageDetailHint() {
 
 customElements.define('si-transitions', SiTransitions);
 customElements.define('si-page-queries', SiPageQueries);
+customElements.define('si-page-views', SiPageViews);
 customElements.define('si-page-snippet', SiPageSnippet);
 customElements.define('si-page-detail', SiPageDetail);

@@ -158,6 +158,25 @@ final class MatomoNormalizer
     }
 
     /**
+     * Pageviews of one page per period of a multi period Actions.getPageUrl result
+     * ({"2026-10-01": [rows], ...}; weeks are keyed "2026-09-28,2026-10-04").
+     *
+     * @return list<array{date: string, value: int}>
+     */
+    public static function pageSeries(mixed $data): array
+    {
+        $series = [];
+        foreach (is_array($data) && !array_is_list($data) ? $data : [] as $key => $rows) {
+            $value = 0;
+            foreach (is_array($rows) ? $rows : [] as $row) {
+                $value += is_array($row) ? (int)($row['nb_hits'] ?? 0) : 0;
+            }
+            $series[] = ['date' => explode(',', (string)$key)[0], 'value' => $value];
+        }
+        return $series;
+    }
+
+    /**
      * Average time on page, bounce rate, pageviews, entries and exits of one page from the
      * archived page report (Actions.getPageUrl, may return several rows, e.g. with and without
      * trailing slash).

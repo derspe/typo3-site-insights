@@ -1,6 +1,6 @@
 /**
  * <derspe-site-insights-news site="…" folder="…" language="…">: key figures of all news records of a
- * folder in the page and list module for 7, 28 or 90 days, 3 months or a year, optionally compared with
+ * folder in the page and list module for 7, 28 or 90 days, 6 months or a year, optionally compared with
  * the period before.
  * The totals are always visible, the list of records can be expanded; a click on a row opens the
  * details of the record (search queries, visitor paths).

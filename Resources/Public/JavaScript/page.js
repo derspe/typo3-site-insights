@@ -1,6 +1,6 @@
 /**
  * <derspe-site-insights-page site="…" page="…" language="…">: key figures of one page in the page module
- * for 7, 28 or 90 days, 3 months or a year, optionally compared with the period before, with a
+ * for 7, 28 or 90 days, 6 months or a year, optionally compared with the period before, with a
  * button that opens the page details (visitor paths and search queries).
  */
 import { css, html, nothing } from 'lit';

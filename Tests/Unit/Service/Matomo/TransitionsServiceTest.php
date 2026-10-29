@@ -71,6 +71,34 @@ final class TransitionsServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function pageviewsPerDayWithTheComparisonAlignedByPosition(): void
+    {
+        $this->http->queue(
+            FakeHttp::json(['https://alpha.example']),
+            FakeHttp::json([
+                ['2026-10-08' => [['nb_hits' => 4]], '2026-10-09' => []],
+                ['2026-10-06' => [['nb_hits' => 1]], '2026-10-07' => [['nb_hits' => 3]]],
+            ]),
+        );
+
+        $result = $this->service()->series('alpha', '/a', ['startDate' => '2026-10-08', 'endDate' => '2026-10-09'], '', ['startDate' => '2026-10-06', 'endDate' => '2026-10-07']);
+
+        self::assertSame('day', $result['period']);
+        self::assertSame([['date' => '2026-10-08', 'value' => 4, 'compare' => 1], ['date' => '2026-10-09', 'value' => 0, 'compare' => 3]], $result['series']);
+        parse_str($this->http->formFields(1)['urls'][0], $call);
+        self::assertSame(['Actions.getPageUrl', 'https://alpha.example/a', 'day', '2026-10-08,2026-10-09'], [$call['method'], $call['pageUrl'], $call['period'], $call['date']]);
+    }
+
+    #[Test]
+    public function longPeriodsArePerWeek(): void
+    {
+        $this->http->queue(FakeHttp::json(['https://alpha.example']), FakeHttp::json([[]]));
+        $result = $this->service()->series('alpha', '/a', ['startDate' => '2025-10-29', 'endDate' => '2026-10-28']);
+        self::assertSame('week', $result['period']);
+        self::assertArrayNotHasKey('compareRange', $result);
+    }
+
+    #[Test]
     public function unknownHostsAndPathsGetTheMainUrlOfTheMatomoSite(): void
     {
         $this->http->queue(

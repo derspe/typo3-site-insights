@@ -34,9 +34,10 @@ service, no long-running processes. It works on ordinary shared hosting.
   the period of the report as a modal: first the visitor paths from Matomo Transitions
   as a flow – entries from outside (search engines, websites, campaigns, direct),
   previous and following pages, site searches, outlinks, downloads and exits – with the
-  average time on page and bounce rate, then the Search Console figures and top queries.
+  average time on page and bounce rate, then a chart of its pageviews over time (per
+  week for more than 90 days), then the Search Console figures and top queries.
   The page module and the news folders open the same modal
-- Next to the title the period can be changed (7, 28 or 90 days, 3 months, a year, each
+- Next to the title the period can be changed (7, 28 or 90 days, 6 months, a year, each
   ending with the last day of the report) and the figures can be compared with the
   period before: Search Console figures and the time on page, bounce rate, entries and
   exit rate of the Matomo page report show their change. The flow itself has no
@@ -58,7 +59,7 @@ service, no long-running processes. It works on ordinary shared hosting.
 
 - Key figures of the current page above the content: Matomo pageviews and entries,
   Search Console clicks, impressions and average position of the last 7, 28 or 90 days,
-  3 months or a year, optionally compared with the period before; only configured
+  6 months or a year, optionally compared with the period before; only configured
   sources are shown, each tile carries the small mark of its source (Matomo or Google)
 - The chosen period and comparison are remembered per browser and shared with the news
   folders. Search Console keeps 16 months, so a year has no comparison there

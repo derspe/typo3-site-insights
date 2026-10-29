@@ -21,7 +21,7 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 
 /**
  * Key figures of a single page for the page module: Matomo pageviews and entries,
- * Search Console clicks, impressions and average position of the last 7, 28 or 90 days, 3 months or a year,
+ * Search Console clicks, impressions and average position of the last 7, 28 or 90 days, 6 months or a year,
  * optionally compared with the period before. Queries and transitions are loaded by the page
  * details modal.
  *

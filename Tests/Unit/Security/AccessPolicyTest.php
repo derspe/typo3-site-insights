@@ -25,6 +25,7 @@ final class AccessPolicyTest extends TestCase
         yield 'page snippet' => ['page/snippet', false, [], AccessPolicy::USER];
         yield 'page insights' => ['page/insights', false, [], AccessPolicy::USER];
         yield 'page insights via POST' => ['page/insights', true, [], null];
+        yield 'matomo page series' => ['matomo/page-series', false, [], AccessPolicy::USER];
         yield 'matomo transitions' => ['matomo/transitions', false, [], AccessPolicy::USER];
         yield 'gsc page' => ['gsc/page', false, [], AccessPolicy::USER];
         yield 'news overview' => ['news/overview', false, [], AccessPolicy::USER];

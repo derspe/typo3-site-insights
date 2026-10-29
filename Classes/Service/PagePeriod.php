@@ -6,13 +6,13 @@ namespace Derspe\SiteInsights\Service;
 
 /**
  * Periods of the page module, the news folders and the page details: 7, 28 or 90 days,
- * 3 months or a year, each ending with a given day.
+ * 6 months or a year, each ending with a given day.
  */
 final class PagePeriod
 {
-    public const KEYS = ['7d', '28d', '90d', '3m', '1y'];
+    public const KEYS = ['7d', '28d', '90d', '6m', '1y'];
     public const DEFAULT = '28d';
-    private const MODIFIERS = ['7d' => '-7 days', '28d' => '-28 days', '90d' => '-90 days', '3m' => '-3 months', '1y' => '-1 year'];
+    private const MODIFIERS = ['7d' => '-7 days', '28d' => '-28 days', '90d' => '-90 days', '6m' => '-6 months', '1y' => '-1 year'];
 
     /**
      * One of the keys; anything else is the default.

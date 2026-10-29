@@ -60,6 +60,19 @@ final class MatomoNormalizerTest extends TestCase
     }
 
     #[Test]
+    public function pageSeriesSumsTheRowsOfEachPeriod(): void
+    {
+        self::assertSame([
+            ['date' => '2026-09-28', 'value' => 7],
+            ['date' => '2026-10-05', 'value' => 0],
+        ], MatomoNormalizer::pageSeries([
+            '2026-09-28,2026-10-04' => [['nb_hits' => 5], ['nb_hits' => 2]],
+            '2026-10-05,2026-10-11' => [],
+        ]));
+        self::assertSame([], MatomoNormalizer::pageSeries([]));
+    }
+
+    #[Test]
     public function engagementIsWeightedOverAllRowsOfThePage(): void
     {
         self::assertSame(['avgTimeOnPage' => 70, 'bounceRate' => 0.4, 'pageviews' => 40, 'entries' => 10, 'exits' => 7], MatomoNormalizer::pageEngagement([

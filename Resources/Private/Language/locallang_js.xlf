@@ -87,8 +87,8 @@
 			<trans-unit id="preset.90d" resname="preset.90d">
 				<source>90D</source>
 			</trans-unit>
-			<trans-unit id="preset.3m" resname="preset.3m">
-				<source>3M</source>
+			<trans-unit id="preset.6m" resname="preset.6m">
+				<source>6M</source>
 			</trans-unit>
 			<trans-unit id="preset.1y" resname="preset.1y">
 				<source>1Y</source>
@@ -833,6 +833,12 @@
 			</trans-unit>
 			<trans-unit id="pageDetail.open" resname="pageDetail.open">
 				<source>Details</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.pageviews" resname="pageDetail.pageviews">
+				<source>Pageviews (Matomo)</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.perWeek" resname="pageDetail.perWeek">
+				<source>Pageviews per week</source>
 			</trans-unit>
 			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
 				<source>No meta description</source>

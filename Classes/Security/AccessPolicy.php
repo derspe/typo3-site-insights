@@ -23,6 +23,7 @@ final class AccessPolicy
         'matomo/goals',
         'matomo/transitions',
         'matomo/dashboard',
+        'matomo/page-series',
         'gsc/dashboard',
         'gsc/drilldown',
         'gsc/page',
