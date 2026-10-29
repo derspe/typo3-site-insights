@@ -4,7 +4,7 @@
  */
 import { LitElement, css, html, nothing, unsafeCSS } from 'lit';
 import AjaxRequest from '@typo3/core/ajax/ajax-request.js';
-import { icon } from '@derspe/site-insights/icons.js';
+import { brandMark, icon } from '@derspe/site-insights/icons.js';
 
 export { icon };
 
@@ -265,7 +265,10 @@ export const baseStyles = [
     .paper { background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); padding: 16px; min-width: 0; }
     .paper.sm { padding: 10px 12px; }
     .paper.alt { background: var(--si-surface-alt); }
-    .stat { background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); padding: 12px 16px; min-width: 0; }
+    .stat { position: relative; background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); padding: 12px 16px; min-width: 0; }
+    .stat .source { position: absolute; left: 12px; bottom: 9px; line-height: 0; opacity: .7; transition: opacity .15s; }
+    .stat:hover .source { opacity: 1; }
+    .stat.has-source .stat-sub { padding-bottom: 16px; }
     .stat.compact { padding: 10px 12px; min-height: 88px; }
     .stat .label { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--si-dimmed); letter-spacing: .02em; }
     .stat .value { font-size: 20px; font-weight: 700; line-height: 1.3; }
@@ -422,7 +425,7 @@ export function deltaText(text, positive) {
 export function statCard(o) {
   const color = o.color ?? 'blue';
   return html`
-    <div class="stat ${o.compact ? 'compact' : ''} ${o.highlight ? 'highlight' : ''}">
+    <div class="stat ${o.compact ? 'compact' : ''} ${o.highlight ? 'highlight' : ''} ${o.source ? 'has-source' : ''}">
       <div class="group-xs nowrap between" style="margin-bottom:${o.compact ? 2 : 4}px">
         <span class="label truncate" title=${o.title ?? o.label}>${o.label}</span>
         ${o.icon ? icon(o.icon, o.compact ? 14 : 16, `var(--si-${color}-6)`) : nothing}
@@ -432,7 +435,8 @@ export function statCard(o) {
         ${o.compact ? delta(o.raw, o.compare, o.invert) : nothing}
       </div>
       ${o.compact ? nothing : delta(o.raw, o.compare, o.invert)}
-      ${o.sub ?? nothing}
+      ${o.sub ? html`<div class="stat-sub">${o.sub}</div>` : nothing}
+      ${o.source ? html`<span class="source">${brandMark(o.source, o.compact ? 11 : 12)}</span>` : nothing}
     </div>`;
 }
 

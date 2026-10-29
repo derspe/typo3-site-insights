@@ -47,7 +47,8 @@ service, no long-running processes. It works on ordinary shared hosting.
 
 - Key figures of the current page above the content: Matomo pageviews and entries,
   Search Console clicks, impressions and average position of the last 28 days,
-  compared with the 28 days before; only configured sources are shown
+  compared with the 28 days before; only configured sources are shown, each tile
+  carries the small mark of its source (Matomo or Google)
 - Collapsible box with the top 10 search queries of the page
 - Collapsible box with the visitor paths of the page (Matomo Transitions, loaded when
   opened)

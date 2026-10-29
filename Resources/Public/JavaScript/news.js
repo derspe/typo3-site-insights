@@ -170,17 +170,17 @@ class SiteInsightsNews extends SiElement {
     const cards = [];
     if (m.ok) {
       cards.push(
-        statCard({ compact: true, label: t('matomo.pageviews'), value: fmt.int(tm.pageviews), raw: tm.pageviews, compare: tm.compare.pageviews, color: 'indigo', icon: 'eye' }),
-        statCard({ compact: true, label: t('page.entries'), value: fmt.int(tm.entries), raw: tm.entries, compare: tm.compare.entries, color: 'orange', icon: 'targetArrow' }),
+        statCard({ compact: true, label: t('matomo.pageviews'), value: fmt.int(tm.pageviews), raw: tm.pageviews, compare: tm.compare.pageviews, color: 'indigo', icon: 'eye', source: 'matomo' }),
+        statCard({ compact: true, label: t('page.entries'), value: fmt.int(tm.entries), raw: tm.entries, compare: tm.compare.entries, color: 'orange', icon: 'targetArrow', source: 'matomo' }),
       );
     }
     if (g.ok) {
       const position = tg.impressions > 0 ? tg.position : null;
       const compare = tg.compare.impressions > 0 ? tg.compare.position : null;
       cards.push(
-        statCard({ compact: true, label: t('metric.clicks'), value: fmt.int(tg.clicks), raw: tg.clicks, compare: tg.compare.clicks, color: 'green', icon: 'mouse' }),
-        statCard({ compact: true, label: t('metric.impressions'), value: fmt.int(tg.impressions), raw: tg.impressions, compare: tg.compare.impressions, color: 'blue', icon: 'search' }),
-        statCard({ compact: true, label: t('metric.avgPosition'), value: fmt.dec(position), raw: position, compare, invert: true, color: 'teal', icon: 'number' }),
+        statCard({ compact: true, label: t('metric.clicks'), value: fmt.int(tg.clicks), raw: tg.clicks, compare: tg.compare.clicks, color: 'green', icon: 'mouse', source: 'gsc' }),
+        statCard({ compact: true, label: t('metric.impressions'), value: fmt.int(tg.impressions), raw: tg.impressions, compare: tg.compare.impressions, color: 'blue', icon: 'search', source: 'gsc' }),
+        statCard({ compact: true, label: t('metric.avgPosition'), value: fmt.dec(position), raw: position, compare, invert: true, color: 'teal', icon: 'number', source: 'gsc' }),
       );
     }
     return cards.length ? html`<div class="grid-tight">${cards}</div>` : nothing;

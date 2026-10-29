@@ -65,14 +65,14 @@ class SiteInsightsPage extends SiElement {
     const cards = [];
     if (m.configured !== false) {
       cards.push(
-        this.card(m, 'pageviews', t('matomo.pageviews'), 'indigo', 'eye'),
-        this.card(m, 'entries', t('page.entries'), 'orange', 'targetArrow'),
+        this.card(m, 'matomo', 'pageviews', t('matomo.pageviews'), 'indigo', 'eye'),
+        this.card(m, 'matomo', 'entries', t('page.entries'), 'orange', 'targetArrow'),
       );
     }
     if (g.configured !== false) {
       cards.push(
-        this.card(g, 'clicks', t('metric.clicks'), 'green', 'mouse'),
-        this.card(g, 'impressions', t('metric.impressions'), 'blue', 'search'),
+        this.card(g, 'gsc', 'clicks', t('metric.clicks'), 'green', 'mouse'),
+        this.card(g, 'gsc', 'impressions', t('metric.impressions'), 'blue', 'search'),
         this.positionCard(g),
       );
     }
@@ -90,27 +90,27 @@ class SiteInsightsPage extends SiElement {
     return html`<div class="grid-tight">${cards}</div>`;
   }
 
-  unavailable(source, label, iconName) {
-    return statCard({ compact: true, label, value: '–', color: 'gray', icon: iconName,
+  unavailable(source, name, label, iconName) {
+    return statCard({ compact: true, label, value: '–', color: 'gray', icon: iconName, source: name,
       sub: html`<div class="xs dimmed truncate" title=${source.error}>${t('page.unavailable')}</div>` });
   }
 
-  card(source, key, label, color, iconName) {
+  card(source, name, key, label, color, iconName) {
     if (source.error) {
-      return this.unavailable(source, label, iconName);
+      return this.unavailable(source, name, label, iconName);
     }
-    return statCard({ compact: true, label, value: fmt.int(source[key]), raw: source[key], compare: source.compare?.[key], color, icon: iconName });
+    return statCard({ compact: true, label, value: fmt.int(source[key]), raw: source[key], compare: source.compare?.[key], color, icon: iconName, source: name });
   }
 
   positionCard(g) {
     const label = t('metric.avgPosition');
     if (g.error) {
-      return this.unavailable(g, label, 'number');
+      return this.unavailable(g, 'gsc', label, 'number');
     }
     // Without impressions there is no position
     const position = g.impressions > 0 ? g.position : null;
     const compare = g.compare?.impressions > 0 ? g.compare.position : null;
-    return statCard({ compact: true, label, value: fmt.dec(position), raw: position, compare, invert: true, color: 'teal', icon: 'number' });
+    return statCard({ compact: true, label, value: fmt.dec(position), raw: position, compare, invert: true, color: 'teal', icon: 'number', source: 'gsc' });
   }
 
   footer(m, g) {
