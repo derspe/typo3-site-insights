@@ -62,20 +62,6 @@ class NewsRepository
     }
 
     /**
-     * @return array{uid: int, newsUid: int, title: string, datetime: int}|null
-     */
-    public function findOne(int $folder, int $uid): ?array
-    {
-        $row = $this->connectionPool->getConnectionForTable(self::TABLE)
-            ->select(['uid', 'title', 'datetime', 'type', 'sys_language_uid', 'l10n_parent'], self::TABLE, ['uid' => $uid] + $this->where($folder))
-            ->fetchAssociative();
-        if (!is_array($row) || in_array((string)$row['type'], self::LINK_TYPES, true)) {
-            return null;
-        }
-        return self::record($row);
-    }
-
-    /**
      * @return array<string, int>
      */
     private function where(int $folder): array

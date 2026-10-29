@@ -987,10 +987,6 @@
 				<source>No news match the filter.</source>
 				<target>Keine News passen zum Filter.</target>
 			</trans-unit>
-			<trans-unit id="news.queriesHint" resname="news.queriesHint">
-				<source>Click a row to show its search queries.</source>
-				<target>Klick auf eine Zeile zeigt die Suchbegriffe.</target>
-			</trans-unit>
 			<trans-unit id="settings.newsDetailPid" resname="settings.newsDetailPid">
 				<source>News detail page (page ID)</source>
 				<target>News-Detailseite (Seiten-ID)</target>

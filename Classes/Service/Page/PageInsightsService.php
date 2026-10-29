@@ -114,16 +114,6 @@ final readonly class PageInsightsService
     }
 
     /**
-     * Search Console figures and top queries of one URL.
-     *
-     * @return array<string, mixed>
-     */
-    public function gscPage(string $site, string $url): array
-    {
-        return $this->gscMetrics($site, $url);
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function matomoMetrics(string $site, string $url): array

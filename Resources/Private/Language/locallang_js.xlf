@@ -741,9 +741,6 @@
 			<trans-unit id="news.empty" resname="news.empty">
 				<source>No news match the filter.</source>
 			</trans-unit>
-			<trans-unit id="news.queriesHint" resname="news.queriesHint">
-				<source>Click a row to show its search queries.</source>
-			</trans-unit>
 			<trans-unit id="settings.newsDetailPid" resname="settings.newsDetailPid">
 				<source>News detail page (page ID)</source>
 			</trans-unit>

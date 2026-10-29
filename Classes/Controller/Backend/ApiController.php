@@ -161,12 +161,6 @@ final readonly class ApiController
                 max(0, (int)($query['language'] ?? 0)),
                 GeneralUtility::sanitizeLocalUrl((string)($query['returnUrl'] ?? ''))
             ),
-            $endpoint === 'news/queries' => $this->newsInsights->queries(
-                $site,
-                $this->newsFolder($query, $user),
-                (int)($query['uid'] ?? 0),
-                max(0, (int)($query['language'] ?? 0))
-            ),
 
             default => throw new ApiException('Unknown endpoint', 404),
         };

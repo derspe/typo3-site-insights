@@ -63,8 +63,8 @@ service, no long-running processes. It works on ordinary shared hosting.
   impressions and average position of the last 28 days, compared with the 28 days
   before; the totals are always visible, the list of records can be expanded
 - Sort by any figure or by its change against the period before (largest loss first),
-  search by title, filter news without impressions; a click on a row shows its
-  search queries
+  search by title, filter news without impressions; a click on a row opens the page
+  details of the record (search queries, time on page, visitor paths)
 - Set the news detail page per site in the settings; the URLs come from the route
   enhancers of the site. All records of a folder are loaded with one Search Console
   query and one Matomo report per period

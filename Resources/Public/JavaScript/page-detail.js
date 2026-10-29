@@ -336,7 +336,9 @@ class SiPageQueries extends SiLoading {
 /**
  * Modal with the Search Console queries and the Matomo transitions of a page in the period of
  * the report it was opened from. "url" may be an absolute URL or a path; "primary" ("gsc" or
- * "matomo") comes first. A click on an internal page in the flow opens that page.
+ * "matomo") comes first. "matomo-start"/"matomo-end" give Matomo its own period, "no-gsc" and
+ * "no-matomo" hide a source that is not set up, "heading" replaces the path as title.
+ * A click on an internal page in the flow opens that page.
  */
 class SiPageDetail extends SiElement {
   static properties = {
@@ -346,6 +348,11 @@ class SiPageDetail extends SiElement {
     searchType: { type: String, attribute: 'search-type' },
     segment: { type: String },
     primary: { type: String },
+    matomoStart: { type: String, attribute: 'matomo-start' },
+    matomoEnd: { type: String, attribute: 'matomo-end' },
+    noGsc: { type: Boolean, attribute: 'no-gsc' },
+    noMatomo: { type: Boolean, attribute: 'no-matomo' },
+    heading: { type: String },
     trail: { state: true },
   };
 
@@ -376,6 +383,11 @@ class SiPageDetail extends SiElement {
     this.searchType = 'web';
     this.segment = '';
     this.primary = 'gsc';
+    this.matomoStart = '';
+    this.matomoEnd = '';
+    this.noGsc = false;
+    this.noMatomo = false;
+    this.heading = '';
     this.trail = [];
   }
 
@@ -400,18 +412,18 @@ class SiPageDetail extends SiElement {
   render() {
     const sources = getMeta().sources ?? {};
     const sections = [];
-    if (sources.gsc !== false) {
+    if (sources.gsc !== false && !this.noGsc) {
       sections.push(html`<section>
         <div class="section-head">${icon('google', 15, 'var(--si-blue-6)')}${t('pageDetail.queries')}</div>
         <si-page-queries .site=${this.site} endpoint="gsc/page"
           .params=${{ url: this.url, start: this.start, end: this.end, searchType: this.searchType }}></si-page-queries>
       </section>`);
     }
-    if (sources.matomo !== false) {
+    if (sources.matomo !== false && !this.noMatomo) {
       const transitions = html`<section>
         <div class="section-head">${icon('route', 15, 'var(--si-indigo-6)')}${t('transitions.title')}</div>
         <si-transitions .site=${this.site} endpoint="matomo/transitions" navigable @si-navigate=${(e) => this.open(e.detail.url)}
-          .params=${{ url: this.url, start: this.start, end: this.end, segment: this.segment }}></si-transitions>
+          .params=${{ url: this.url, start: this.matomoStart || this.start, end: this.matomoEnd || this.end, segment: this.segment }}></si-transitions>
       </section>`;
       if (this.primary === 'matomo') {
         sections.unshift(transitions);
@@ -420,15 +432,18 @@ class SiPageDetail extends SiElement {
       }
     }
     const absolute = /^https?:\/\//.test(this.url);
-    return html`<dialog aria-label=${fmt.path(this.url)}
+    return html`<dialog aria-label=${this.heading || fmt.path(this.url)}
       @close=${() => this.dispatchEvent(new CustomEvent('close'))}
       @click=${(e) => { if (e.target === e.currentTarget) { this.close(); } }}>
       <div class="head">
         ${this.trail.length ? html`<button type="button" class="icon-btn" title=${t('pageDetail.back')} aria-label=${t('pageDetail.back')}
           @click=${() => this.back()}><span class="back">${icon('chevronDown', 16)}</span></button>` : nothing}
-        <span class="fw7 truncate" title=${this.url}>${fmt.path(this.url)}</span>
+        <span class="grow" style="min-width:0">
+          <span class="fw7 truncate" style="display:block" title=${this.url}>${this.heading && !this.trail.length ? this.heading : fmt.path(this.url)}</span>
+          ${this.heading && !this.trail.length ? html`<span class="xs dimmed truncate" style="display:block">${fmt.path(this.url)}</span>` : nothing}
+        </span>
         ${absolute ? html`<a href=${this.url} target="_blank" rel="noopener noreferrer" title=${t('news.view')}>${icon('externalLink', 14)}</a>` : nothing}
-        <button type="button" class="icon-btn ml-auto" title=${t('pageDetail.close')} aria-label=${t('pageDetail.close')}
+        <button type="button" class="icon-btn" title=${t('pageDetail.close')} aria-label=${t('pageDetail.close')}
           @click=${() => this.close()}>${icon('x', 16)}</button>
       </div>
       <div class="body">${sections}</div>

@@ -1,11 +1,11 @@
 /**
  * <derspe-site-insights-news site="…" folder="…" language="…">: key figures of all news records of a
  * folder in the page and list module. The totals are always visible, the list of records can be
- * expanded; a click on a row shows the search queries of the record.
+ * expanded; a click on a row opens the details of the record (search queries, visitor paths).
  */
 import { css, html, nothing } from 'lit';
 import { SiElement, alertBox, delta, errorState, fmt, icon, loadMeta, segmented, skeleton, statCard, t } from '@derspe/site-insights/core.js';
-import '@derspe/site-insights/table.js';
+import '@derspe/site-insights/page-detail.js';
 
 const STORAGE_KEY = 'derspe-site-insights-news-list';
 const PAGE_SIZE = 25;
@@ -40,8 +40,7 @@ class SiteInsightsNews extends SiElement {
     sortKey: { state: true },
     sortDir: { state: true },
     showAll: { state: true },
-    expanded: { state: true },
-    queries: { state: true },
+    detail: { state: true },
   };
 
   static styles = [
@@ -78,7 +77,6 @@ class SiteInsightsNews extends SiElement {
       .title .text { font-weight: 600; color: var(--si-text-strong); }
       .title a { display: inline-flex; color: var(--si-text); opacity: .6; }
       .title a:hover { opacity: 1; color: var(--si-primary); }
-      td.detail { background: var(--si-surface-alt); padding: 10px 12px; }
       .footer { margin-top: 6px; }
       .more { margin-top: 10px; }
     `,
@@ -98,8 +96,7 @@ class SiteInsightsNews extends SiElement {
     this.sortKey = '';
     this.sortDir = 'desc';
     this.showAll = false;
-    this.expanded = 0;
-    this.queries = {};
+    this.detail = null;
   }
 
   connectedCallback() {
@@ -154,7 +151,8 @@ class SiteInsightsNews extends SiElement {
       </button>
       ${this.open ? html`
         ${this.table(m, g)}
-        ${d.truncated ? html`<div class="xs dimmed footer">${t('news.truncated', { count: d.records.length })}</div>` : nothing}` : nothing}`;
+        ${d.truncated ? html`<div class="xs dimmed footer">${t('news.truncated', { count: d.records.length })}</div>` : nothing}` : nothing}
+      ${this.renderDetail(m, g)}`;
   }
 
   /**
@@ -299,7 +297,7 @@ class SiteInsightsNews extends SiElement {
         ${filters.length > 1 ? segmented(filters.map((f) => ({ ...f, active: f.value === this.filter })), (f) => this.setFilter(f.value)) : nothing}
         <input class="input xs" type="search" placeholder=${t('news.search')} aria-label=${t('news.search')}
           .value=${this.search} @input=${(e) => { this.search = e.target.value; this.showAll = false; }}>
-        ${g.ok ? html`<span class="xs dimmed ml-auto">${t('news.queriesHint')}</span>` : nothing}
+        ${g.ok || m.ok ? html`<span class="xs dimmed ml-auto">${t(!m.ok ? 'pageDetail.hint.gsc' : !g.ok ? 'pageDetail.hint.matomo' : 'pageDetail.hint')}</span>` : nothing}
       </div>
       ${rows.length === 0 ? html`<div class="xs dimmed">${t('news.empty')}</div>` : html`
         <div class="wrap">
@@ -309,18 +307,17 @@ class SiteInsightsNews extends SiElement {
               ${header('date', t('news.column.date'))}
               ${columns.map((c) => header(c.key, c.label, true))}
             </tr></thead>
-            <tbody>${limited.map((r) => this.row(r, columns, g))}</tbody>
+            <tbody>${limited.map((r) => this.row(r, columns, g, m))}</tbody>
           </table>
         </div>
         ${rows.length > PAGE_SIZE ? html`<div class="more"><button type="button" class="btn subtle xs full" @click=${() => { this.showAll = !this.showAll; }}>
           ${this.showAll ? t('table.showLess') : t('table.showAll', { count: rows.length })}</button></div>` : nothing}`}`;
   }
 
-  row(r, columns, g) {
-    const expanded = this.expanded === r.uid;
-    const expandable = g.ok && r.url;
+  row(r, columns, g, m) {
+    const openable = (g.ok || m.ok) && r.url;
     return html`
-      <tr class="${expandable ? 'row' : ''} ${expanded ? 'expanded' : ''}" @click=${() => expandable && this.expand(r)}>
+      <tr class="${openable ? 'row' : ''} ${this.detail?.uid === r.uid ? 'expanded' : ''}" @click=${() => openable && this.openDetail(r)}>
         <td>
           <div class="title">
             <span class="text">${r.title}</span>
@@ -332,42 +329,26 @@ class SiteInsightsNews extends SiElement {
         </td>
         <td style="white-space:nowrap">${r.datetime ? fmt.date(new Date(r.datetime * 1000).toISOString()) : '–'}</td>
         ${columns.map((c) => html`<td class="num">${c.format(c.value(r))}${delta(c.value(r), c.compare(r), c.invert)}</td>`)}
-      </tr>
-      ${expanded ? html`<tr><td class="detail" colspan=${2 + columns.length}>${this.queriesOf(r)}</td></tr>` : nothing}`;
+      </tr>`;
   }
 
-  expand(r) {
-    this.expanded = this.expanded === r.uid ? 0 : r.uid;
-    if (this.expanded && !this.queries[r.uid]) {
-      this.queries = { ...this.queries, [r.uid]: { loading: true } };
-      this.api('news/queries', { params: { folder: this.folder, uid: r.uid, language: this.language } })
-        .then((data) => { this.queries = { ...this.queries, [r.uid]: { data } }; })
-        .catch((error) => { this.queries = { ...this.queries, [r.uid]: { error } }; });
-    }
+  openDetail(r) {
+    this.detail = r;
   }
 
-  queriesOf(r) {
-    const state = this.queries[r.uid];
-    if (!state || state.loading) {
-      return skeleton(80);
+  /**
+   * Modal of the selected record in the periods of the overview.
+   */
+  renderDetail(m, g) {
+    const r = this.detail;
+    if (!r) {
+      return nothing;
     }
-    if (state.error) {
-      return errorState(state.error);
-    }
-    const q = state.data;
-    return html`
-      <div class="fw6 mb-sm">${t('page.topQueries', { count: q.queries.length })}</div>
-      ${q.queries.length === 0
-        ? html`<div class="xs dimmed">${t('empty.noData')}</div>`
-        : html`<si-table sort-key="clicks" .rows=${q.queries} .columns=${[
-          { key: 'query', label: t('metric.query') },
-          { key: 'clicks', label: t('metric.clicks'), align: 'right', render: (x) => fmt.int(x.clicks) },
-          { key: 'impressions', label: t('metric.impressions'), align: 'right', render: (x) => fmt.int(x.impressions) },
-          { key: 'ctr', label: t('metric.ctr'), align: 'right', render: (x) => fmt.pct(x.ctr) },
-          { key: 'position', label: t('metric.positionShort'), align: 'right', render: (x) => fmt.dec(x.position) },
-        ]}></si-table>`}
-      ${q.anonymized ? html`<div class="xs footer">${t('page.anonymized', { clicks: fmt.int(q.anonymized.clicks), impressions: fmt.int(q.anonymized.impressions) })}</div>` : nothing}
-      <div class="xs dimmed footer">${t('page.anonymizedHint')}</div>`;
+    const gscRange = g.range ?? m.range;
+    const matomoRange = m.range ?? g.range;
+    return html`<si-page-detail .site=${this.site} url=${r.url} heading=${r.title} primary=${g.ok ? 'gsc' : 'matomo'}
+      start=${gscRange.startDate} end=${gscRange.endDate} matomo-start=${matomoRange.startDate} matomo-end=${matomoRange.endDate}
+      ?no-gsc=${!g.ok} ?no-matomo=${!m.ok} @close=${() => { this.detail = null; }}></si-page-detail>`;
   }
 
   footer(m, g) {

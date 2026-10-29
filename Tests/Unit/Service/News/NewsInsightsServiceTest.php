@@ -221,31 +221,6 @@ final class NewsInsightsServiceTest extends UnitTestCase
     }
 
     #[Test]
-    public function queriesOfOneRecord(): void
-    {
-        $this->configure(matomo: false);
-        $this->http->queue(
-            FakeHttp::json(['rows' => [['keys' => ['2026-10-19']]]]),
-            FakeHttp::json(['rows' => [['clicks' => 3, 'impressions' => 40]]]),
-            FakeHttp::json(['rows' => [['keys' => ['smart home'], 'clicks' => 3, 'impressions' => 30]]]),
-            FakeHttp::json(['rows' => []]),
-        );
-        $result = $this->service()->queries('alpha', self::FOLDER, 2, 0);
-        self::assertSame(['smart home'], array_column($result['queries'], 'query'));
-        self::assertSame(['clicks' => 0, 'impressions' => 10], $result['anonymized']);
-        $filter = json_decode((string)$this->http->history[1]['request']->getBody(), true)['dimensionFilterGroups'][0]['filters'][0];
-        self::assertStringContainsString('item\\-2', $filter['expression']);
-    }
-
-    #[Test]
-    public function queriesOnlyForRecordsOfTheFolder(): void
-    {
-        $this->configure(matomo: false);
-        $this->expectExceptionCode(404);
-        $this->service()->queries('alpha', self::FOLDER, 4, 0);
-    }
-
-    #[Test]
     public function urlPrefixIsTheCommonDirectory(): void
     {
         self::assertSame('https://a.example/news/detail/', NewsInsightsService::urlPrefix(['https://a.example/news/detail/abc', 'https://a.example/news/detail/abd']));

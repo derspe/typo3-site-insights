@@ -103,26 +103,6 @@ final readonly class NewsInsightsService
     }
 
     /**
-     * Search Console figures and top queries of one record of the folder.
-     *
-     * @return array<string, mixed>
-     */
-    public function queries(string $site, int $folder, int $uid, int $language): array
-    {
-        $siteObject = $this->folderSite($site, $folder);
-        if (!$this->pageInsights->gscConfigured($site)) {
-            return ['configured' => false];
-        }
-        $record = $this->news->findOne($folder, $uid);
-        $detailPid = $this->detailPid($site);
-        $url = $record === null || $detailPid === 0 ? null : $this->urls->detailUrl($siteObject, $detailPid, $record['newsUid'], $language);
-        if ($url === null) {
-            throw new ApiException('No URL for this record', 404);
-        }
-        return $this->pageInsights->gscPage($site, $url);
-    }
-
-    /**
      * Longest common prefix of the URLs up to the last slash, at least scheme and host.
      * null without URLs or if they belong to different hosts.
      *

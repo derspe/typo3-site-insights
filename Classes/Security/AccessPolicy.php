@@ -38,7 +38,6 @@ final class AccessPolicy
         'page/insights',
         'page/transitions',
         'news/overview',
-        'news/queries',
     ];
 
     private const MAINTAINER_POST_ENDPOINTS = [

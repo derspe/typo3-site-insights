@@ -28,7 +28,6 @@ final class AccessPolicyTest extends TestCase
         yield 'matomo transitions' => ['matomo/transitions', false, [], AccessPolicy::USER];
         yield 'gsc page' => ['gsc/page', false, [], AccessPolicy::USER];
         yield 'news overview' => ['news/overview', false, [], AccessPolicy::USER];
-        yield 'news queries' => ['news/queries', false, [], AccessPolicy::USER];
         yield 'news overview via POST' => ['news/overview', true, [], null];
         yield 'job step' => ['job/step', true, [], AccessPolicy::USER];
         // Quota friendly actions: module users
