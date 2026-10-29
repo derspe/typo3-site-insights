@@ -158,16 +158,18 @@ final class MatomoNormalizer
     }
 
     /**
-     * Average time on page and bounce rate of one page (Actions.getPageUrl, may return several
-     * rows, e.g. with and without trailing slash).
+     * Average time on page, bounce rate, pageviews, entries and exits of one page from the
+     * archived page report (Actions.getPageUrl, may return several rows, e.g. with and without
+     * trailing slash).
      *
-     * @return array{avgTimeOnPage: int|null, bounceRate: float|null}
+     * @return array{avgTimeOnPage: int|null, bounceRate: float|null, pageviews: int, entries: int, exits: int}
      */
     public static function pageEngagement(mixed $data): array
     {
         $hits = 0;
         $time = 0.0;
         $entries = 0;
+        $exits = 0;
         $bounces = 0;
         $fallback = null;
         foreach (is_array($data) && array_is_list($data) ? $data : [] as $row) {
@@ -178,13 +180,17 @@ final class MatomoNormalizer
             $hits += $rowHits;
             $time += (float)($row['avg_time_on_page'] ?? 0) * $rowHits;
             $entries += (int)($row['entry_nb_visits'] ?? 0);
+            $exits += (int)($row['exit_nb_visits'] ?? 0);
             $bounces += (int)($row['entry_bounce_count'] ?? 0);
             // Processed metric ("45%") when the raw counts are missing
             $fallback ??= isset($row['bounce_rate']) ? (float)rtrim((string)$row['bounce_rate'], '%') / 100 : null;
         }
         return [
             'avgTimeOnPage' => $hits > 0 ? (int)round($time / $hits) : null,
-            'bounceRate' => $entries > 0 ? $bounces / $entries : $fallback,
+            'bounceRate' => $entries > 0 ? (float)($bounces / $entries) : $fallback,
+            'pageviews' => $hits,
+            'entries' => $entries,
+            'exits' => $exits,
         ];
     }
 

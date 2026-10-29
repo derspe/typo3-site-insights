@@ -10,6 +10,8 @@ services:
       - '../Classes/Http/ApiException.php'
       - '../Classes/Service/Gsc/GscNormalizer.php'
       - '../Classes/Service/Matomo/MatomoNormalizer.php'
+      - '../Classes/Service/PreviousRange.php'
+      - '../Classes/Service/PagePeriod.php'
       - '../Classes/Widgets/InsightsWidget.php'
       - '../Classes/Security/AccessPolicy.php'
       - '../Classes/DependencyInjection/*'

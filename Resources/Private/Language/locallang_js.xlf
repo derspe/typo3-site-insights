@@ -87,6 +87,9 @@
 			<trans-unit id="preset.90d" resname="preset.90d">
 				<source>90D</source>
 			</trans-unit>
+			<trans-unit id="preset.3m" resname="preset.3m">
+				<source>3M</source>
+			</trans-unit>
 			<trans-unit id="preset.1y" resname="preset.1y">
 				<source>1Y</source>
 			</trans-unit>
@@ -678,6 +681,9 @@
 			<trans-unit id="matomo.settings.goals.empty" resname="matomo.settings.goals.empty">
 				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
 			</trans-unit>
+			<trans-unit id="page.title" resname="page.title">
+				<source>Page figures</source>
+			</trans-unit>
 			<trans-unit id="page.entries" resname="page.entries">
 				<source>Entries</source>
 			</trans-unit>
@@ -829,7 +835,7 @@
 				<source>Back</source>
 			</trans-unit>
 			<trans-unit id="pageDetail.open" resname="pageDetail.open">
-				<source>Page details</source>
+				<source>Details</source>
 			</trans-unit>
 			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
 				<source>No meta description</source>

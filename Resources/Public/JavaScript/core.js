@@ -266,6 +266,7 @@ export const baseStyles = [
     .paper.sm { padding: 10px 12px; }
     .paper.alt { background: var(--si-surface-alt); }
     .stat { position: relative; background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); padding: 12px 16px; min-width: 0; }
+    .period-controls { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .stat .source { position: absolute; left: 12px; bottom: 9px; line-height: 0; opacity: .7; transition: opacity .15s; }
     .stat:hover .source { opacity: 1; }
     .stat.has-source .stat-sub { padding-bottom: 16px; }
@@ -490,6 +491,61 @@ export function selectInput(options, value, onChange, { size = 'xs', minWidth = 
 export function checkbox(label, checked, onChange, size = 'xs') {
   return html`<label class="checkbox ${size}"><input type="checkbox" .checked=${checked}
     @change=${(e) => onChange(e.target.checked)}>${label}</label>`;
+}
+
+// Periods of the page module, the news folders and the page details (PagePeriod in PHP)
+export const PAGE_PERIODS = ['7d', '28d', '90d', '3m', '1y'];
+const PAGE_PERIOD_KEY = 'derspe-site-insights-page-period';
+
+/**
+ * Period and comparison last chosen in the page module or a news folder (per browser).
+ */
+export function readPagePeriod() {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(PAGE_PERIOD_KEY) ?? 'null');
+    if (value && PAGE_PERIODS.includes(value.period)) {
+      return { period: value.period, compare: value.compare !== false };
+    }
+  } catch {
+    // storage not available or invalid
+  }
+  return { period: '28d', compare: true };
+}
+
+export function writePagePeriod(value) {
+  try {
+    window.localStorage.setItem(PAGE_PERIOD_KEY, JSON.stringify({ period: value.period, compare: value.compare }));
+  } catch {
+    // storage not available
+  }
+}
+
+/**
+ * The day "YYYY-MM-DD" a period ending with "end" starts on (same as PagePeriod in PHP).
+ */
+export function periodStart(end, period) {
+  const day = new Date(`${end}T00:00:00Z`);
+  const amount = parseInt(period, 10);
+  if (period.endsWith('d')) {
+    day.setUTCDate(day.getUTCDate() - amount);
+  } else if (period.endsWith('m')) {
+    day.setUTCMonth(day.getUTCMonth() - amount);
+  } else {
+    day.setUTCFullYear(day.getUTCFullYear() - amount);
+  }
+  day.setUTCDate(day.getUTCDate() + 1);
+  return day.toISOString().slice(0, 10);
+}
+
+/**
+ * Buttons for the period (7, 28, 90 days, 3 months, a year) and a checkbox for the comparison
+ * with the period before; an empty "period" marks no button (a range given by a report).
+ */
+export function periodControls({ period, compare }, onChange) {
+  return html`<div class="period-controls">
+    ${segmented(PAGE_PERIODS.map((p) => ({ label: t(`preset.${p}`), value: p, active: p === period })), (item) => onChange({ period: item.value, compare }))}
+    ${checkbox(t('compare.enable'), compare, (checked) => onChange({ period, compare: checked }))}
+  </div>`;
 }
 
 export function spinnerButton(label, { loading = false, disabled = false, onClick, variant = '', size = '', iconName = '', color = '' } = {}) {

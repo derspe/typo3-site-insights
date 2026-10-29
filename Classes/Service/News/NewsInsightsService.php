@@ -6,6 +6,7 @@ namespace Derspe\SiteInsights\Service\News;
 
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
+use Derspe\SiteInsights\Service\PagePeriod;
 use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\GscNormalizer;
 use Derspe\SiteInsights\Service\Gsc\SearchConsoleClient;
@@ -47,8 +48,9 @@ final readonly class NewsInsightsService
     /**
      * @return array<string, mixed>
      */
-    public function overview(string $site, int $folder, int $language, string $returnUrl): array
+    public function overview(string $site, int $folder, int $language, string $returnUrl, string $period = PagePeriod::DEFAULT, bool $compare = true): array
     {
+        $period = PagePeriod::normalize($period);
         $siteObject = $this->folderSite($site, $folder);
         $detailPid = $this->detailPid($site);
         if ($detailPid === 0) {
@@ -67,37 +69,41 @@ final readonly class NewsInsightsService
         $matomo = ['configured' => false];
         $gsc = ['configured' => false];
         if ($this->pageInsights->matomoConfigured($site)) {
-            $matomo = $prefix === null ? ['pages' => [], 'compare' => []] : self::guarded(fn(): array => $this->matomoPages($site, $prefix));
+            $matomo = $prefix === null ? ['pages' => [], 'compare' => []] : self::guarded(fn(): array => $this->matomoPages($site, $prefix, $period, $compare));
         }
         if ($this->pageInsights->gscConfigured($site)) {
-            $gsc = $prefix === null ? ['pages' => [], 'compare' => []] : self::guarded(fn(): array => $this->gscPages($site, $prefix));
+            $gsc = $prefix === null ? ['pages' => [], 'compare' => []] : self::guarded(fn(): array => $this->gscPages($site, $prefix, $period, $compare));
         }
 
+        // Search Console may no longer keep the period before (e.g. the year before a year)
+        $gscCompare = $compare && isset($gsc['compareRange']);
         $totals = ['matomo' => self::emptyMatomo(), 'matomoCompare' => self::emptyMatomo(), 'gsc' => self::emptyGsc(), 'gscCompare' => self::emptyGsc()];
         foreach ($records as $i => $record) {
             $key = $record['url'] === null ? null : self::pathKey($record['url']);
             unset($records[$i]['newsUid']);
             if (isset($matomo['pages'])) {
-                $records[$i]['matomo'] = ($matomo['pages'][$key] ?? self::emptyMatomo()) + ['compare' => $matomo['compare'][$key] ?? self::emptyMatomo()];
+                $records[$i]['matomo'] = ($matomo['pages'][$key] ?? self::emptyMatomo()) + ['compare' => $compare ? $matomo['compare'][$key] ?? self::emptyMatomo() : null];
                 $totals['matomo'] = self::sum($totals['matomo'], $records[$i]['matomo']);
-                $totals['matomoCompare'] = self::sum($totals['matomoCompare'], $records[$i]['matomo']['compare']);
+                $totals['matomoCompare'] = self::sum($totals['matomoCompare'], $records[$i]['matomo']['compare'] ?? []);
             }
             if (isset($gsc['pages'])) {
-                $records[$i]['gsc'] = ($gsc['pages'][$key] ?? self::emptyGsc()) + ['compare' => $gsc['compare'][$key] ?? self::emptyGsc()];
+                $records[$i]['gsc'] = ($gsc['pages'][$key] ?? self::emptyGsc()) + ['compare' => $gscCompare ? $gsc['compare'][$key] ?? self::emptyGsc() : null];
                 $totals['gsc'] = self::sum($totals['gsc'], $records[$i]['gsc']);
-                $totals['gscCompare'] = self::sum($totals['gscCompare'], $records[$i]['gsc']['compare']);
+                $totals['gscCompare'] = self::sum($totals['gscCompare'], $records[$i]['gsc']['compare'] ?? []);
             }
         }
         unset($matomo['pages'], $matomo['compare'], $gsc['pages'], $gsc['compare']);
         return [
             'detailPage' => true,
+            'period' => $period,
+            'compare' => $compare,
             'records' => $records,
             'truncated' => $truncated,
             'matomo' => $matomo,
             'gsc' => $gsc,
             'totals' => [
-                'matomo' => $totals['matomo'] + ['compare' => $totals['matomoCompare']],
-                'gsc' => self::withRatios($totals['gsc']) + ['compare' => self::withRatios($totals['gscCompare'])],
+                'matomo' => $totals['matomo'] + ['compare' => $compare ? $totals['matomoCompare'] : null],
+                'gsc' => self::withRatios($totals['gsc']) + ['compare' => $gscCompare ? self::withRatios($totals['gscCompare']) : null],
             ],
         ];
     }
@@ -176,14 +182,15 @@ final readonly class NewsInsightsService
     /**
      * @return array<string, mixed>
      */
-    private function gscPages(string $site, string $prefix): array
+    private function gscPages(string $site, string $prefix, string $period, bool $compare): array
     {
         $anchor = $this->gsc->latestDataDate($site);
         // By path only: the property may cover several hosts (www, development domains)
         $path = (string)(parse_url($prefix, PHP_URL_PATH) ?? '/');
-        return $this->cache->remember([$site, 'news', 'gsc', 1, $path, $anchor], function () use ($site, $path, $anchor): array {
-            $range = GscDashboardService::dateRange($anchor, 'range', 'last' . PageInsightsService::DAYS);
-            $compareRange = GscDashboardService::compareRange($anchor, 'range', 'last' . PageInsightsService::DAYS, 'previous');
+        [$range, $compareRange] = PageInsightsService::gscRanges($anchor, $period);
+        // Without the period before in Search Console, its figures stay empty
+        $fetchCompare = $compare && $compareRange !== null;
+        return $this->cache->remember([$site, 'news', 'gsc', 3, $path, $range, $fetchCompare], function () use ($site, $path, $anchor, $range, $compareRange, $fetchCompare): array {
             $body = static fn(array $r): array => $r + [
                 'dimensions' => ['page'],
                 'type' => 'web',
@@ -192,24 +199,23 @@ final readonly class NewsInsightsService
                 ]]],
                 'rowLimit' => self::GSC_ROWS,
             ];
-            $r = $this->client->searchAnalyticsMany($site, ['main' => $body($range), 'compare' => $body($compareRange)]);
+            $r = $this->client->searchAnalyticsMany($site, ['main' => $body($range)] + ($fetchCompare ? ['compare' => $body($compareRange)] : []));
             return [
                 'pages' => self::gscByPath($r['main']['rows'] ?? []),
                 'compare' => self::gscByPath($r['compare']['rows'] ?? []),
                 'range' => $range,
-                'compareRange' => $compareRange,
                 'dataDate' => $anchor,
-            ];
+            ] + ($fetchCompare ? ['compareRange' => $compareRange] : []);
         }, self::GSC_LIFETIME);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function matomoPages(string $site, string $prefix): array
+    private function matomoPages(string $site, string $prefix, string $period, bool $compare): array
     {
-        [$range, $compareRange] = PageInsightsService::matomoRanges();
-        return $this->cache->remember([$site, 'news', 'matomo', 1, $prefix, $range], function () use ($site, $prefix, $range, $compareRange): array {
+        [$range, $compareRange] = PageInsightsService::matomoRanges($period);
+        return $this->cache->remember([$site, 'news', 'matomo', 2, $prefix, $range, $compare], function () use ($site, $prefix, $range, $compareRange, $compare): array {
             $path = trim((string)(parse_url($prefix, PHP_URL_PATH) ?? ''), '/');
             // Flat labels are paths; Matomo puts the pattern between delimiters itself
             $filter = $path === '' ? [] : ['filter_pattern' => '^/?' . preg_quote($path)];
@@ -219,13 +225,12 @@ final readonly class NewsInsightsService
                 'flat' => 1,
                 'filter_limit' => self::MATOMO_ROWS,
             ] + $filter];
-            [$main, $compare] = $this->matomo->bulk($site, [$call($range), $call($compareRange)]);
+            $results = $this->matomo->bulk($site, $compare ? [$call($range), $call($compareRange)] : [$call($range)]);
             return [
-                'pages' => self::matomoByPath($main),
-                'compare' => self::matomoByPath($compare),
+                'pages' => self::matomoByPath($results[0]),
+                'compare' => self::matomoByPath($results[1] ?? []),
                 'range' => $range,
-                'compareRange' => $compareRange,
-            ];
+            ] + ($compare ? ['compareRange' => $compareRange] : []);
         }, self::MATOMO_LIFETIME);
     }
 

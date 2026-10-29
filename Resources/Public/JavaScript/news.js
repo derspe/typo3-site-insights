@@ -1,10 +1,12 @@
 /**
  * <derspe-site-insights-news site="…" folder="…" language="…">: key figures of all news records of a
- * folder in the page and list module. The totals are always visible, the list of records can be
- * expanded; a click on a row opens the details of the record (search queries, visitor paths).
+ * folder in the page and list module for 7, 28 or 90 days, 3 months or a year, optionally compared with
+ * the period before.
+ * The totals are always visible, the list of records can be expanded; a click on a row opens the
+ * details of the record (search queries, visitor paths).
  */
 import { css, html, nothing } from 'lit';
-import { SiElement, alertBox, delta, errorState, fmt, icon, loadMeta, segmented, skeleton, statCard, t } from '@derspe/site-insights/core.js';
+import { SiElement, alertBox, delta, errorState, fmt, icon, loadMeta, periodControls, readPagePeriod, segmented, skeleton, statCard, t, writePagePeriod } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/page-detail.js';
 
 const STORAGE_KEY = 'derspe-site-insights-news-list';
@@ -41,6 +43,8 @@ class SiteInsightsNews extends SiElement {
     sortDir: { state: true },
     showAll: { state: true },
     detail: { state: true },
+    period: { state: true },
+    loading: { state: true },
   };
 
   static styles = [
@@ -78,6 +82,9 @@ class SiteInsightsNews extends SiElement {
       .title a { display: inline-flex; color: var(--si-text); opacity: .6; }
       .title a:hover { opacity: 1; color: var(--si-primary); }
       .footer { margin-top: 6px; }
+      .period { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; margin-top: 10px; }
+      .period .range { flex: 1 1 220px; }
+      .reloading { opacity: .55; transition: opacity .15s; }
       .more { margin-top: 10px; }
     `,
   ];
@@ -97,17 +104,36 @@ class SiteInsightsNews extends SiElement {
     this.sortDir = 'desc';
     this.showAll = false;
     this.detail = null;
+    this.period = readPagePeriod();
+    this.loading = false;
   }
 
   connectedCallback() {
     super.connectedCallback();
-    loadMeta()
-      .then(() => this.api('news/overview', { params: { folder: this.folder, language: this.language, returnUrl: window.location.href } }))
+    loadMeta().then(() => this.load()).catch((e) => { this.error = e; });
+  }
+
+  load() {
+    const period = this.period;
+    this.loading = true;
+    const params = { folder: this.folder, language: this.language, returnUrl: window.location.href, period: period.period, compare: period.compare ? '1' : '0' };
+    return this.api('news/overview', { params })
       .then((data) => {
+        if (period !== this.period) {
+          return;
+        }
+        this.sortKey ||= data.gsc?.configured === false ? 'pageviews' : 'clicks';
         this.data = data;
-        this.sortKey = data.gsc?.configured === false ? 'pageviews' : 'clicks';
+        this.error = null;
       })
-      .catch((e) => { this.error = e; });
+      .catch((e) => { if (period === this.period) { this.error = e; } })
+      .finally(() => { if (period === this.period) { this.loading = false; } });
+  }
+
+  setPeriod(period) {
+    this.period = period;
+    writePagePeriod(period);
+    this.load();
   }
 
   toggle() {
@@ -121,7 +147,7 @@ class SiteInsightsNews extends SiElement {
       <div class="head">
         ${icon('chartBar', 16, 'var(--si-primary)')}
         <span class="fw6">${t('news.title')}</span>
-        ${count != null ? html`<span class="xs dimmed">${t('news.count', { count })} · ${t('widget.last28')}</span>` : nothing}
+        ${count != null ? html`<span class="xs dimmed">${t('news.count', { count })}</span>` : nothing}
       </div>
       <div class="body">${this.content()}</div>
     </div>`;
@@ -144,8 +170,11 @@ class SiteInsightsNews extends SiElement {
     return html`
       ${m.error ? html`<div class="mb-sm">${alertBox(`Matomo: ${m.error}`)}</div>` : nothing}
       ${g.error ? html`<div class="mb-sm">${alertBox(`Search Console: ${g.error}`)}</div>` : nothing}
-      ${this.totals(m, g)}
-      <div class="xs dimmed footer">${this.footer(m, g)}</div>
+      <div class=${this.loading ? 'reloading' : ''}>${this.totals(m, g)}</div>
+      <div class="period">
+        ${periodControls(this.period, (period) => this.setPeriod(period))}
+        <span class="xs dimmed range">${this.footer(m, g)}</span>
+      </div>
       <button type="button" class="list-toggle ${this.open ? 'open' : ''}" aria-expanded=${this.open ? 'true' : 'false'} @click=${() => this.toggle()}>
         <span class="chevron">${icon('chevronDown', 14)}</span>${t('news.list', { count: d.records.length })}
       </button>
@@ -170,16 +199,16 @@ class SiteInsightsNews extends SiElement {
     const cards = [];
     if (m.ok) {
       cards.push(
-        statCard({ compact: true, label: t('matomo.pageviews'), value: fmt.int(tm.pageviews), raw: tm.pageviews, compare: tm.compare.pageviews, color: 'indigo', icon: 'eye', source: 'matomo' }),
-        statCard({ compact: true, label: t('page.entries'), value: fmt.int(tm.entries), raw: tm.entries, compare: tm.compare.entries, color: 'orange', icon: 'targetArrow', source: 'matomo' }),
+        statCard({ compact: true, label: t('matomo.pageviews'), value: fmt.int(tm.pageviews), raw: tm.pageviews, compare: tm.compare?.pageviews, color: 'indigo', icon: 'eye', source: 'matomo' }),
+        statCard({ compact: true, label: t('page.entries'), value: fmt.int(tm.entries), raw: tm.entries, compare: tm.compare?.entries, color: 'orange', icon: 'targetArrow', source: 'matomo' }),
       );
     }
     if (g.ok) {
       const position = tg.impressions > 0 ? tg.position : null;
-      const compare = tg.compare.impressions > 0 ? tg.compare.position : null;
+      const compare = tg.compare?.impressions > 0 ? tg.compare.position : null;
       cards.push(
-        statCard({ compact: true, label: t('metric.clicks'), value: fmt.int(tg.clicks), raw: tg.clicks, compare: tg.compare.clicks, color: 'green', icon: 'mouse', source: 'gsc' }),
-        statCard({ compact: true, label: t('metric.impressions'), value: fmt.int(tg.impressions), raw: tg.impressions, compare: tg.compare.impressions, color: 'blue', icon: 'search', source: 'gsc' }),
+        statCard({ compact: true, label: t('metric.clicks'), value: fmt.int(tg.clicks), raw: tg.clicks, compare: tg.compare?.clicks, color: 'green', icon: 'mouse', source: 'gsc' }),
+        statCard({ compact: true, label: t('metric.impressions'), value: fmt.int(tg.impressions), raw: tg.impressions, compare: tg.compare?.impressions, color: 'blue', icon: 'search', source: 'gsc' }),
         statCard({ compact: true, label: t('metric.avgPosition'), value: fmt.dec(position), raw: position, compare, invert: true, color: 'teal', icon: 'number', source: 'gsc' }),
       );
     }
@@ -193,20 +222,20 @@ class SiteInsightsNews extends SiElement {
     const columns = [];
     if (m.ok) {
       columns.push(
-        { key: 'pageviews', label: t('matomo.pageviews'), value: (r) => r.matomo.pageviews, compare: (r) => r.matomo.compare.pageviews, format: fmt.int },
-        { key: 'entries', label: t('page.entries'), value: (r) => r.matomo.entries, compare: (r) => r.matomo.compare.entries, format: fmt.int },
+        { key: 'pageviews', label: t('matomo.pageviews'), value: (r) => r.matomo.pageviews, compare: (r) => r.matomo.compare?.pageviews, format: fmt.int },
+        { key: 'entries', label: t('page.entries'), value: (r) => r.matomo.entries, compare: (r) => r.matomo.compare?.entries, format: fmt.int },
       );
     }
     if (g.ok) {
       columns.push(
-        { key: 'clicks', label: t('metric.clicks'), value: (r) => r.gsc.clicks, compare: (r) => r.gsc.compare.clicks, format: fmt.int },
-        { key: 'impressions', label: t('metric.impressions'), value: (r) => r.gsc.impressions, compare: (r) => r.gsc.compare.impressions, format: fmt.int },
+        { key: 'clicks', label: t('metric.clicks'), value: (r) => r.gsc.clicks, compare: (r) => r.gsc.compare?.clicks, format: fmt.int },
+        { key: 'impressions', label: t('metric.impressions'), value: (r) => r.gsc.impressions, compare: (r) => r.gsc.compare?.impressions, format: fmt.int },
         {
           key: 'position',
           label: t('metric.positionShort'),
           // Without impressions there is no position
           value: (r) => (r.gsc.impressions > 0 ? r.gsc.position : null),
-          compare: (r) => (r.gsc.compare.impressions > 0 ? r.gsc.compare.position : null),
+          compare: (r) => (r.gsc.compare?.impressions > 0 ? r.gsc.compare.position : null),
           format: (v) => fmt.dec(v),
           invert: true,
         },
@@ -249,7 +278,7 @@ class SiteInsightsNews extends SiElement {
     if (!column) {
       return rows;
     }
-    const value = mode === 'change' ? (r) => SiteInsightsNews.change(column, r) : column.value;
+    const value = mode === 'change' && this.data.compare ? (r) => SiteInsightsNews.change(column, r) : column.value;
     // Records without a value are always last
     return [...rows].sort((a, b) => {
       const av = value(a);
@@ -290,7 +319,7 @@ class SiteInsightsNews extends SiElement {
       @click=${() => this.sortBy(key)}>${content}${sortIcon(key)}</span>`;
     const header = (key, label, right = false) => html`<th class=${right ? 'right' : ''}>
       ${target(key, label)}
-      ${right ? target(`${key}:change`, 'Δ', t('news.sortByChange')) : nothing}
+      ${right && this.data.compare ? target(`${key}:change`, 'Δ', t('news.sortByChange')) : nothing}
     </th>`;
     return html`
       <div class="toolbar">
@@ -348,11 +377,13 @@ class SiteInsightsNews extends SiElement {
     const matomoRange = m.range ?? g.range;
     return html`<si-page-detail .site=${this.site} url=${r.url} heading=${r.title}
       start=${gscRange.startDate} end=${gscRange.endDate} matomo-start=${matomoRange.startDate} matomo-end=${matomoRange.endDate}
+      period=${this.data.period} ?compare=${this.data.compare}
       ?no-gsc=${!g.ok} ?no-matomo=${!m.ok} @close=${() => { this.detail = null; }}></si-page-detail>`;
   }
 
   footer(m, g) {
-    const parts = [t('widget.last28'), t('widget.vsPrevious')];
+    // The same text with and without comparison, so it does not wrap differently
+    const parts = [];
     if (m.ok && m.range) {
       parts.push(`Matomo ${fmt.date(m.range.startDate)} – ${fmt.date(m.range.endDate)}`);
     }

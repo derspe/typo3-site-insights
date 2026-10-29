@@ -1,9 +1,10 @@
 /**
- * <derspe-site-insights-page site="…" page="…" language="…">: key figures of one page in the page module,
- * with a button that opens the page details (visitor paths and search queries).
+ * <derspe-site-insights-page site="…" page="…" language="…">: key figures of one page in the page module
+ * for 7, 28 or 90 days, 3 months or a year, optionally compared with the period before, with a
+ * button that opens the page details (visitor paths and search queries).
  */
 import { css, html, nothing } from 'lit';
-import { SiElement, errorState, fmt, icon, loadMeta, skeleton, statCard, t } from '@derspe/site-insights/core.js';
+import { SiElement, errorState, fmt, icon, loadMeta, periodControls, readPagePeriod, skeleton, statCard, t, writePagePeriod } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/page-detail.js';
 
 class SiteInsightsPage extends SiElement {
@@ -15,14 +16,22 @@ class SiteInsightsPage extends SiElement {
     data: { state: true },
     error: { state: true },
     detailOpen: { state: true },
+    period: { state: true },
+    loading: { state: true },
   };
 
   static styles = [
     ...SiElement.styles,
     css`
       :host { display: block; margin: 0 0 16px; font-size: 13px; }
+      /* Same box as the news figures of a folder */
+      .box { background: var(--si-surface); border: 1px solid var(--si-border); border-radius: var(--si-radius); }
+      .head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
+      .body { padding: 0 12px 12px; }
       .grid-tight { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-      .footer { margin-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+      .footer { margin-top: 10px; display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; }
+      .footer .range { flex: 1 1 220px; }
+      .reloading { opacity: .55; transition: opacity .15s; }
     `,
   ];
 
@@ -35,17 +44,42 @@ class SiteInsightsPage extends SiElement {
     this.data = null;
     this.error = null;
     this.detailOpen = false;
+    this.period = readPagePeriod();
+    this.loading = false;
   }
 
   connectedCallback() {
     super.connectedCallback();
-    loadMeta()
-      .then(() => this.api('page/insights', { params: { page: this.page, language: this.language } }))
-      .then((data) => { this.data = data; })
-      .catch((e) => { this.error = e; });
+    loadMeta().then(() => this.load()).catch((e) => { this.error = e; });
+  }
+
+  load() {
+    const period = this.period;
+    this.loading = true;
+    return this.api('page/insights', { params: { page: this.page, language: this.language, period: period.period, compare: period.compare ? '1' : '0' } })
+      .then((data) => { if (period === this.period) { this.data = data; this.error = null; } })
+      .catch((e) => { if (period === this.period) { this.error = e; } })
+      .finally(() => { if (period === this.period) { this.loading = false; } });
+  }
+
+  setPeriod(period) {
+    this.period = period;
+    writePagePeriod(period);
+    this.load();
   }
 
   render() {
+    const content = this.content();
+    if (content === nothing) {
+      return nothing;
+    }
+    return html`<div class="box">
+      <div class="head">${icon('chartBar', 16, 'var(--si-primary)')}<span class="fw6">${t('page.title')}</span></div>
+      <div class="body">${content}</div>
+    </div>`;
+  }
+
+  content() {
     if (this.error) {
       return errorState(this.error);
     }
@@ -75,11 +109,12 @@ class SiteInsightsPage extends SiElement {
     }
     const detail = (m.configured !== false && !m.error) || (g.configured !== false && !g.error);
     return html`
-      ${this.grid(cards)}
+      <div class=${this.loading ? 'reloading' : ''}>${this.grid(cards)}</div>
       <div class="footer">
         ${detail ? html`<button type="button" class="btn light" @click=${() => { this.detailOpen = true; }}>
           ${icon('route', 16)}${t('pageDetail.open')}</button>` : nothing}
-        <span class="xs dimmed">${this.footer(m, g)}</span>
+        ${periodControls(this.period, (period) => this.setPeriod(period))}
+        <span class="xs dimmed range">${this.footer(m, g)}</span>
       </div>
       ${detail && this.detailOpen ? this.detail(m, g) : nothing}`;
   }
@@ -112,7 +147,8 @@ class SiteInsightsPage extends SiElement {
   }
 
   footer(m, g) {
-    const parts = [t('widget.last28'), t('widget.vsPrevious')];
+    // The same text with and without comparison, so it does not wrap differently
+    const parts = [];
     if (m.configured !== false && !m.error) {
       parts.push(`Matomo ${fmt.date(m.range.startDate)} – ${fmt.date(m.range.endDate)}`);
     }
@@ -132,6 +168,7 @@ class SiteInsightsPage extends SiElement {
     const matomoRange = matomoOk ? m.range : g.range;
     return html`<si-page-detail .site=${this.site} url=${this.data.url}
       start=${gscRange.startDate} end=${gscRange.endDate} matomo-start=${matomoRange.startDate} matomo-end=${matomoRange.endDate}
+      period=${this.data.period} ?compare=${this.data.compare}
       ?no-gsc=${!gscOk} ?no-matomo=${!matomoOk} @close=${() => { this.detailOpen = false; }}></si-page-detail>`;
   }
 }

@@ -115,6 +115,10 @@
 				<source>90D</source>
 				<target>90T</target>
 			</trans-unit>
+			<trans-unit id="preset.3m" resname="preset.3m">
+				<source>3M</source>
+				<target>3M</target>
+			</trans-unit>
 			<trans-unit id="preset.1y" resname="preset.1y">
 				<source>1Y</source>
 				<target>1J</target>
@@ -903,6 +907,10 @@
 				<source>No goals loaded. Save URL, token and site ID – the goals appear here afterwards.</source>
 				<target>Keine Ziele geladen. URL, Token und Site-ID speichern – danach erscheinen die Ziele hier.</target>
 			</trans-unit>
+			<trans-unit id="page.title" resname="page.title">
+				<source>Page figures</source>
+				<target>Seitenkennzahlen</target>
+			</trans-unit>
 			<trans-unit id="page.entries" resname="page.entries">
 				<source>Entries</source>
 				<target>Einstiege</target>
@@ -1104,8 +1112,8 @@
 				<target>Zurück</target>
 			</trans-unit>
 			<trans-unit id="pageDetail.open" resname="pageDetail.open">
-				<source>Page details</source>
-				<target>Seitendetails</target>
+				<source>Details</source>
+				<target>Details</target>
 			</trans-unit>
 			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
 				<source>No meta description</source>

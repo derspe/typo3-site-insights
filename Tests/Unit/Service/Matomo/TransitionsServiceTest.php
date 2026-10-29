@@ -54,6 +54,23 @@ final class TransitionsServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function theFiguresOfThePageReportCanBeCompared(): void
+    {
+        $this->http->queue(
+            FakeHttp::json(['https://alpha.example']),
+            FakeHttp::json(['pageMetrics' => ['pageviews' => 10, 'entries' => 4, 'exits' => 3, 'loops' => 0]]),
+            FakeHttp::json([['nb_hits' => 12, 'avg_time_on_page' => 60, 'entry_nb_visits' => 4, 'entry_bounce_count' => 2, 'exit_nb_visits' => 3]]),
+            FakeHttp::json([['nb_hits' => 8, 'avg_time_on_page' => 40, 'entry_nb_visits' => 2, 'entry_bounce_count' => 2, 'exit_nb_visits' => 1]]),
+        );
+
+        $result = $this->service()->forUrl('alpha', 'https://alpha.example/a', '2026-10-08', '2026-10-14', '', ['startDate' => '2026-10-01', 'endDate' => '2026-10-07']);
+
+        self::assertSame(12, $result['engagement']['pageviews']);
+        self::assertSame(['avgTimeOnPage' => 40, 'bounceRate' => 1.0, 'pageviews' => 8, 'entries' => 2, 'exits' => 1], $result['compare']);
+        self::assertSame(['Actions.getPageUrl', 'range', '2026-10-01,2026-10-07'], [$this->http->formFields(3)['method'], $this->http->formFields(3)['period'], $this->http->formFields(3)['date']]);
+    }
+
+    #[Test]
     public function unknownHostsAndPathsGetTheMainUrlOfTheMatomoSite(): void
     {
         $this->http->queue(

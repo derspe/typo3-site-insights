@@ -21,6 +21,7 @@ use Derspe\SiteInsights\Service\News\NewsInsightsService;
 use Derspe\SiteInsights\Service\News\NewsRepository;
 use Derspe\SiteInsights\Service\Page\PageInsightsService;
 use Derspe\SiteInsights\Service\Page\PageSnippetService;
+use Derspe\SiteInsights\Service\PagePeriod;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\Sources;
 use Derspe\SiteInsights\Settings\SiteSettings;
@@ -159,7 +160,9 @@ final readonly class ApiController
                 $site,
                 $this->newsFolder($query, $user),
                 max(0, (int)($query['language'] ?? 0)),
-                GeneralUtility::sanitizeLocalUrl((string)($query['returnUrl'] ?? ''))
+                GeneralUtility::sanitizeLocalUrl((string)($query['returnUrl'] ?? '')),
+                PagePeriod::normalize($query['period'] ?? null),
+                self::compareFlag($query)
             ),
 
             default => throw new ApiException('Unknown endpoint', 404),
@@ -172,7 +175,17 @@ final readonly class ApiController
      */
     private function pageInsights(string $site, array $query, BackendUserAuthentication $user): array
     {
-        return $this->pageInsights->insights($site, $this->pageUrl($site, $query, $user));
+        return $this->pageInsights->insights($site, $this->pageUrl($site, $query, $user), PagePeriod::normalize($query['period'] ?? null), self::compareFlag($query));
+    }
+
+    /**
+     * Comparison with the period before, on unless "compare" is "0".
+     *
+     * @param array<string, mixed> $query
+     */
+    private static function compareFlag(array $query): bool
+    {
+        return (string)($query['compare'] ?? '1') !== '0';
     }
 
     /**

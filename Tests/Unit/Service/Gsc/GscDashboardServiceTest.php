@@ -83,6 +83,32 @@ final class GscDashboardServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function pageFiguresCanBeComparedWithThePeriodBefore(): void
+    {
+        $http = new FakeHttp($this);
+        $settings = $this->settings();
+        $settings->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
+        $account = $this->createMock(GoogleServiceAccount::class);
+        $account->method('accessToken')->willReturn('token');
+        $client = new SearchConsoleClient($account, $settings, $http->factory());
+        $service = new GscDashboardService($client, $settings, $this->cache(), new SnapshotRepository($this->db->connectionPool()), new MatomoClient($settings, $http->factory()), new Sources(new ExtensionConfiguration()));
+        $http->queue(
+            FakeHttp::json(['rows' => [['clicks' => 12, 'impressions' => 300, 'position' => 4.2]]]),
+            FakeHttp::json(['rows' => []]),
+            FakeHttp::json(['rows' => [['clicks' => 8, 'impressions' => 200, 'position' => 5.0]]]),
+        );
+        $end = (new \DateTimeImmutable('today', new \DateTimeZone('UTC')))->modify('-3 days');
+        $start = $end->modify('-6 days');
+
+        $result = $service->page('alpha', ['url' => '/news/a', 'start' => $start->format('Y-m-d'), 'end' => $end->format('Y-m-d'), 'compare' => '1']);
+
+        self::assertSame(8, $result['compare']['clicks']);
+        self::assertSame(['startDate' => $start->modify('-7 days')->format('Y-m-d'), 'endDate' => $start->modify('-1 day')->format('Y-m-d')], $result['compareRange']);
+        $body = json_decode((string)$http->history[2]['request']->getBody(), true);
+        self::assertSame($result['compareRange'], ['startDate' => $body['startDate'], 'endDate' => $body['endDate']]);
+    }
+
+    #[Test]
     public function explicitRangesStayInsideTheDataOfSearchConsole(): void
     {
         $today = new \DateTimeImmutable('2026-10-28', new \DateTimeZone('UTC'));

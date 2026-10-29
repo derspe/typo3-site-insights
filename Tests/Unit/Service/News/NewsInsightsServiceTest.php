@@ -164,6 +164,31 @@ final class NewsInsightsServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function withoutComparisonOnlyThePeriodIsRequested(): void
+    {
+        $this->configure();
+        $this->http->queue(
+            FakeHttp::json([[['label' => 'news/detail/item-2', 'nb_hits' => 50, 'entry_nb_visits' => 20]]]),
+            FakeHttp::json(['rows' => [['keys' => ['2026-10-19']]]]),
+            FakeHttp::json(['rows' => [['keys' => ['https://alpha.example/news/detail/item-2'], 'clicks' => 10, 'impressions' => 100, 'position' => 4.0]]]),
+        );
+
+        $result = $this->service()->overview('alpha', self::FOLDER, 0, '', '7d', false);
+
+        self::assertSame(['7d', false], [$result['period'], $result['compare']]);
+        self::assertNull($result['records'][0]['matomo']['compare']);
+        self::assertNull($result['records'][0]['gsc']['compare']);
+        self::assertNull($result['totals']['gsc']['compare']);
+        self::assertArrayNotHasKey('compareRange', $result['matomo']);
+        self::assertCount(1, $this->http->formFields(0)['urls'], 'one Matomo period');
+        parse_str($this->http->formFields(0)['urls'][0], $matomoCall);
+        $yesterday = new \DateTimeImmutable('yesterday');
+        self::assertSame($yesterday->modify('-6 days')->format('Y-m-d') . ',' . $yesterday->format('Y-m-d'), $matomoCall['date']);
+        self::assertSame(['startDate' => '2026-10-13', 'endDate' => '2026-10-19'], $result['gsc']['range']);
+        self::assertCount(3, $this->http->history, 'Matomo, latest date, one Search Console query');
+    }
+
+    #[Test]
     public function translatedRecordsLinkTheDetailViewOfTheirDefaultLanguageRecord(): void
     {
         $this->configure(matomo: false, gsc: false);

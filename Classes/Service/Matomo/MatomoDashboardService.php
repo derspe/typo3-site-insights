@@ -6,6 +6,7 @@ namespace Derspe\SiteInsights\Service\Matomo;
 
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
+use Derspe\SiteInsights\Service\PreviousRange;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\SiteSettings;
 
@@ -111,7 +112,10 @@ final readonly class MatomoDashboardService
         if ($segment !== '' && !in_array($segment, array_column($this->segments($site), 'definition'), true)) {
             throw new ApiException('Unknown segment', 400);
         }
-        return $this->transitions->forUrl($site, $url, $bounds[0]->format('Y-m-d'), $bounds[1]->format('Y-m-d'), $segment);
+        $range = ['startDate' => $bounds[0]->format('Y-m-d'), 'endDate' => $bounds[1]->format('Y-m-d')];
+        // "compare=1": figures of the period of the same length before
+        $compareRange = (string)($q['compare'] ?? '') === '1' ? PreviousRange::of($range) : null;
+        return $this->transitions->forUrl($site, $url, $range['startDate'], $range['endDate'], $segment, $compareRange);
     }
 
     /**

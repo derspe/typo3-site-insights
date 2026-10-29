@@ -9,6 +9,7 @@ use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoNormalizer;
+use Derspe\SiteInsights\Service\PreviousRange;
 use Derspe\SiteInsights\Settings\SettingsValidator;
 use Derspe\SiteInsights\Settings\SiteSettings;
 use Derspe\SiteInsights\Settings\Sources;
@@ -219,8 +220,14 @@ final readonly class GscDashboardService
         [, , $searchType] = $this->normalizeQuery($q);
         $supportsQuery = !in_array($searchType, ['discover', 'googleNews'], true);
         $regex = GscNormalizer::pageRegex($url);
-        return $this->cache->remember([$site, 'page', 1, $regex, $range, $searchType], function () use ($site, $range, $searchType, $supportsQuery, $regex): array {
-            $body = static fn(array $dimensions, int $rowLimit): array => $range + [
+        // "compare=1": figures of the period of the same length before, if Search Console still has it
+        $compareRange = null;
+        if ((string)($q['compare'] ?? '') === '1') {
+            $previous = PreviousRange::of($range);
+            $compareRange = self::explicitRange($previous['startDate'], $previous['endDate'], new \DateTimeImmutable('today', new \DateTimeZone('UTC')));
+        }
+        return $this->cache->remember([$site, 'page', 2, $regex, $range, $searchType, $compareRange], function () use ($site, $range, $searchType, $supportsQuery, $regex, $compareRange): array {
+            $body = static fn(array $dimensions, int $rowLimit, ?array $r = null): array => ($r ?? $range) + [
                 'dimensions' => $dimensions,
                 'type' => $searchType,
                 'dimensionFilterGroups' => [['filters' => [['dimension' => 'page', 'operator' => 'includingRegex', 'expression' => $regex]]]],
@@ -230,6 +237,9 @@ final readonly class GscDashboardService
             if ($supportsQuery) {
                 $bodies['allQueries'] = $body(['query'], self::ALL_ROWS);
             }
+            if ($compareRange !== null) {
+                $bodies['compareKpis'] = $body([], 1, $compareRange);
+            }
             $r = $this->client->searchAnalyticsMany($site, $bodies);
             $kpis = GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []);
             $queries = $r['allQueries']['rows'] ?? [];
@@ -238,7 +248,10 @@ final readonly class GscDashboardService
                 'anonymized' => $supportsQuery ? GscNormalizer::anonymizedShare($kpis, $queries) : null,
                 'supportsQuery' => $supportsQuery,
                 'range' => $range,
-            ];
+            ] + ($compareRange !== null ? [
+                'compare' => GscNormalizer::kpisFromRows($r['compareKpis']['rows'] ?? []),
+                'compareRange' => $compareRange,
+            ] : []);
         });
     }
 

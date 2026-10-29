@@ -105,6 +105,27 @@ final class PageInsightsServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function periodAndComparisonCanBeChosen(): void
+    {
+        $this->configureMatomo();
+        $this->settings()->set('alpha', 'gsc_site_url', 'sc-domain:alpha.example');
+        $this->http->queue(
+            FakeHttp::json([[['nb_hits' => 12, 'entry_nb_visits' => 3]]]),
+            FakeHttp::json(['rows' => [['keys' => ['2026-10-19']]]]),
+            FakeHttp::json(['rows' => [['clicks' => 4, 'impressions' => 90, 'position' => 6.5]]]),
+        );
+
+        $result = $this->service()->insights('alpha', self::URL, '90d', false);
+
+        self::assertSame(['90d', false], [$result['period'], $result['compare']]);
+        self::assertArrayNotHasKey('compare', $result['matomo']);
+        self::assertArrayNotHasKey('compare', $result['gsc']);
+        self::assertSame(['startDate' => '2026-07-22', 'endDate' => '2026-10-19'], $result['gsc']['range']);
+        self::assertCount(1, $this->http->formFields(0)['urls'], 'one Matomo period');
+        self::assertCount(3, $this->http->history);
+    }
+
+    #[Test]
     public function aMissingSourceDoesNotHideTheOther(): void
     {
         $this->configureMatomo();

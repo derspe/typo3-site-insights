@@ -8,15 +8,20 @@
  * The first two load their data themselves from "endpoint" with "params"; a change of either reloads.
  */
 import { css, html, nothing, svg } from 'lit';
-import { SiElement, errorState, fmt, getMeta, icon, skeleton, t } from '@derspe/site-insights/core.js';
+import { SiElement, delta, errorState, fmt, getMeta, icon, periodControls, periodStart, skeleton, t } from '@derspe/site-insights/core.js';
 import '@derspe/site-insights/table.js';
 
+/**
+ * While other params load, the data shown so far stays (dimmed), so the modal keeps its height;
+ * only another URL starts empty.
+ */
 class SiLoading extends SiElement {
   static properties = {
     endpoint: { type: String },
     params: { attribute: false },
     data: { state: true },
     error: { state: true },
+    reloading: { type: Boolean, reflect: true },
   };
 
   constructor() {
@@ -25,7 +30,9 @@ class SiLoading extends SiElement {
     this.params = {};
     this.data = null;
     this.error = null;
+    this.reloading = false;
     this.requestKey = '';
+    this.dataUrl = null;
   }
 
   willUpdate(changed) {
@@ -37,11 +44,15 @@ class SiLoading extends SiElement {
       return;
     }
     this.requestKey = key;
-    this.data = null;
+    if (this.params?.url !== this.dataUrl) {
+      this.data = null;
+    }
+    this.reloading = this.data !== null;
     this.error = null;
     this.api(this.endpoint, { params: this.params })
-      .then((data) => { if (key === this.requestKey) { this.data = data; } })
-      .catch((error) => { if (key === this.requestKey) { this.error = error; } });
+      .then((data) => { if (key === this.requestKey) { this.data = data; this.dataUrl = this.params?.url; } })
+      .catch((error) => { if (key === this.requestKey) { this.data = null; this.error = error; } })
+      .finally(() => { if (key === this.requestKey) { this.reloading = false; } });
   }
 }
 
@@ -169,7 +180,8 @@ class SiTransitions extends SiLoading {
   static styles = [
     ...SiElement.styles,
     css`
-      :host { font-size: 12px; }
+      :host { display: block; font-size: 12px; transition: opacity .15s; }
+      :host([reloading]) { opacity: .55; }
       svg { display: block; width: 100%; max-width: ${W}px; margin: 0 auto; overflow: visible; }
       text { fill: var(--si-text); font-size: 12px; dominant-baseline: middle; }
       .pct { font-weight: 700; fill: var(--si-text-strong); font-variant-numeric: tabular-nums; }
@@ -215,12 +227,18 @@ class SiTransitions extends SiLoading {
     const height = Math.max(left.column, right.column, BOX.h) + 2 * PAD;
     const boxY = (height - BOX.h) / 2;
     const share = (n) => fmt.pct(n / d.pageviews, 0);
+    // Changes compare the page report of both periods (transitions exist for this period only)
+    const e = d.engagement ?? {};
+    const c = d.compare;
+    const exitRate = (x) => (x?.pageviews ? x.exits / x.pageviews : null);
+    const change = (current, before, invert = false) => (c ? delta(current, before, invert) : nothing);
     return html`
       <div class="metrics">
-        <span>${t('transitions.avgTimeOnPage')}: <b>${fmt.duration(d.avgTimeOnPage)}</b></span>
-        <span title=${t('transitions.bounceRate.hint')}>${t('matomo.bounceRate')}: <b>${d.bounceRate == null ? '–' : fmt.pct(d.bounceRate, 0)}</b></span>
-        <span>${t('page.entries')}: <b>${fmt.int(d.entries)}</b> <span class="dimmed">(${share(d.entries)})</span></span>
-        <span>${t('transitions.exitRate')}: <b>${share(d.exits)}</b></span>
+        <span>${t('transitions.avgTimeOnPage')}: <b>${fmt.duration(d.avgTimeOnPage)}</b> ${change(e.avgTimeOnPage, c?.avgTimeOnPage)}</span>
+        <span title=${t('transitions.bounceRate.hint')}>${t('matomo.bounceRate')}: <b>${d.bounceRate == null ? '–' : fmt.pct(d.bounceRate, 0)}</b> ${change(e.bounceRate, c?.bounceRate, true)}</span>
+        <span>${t('page.entries')}: <b>${fmt.int(d.entries)}</b> <span class="dimmed">(${share(d.entries)})</span> ${change(e.entries, c?.entries)}</span>
+        <span>${t('transitions.exitRate')}: <b>${share(d.exits)}</b> ${change(exitRate(e), exitRate(c), true)}</span>
+        ${c ? html`<span class="dimmed">${t('compare.short')} ${fmt.date(d.compareRange.startDate)} – ${fmt.date(d.compareRange.endDate)}</span>` : nothing}
       </div>
       <div class="heads"><span>${t('transitions.before')}</span><span>${t('transitions.after')}</span></div>
       <svg viewBox="0 0 ${W} ${height}" role="img" aria-label=${t('transitions.title')}>
@@ -294,7 +312,8 @@ class SiPageQueries extends SiLoading {
   static styles = [
     ...SiElement.styles,
     css`
-      :host { font-size: 12px; }
+      :host { display: block; font-size: 12px; transition: opacity .15s; }
+      :host([reloading]) { opacity: .55; }
       .metrics { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 10px; }
       .metrics b { color: var(--si-text-strong); }
     `,
@@ -308,13 +327,16 @@ class SiPageQueries extends SiLoading {
     if (!d) {
       return skeleton(160);
     }
+    const c = d.compare;
+    const change = (current, before, invert = false) => (c ? delta(current, before, invert) : nothing);
     return html`
       <div class="metrics">
-        <span>${t('metric.clicks')}: <b>${fmt.int(d.clicks)}</b></span>
-        <span>${t('metric.impressions')}: <b>${fmt.int(d.impressions)}</b></span>
-        <span>${t('metric.ctr')}: <b>${fmt.pct(d.ctr)}</b></span>
-        <span>${t('metric.positionShort')}: <b>${d.impressions > 0 ? fmt.dec(d.position) : '–'}</b></span>
+        <span>${t('metric.clicks')}: <b>${fmt.int(d.clicks)}</b> ${change(d.clicks, c?.clicks)}</span>
+        <span>${t('metric.impressions')}: <b>${fmt.int(d.impressions)}</b> ${change(d.impressions, c?.impressions)}</span>
+        <span>${t('metric.ctr')}: <b>${fmt.pct(d.ctr)}</b> ${change(d.ctr, c?.ctr)}</span>
+        <span>${t('metric.positionShort')}: <b>${d.impressions > 0 ? fmt.dec(d.position) : '–'}</b> ${change(d.impressions > 0 ? d.position : null, c?.impressions > 0 ? c.position : null, true)}</span>
         <span class="dimmed">${fmt.date(d.range.startDate)} – ${fmt.date(d.range.endDate)}</span>
+        ${c ? html`<span class="dimmed">${t('compare.short')} ${fmt.date(d.compareRange.startDate)} – ${fmt.date(d.compareRange.endDate)}</span>` : nothing}
       </div>
       ${!d.supportsQuery ? html`<div class="dimmed">${t('pageDetail.noQueries')}</div>`
         : d.queries.length === 0 ? html`<div class="dimmed">${t('empty.noData')}</div>`
@@ -391,7 +413,9 @@ class SiPageSnippet extends SiLoading {
 /**
  * Modal with the Matomo transitions and the Search Console queries of a page in the period of
  * the report it was opened from; Matomo always comes first. "url" may be an absolute URL or a
- * path. "matomo-start"/"matomo-end" give Matomo its own period, "no-gsc" and
+ * path. "period" (7d, 28d, 90d, 3m, 1y) selects a period ending with the given end dates, empty
+ * keeps the given range; "compare" compares the figures with the period before; both can be
+ * changed in the modal. "matomo-start"/"matomo-end" give Matomo its own period, "no-gsc" and
  * "no-matomo" hide a source that is not set up, "heading" replaces the path as title.
  * A click on an internal page in the flow opens that page.
  */
@@ -407,17 +431,20 @@ class SiPageDetail extends SiElement {
     noGsc: { type: Boolean, attribute: 'no-gsc' },
     noMatomo: { type: Boolean, attribute: 'no-matomo' },
     heading: { type: String },
+    period: { type: String },
+    compare: { type: Boolean },
     trail: { state: true },
   };
 
   static styles = [
     ...SiElement.styles,
     css`
-      dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0; overflow: auto;
+      /* At the top, not centered: a new height of the content does not move the modal */
+      dialog { width: min(980px, calc(100vw - 32px)); max-height: calc(100vh - 48px); margin: 24px auto auto; padding: 0; overflow: auto;
         border: 1px solid var(--si-border); border-radius: var(--si-radius); background: var(--si-surface); color: var(--si-text);
         box-shadow: 0 12px 48px rgba(0, 0, 0, .3); }
       dialog::backdrop { background: rgba(0, 0, 0, .45); }
-      .head { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px;
+      .head { position: sticky; top: 0; z-index: 1; display: flex; align-items: flex-start; gap: 8px 20px; padding: 12px 16px;
         background: var(--si-surface); border-bottom: 1px solid var(--si-border); }
       .head a { color: var(--si-dimmed); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; }
       .body { padding: 16px; }
@@ -426,6 +453,13 @@ class SiPageDetail extends SiElement {
         border: 0; border-radius: var(--si-radius-sm); background: transparent; color: var(--si-dimmed); cursor: pointer; }
       .icon-btn:hover { background: var(--si-hover); color: var(--si-text); }
       .back { transform: rotate(90deg); }
+      .head si-page-snippet { flex: 1 1 0; max-width: 600px; min-width: 0; }
+      .head .side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-left: auto; flex: none; }
+      .head .actions { display: flex; gap: 4px; margin-right: -6px; }
+      @media (max-width: 760px) {
+        .head { flex-wrap: wrap; }
+        .head si-page-snippet { flex: 1 1 240px; }
+      }
     `,
   ];
 
@@ -441,7 +475,21 @@ class SiPageDetail extends SiElement {
     this.noGsc = false;
     this.noMatomo = false;
     this.heading = '';
+    this.period = '';
+    this.compare = false;
     this.trail = [];
+  }
+
+  /**
+   * Search Console and Matomo ranges: the given ones, or the chosen period up to their end.
+   */
+  ranges() {
+    const matomoStart = this.matomoStart || this.start;
+    const matomoEnd = this.matomoEnd || this.end;
+    if (!this.period) {
+      return { gsc: [this.start, this.end], matomo: [matomoStart, matomoEnd] };
+    }
+    return { gsc: [periodStart(this.end, this.period), this.end], matomo: [periodStart(matomoEnd, this.period), matomoEnd] };
   }
 
   firstUpdated() {
@@ -464,19 +512,21 @@ class SiPageDetail extends SiElement {
 
   render() {
     const sources = getMeta().sources ?? {};
+    const ranges = this.ranges();
+    const compare = this.compare ? '1' : '';
     const sections = [];
     if (sources.matomo !== false && !this.noMatomo) {
       sections.push(html`<section>
         <div class="section-head">${icon('route', 15, 'var(--si-indigo-6)')}${t('transitions.title')}</div>
         <si-transitions .site=${this.site} endpoint="matomo/transitions" navigable @si-navigate=${(e) => this.open(e.detail.url)}
-          .params=${{ url: this.url, start: this.matomoStart || this.start, end: this.matomoEnd || this.end, segment: this.segment }}></si-transitions>
+          .params=${{ url: this.url, start: ranges.matomo[0], end: ranges.matomo[1], segment: this.segment, compare }}></si-transitions>
       </section>`);
     }
     if (sources.gsc !== false && !this.noGsc) {
       sections.push(html`<section>
         <div class="section-head">${icon('google', 15, 'var(--si-blue-6)')}${t('pageDetail.queries')}</div>
         <si-page-queries .site=${this.site} endpoint="gsc/page"
-          .params=${{ url: this.url, start: this.start, end: this.end, searchType: this.searchType }}></si-page-queries>
+          .params=${{ url: this.url, start: ranges.gsc[0], end: ranges.gsc[1], searchType: this.searchType, compare }}></si-page-queries>
       </section>`);
     }
     const absolute = /^https?:\/\//.test(this.url);
@@ -486,11 +536,16 @@ class SiPageDetail extends SiElement {
       <div class="head">
         ${this.trail.length ? html`<button type="button" class="icon-btn" title=${t('pageDetail.back')} aria-label=${t('pageDetail.back')}
           @click=${() => this.back()}><span class="back">${icon('chevronDown', 16)}</span></button>` : nothing}
-        <si-page-snippet class="grow" style="min-width:0" .site=${this.site} url=${this.url}
+        <si-page-snippet .site=${this.site} url=${this.url}
           fallback=${this.heading && !this.trail.length ? this.heading : ''}></si-page-snippet>
-        ${absolute ? html`<a href=${this.url} target="_blank" rel="noopener noreferrer" title=${t('news.view')}>${icon('externalLink', 14)}</a>` : nothing}
-        <button type="button" class="icon-btn" title=${t('pageDetail.close')} aria-label=${t('pageDetail.close')}
-          @click=${() => this.close()}>${icon('x', 16)}</button>
+        <div class="side">
+          <span class="actions">
+            ${absolute ? html`<a href=${this.url} target="_blank" rel="noopener noreferrer" title=${t('news.view')}>${icon('externalLink', 14)}</a>` : nothing}
+            <button type="button" class="icon-btn" title=${t('pageDetail.close')} aria-label=${t('pageDetail.close')}
+              @click=${() => this.close()}>${icon('x', 16)}</button>
+          </span>
+          ${periodControls({ period: this.period, compare: this.compare }, ({ period, compare }) => { this.period = period; this.compare = compare; })}
+        </div>
       </div>
       <div class="body">${sections}</div>
     </dialog>`;

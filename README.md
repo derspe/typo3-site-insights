@@ -36,6 +36,11 @@ service, no long-running processes. It works on ordinary shared hosting.
   previous and following pages, site searches, outlinks, downloads and exits – with the
   average time on page and bounce rate, then the Search Console figures and top queries.
   The page module and the news folders open the same modal
+- Next to the title the period can be changed (7, 28 or 90 days, 3 months, a year, each
+  ending with the last day of the report) and the figures can be compared with the
+  period before: Search Console figures and the time on page, bounce rate, entries and
+  exit rate of the Matomo page report show their change. The flow itself has no
+  comparison, since Matomo computes transitions from its raw data on every request
 - At the top the modal shows title and description of the page:
   SEO title (or title) and description of the page, or alternative title (or title) and
   description (or the teaser, cut to 280 characters) of the news record for news detail URLs,
@@ -52,10 +57,12 @@ service, no long-running processes. It works on ordinary shared hosting.
 **Page module**
 
 - Key figures of the current page above the content: Matomo pageviews and entries,
-  Search Console clicks, impressions and average position of the last 28 days,
-  compared with the 28 days before; only configured sources are shown, each tile
-  carries the small mark of its source (Matomo or Google)
-- The button "Page details" opens the page details of the page for the same period
+  Search Console clicks, impressions and average position of the last 7, 28 or 90 days,
+  3 months or a year, optionally compared with the period before; only configured
+  sources are shown, each tile carries the small mark of its source (Matomo or Google)
+- The chosen period and comparison are remembered per browser and shared with the news
+  folders. Search Console keeps 16 months, so a year has no comparison there
+- The button "Details" opens the page details of the page for the same period
   (visitor paths, time on page, search queries)
 - Search Console rows are matched by path, not by host, so the figures also appear in
   development environments with another domain
@@ -66,8 +73,9 @@ service, no long-running processes. It works on ordinary shared hosting.
 
 - Folders with news show the key figures of all their records above the page module
   and the list module: Matomo pageviews and entries, Search Console clicks,
-  impressions and average position of the last 28 days, compared with the 28 days
-  before; the totals are always visible, the list of records can be expanded
+  impressions and average position for the same periods as the page module, optionally
+  compared with the period before; the totals are always visible, the list of records
+  can be expanded
 - Sort by any figure or by its change against the period before (largest loss first),
   search by title, filter news without impressions; a click on a row opens the page
   details of the record (search queries, time on page, visitor paths)

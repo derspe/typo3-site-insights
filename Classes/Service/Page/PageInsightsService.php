@@ -6,6 +6,8 @@ namespace Derspe\SiteInsights\Service\Page;
 
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
+use Derspe\SiteInsights\Service\PagePeriod;
+use Derspe\SiteInsights\Service\PreviousRange;
 use Derspe\SiteInsights\Service\Gsc\GoogleServiceAccount;
 use Derspe\SiteInsights\Service\Gsc\GscDashboardService;
 use Derspe\SiteInsights\Service\Gsc\GscNormalizer;
@@ -19,15 +21,15 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 
 /**
  * Key figures of a single page for the page module: Matomo pageviews and entries,
- * Search Console clicks, impressions and average position of the last 28 days, each compared
- * with the 28 days before. Queries and transitions are loaded by the page details modal.
+ * Search Console clicks, impressions and average position of the last 7, 28 or 90 days, 3 months or a year,
+ * optionally compared with the period before. Queries and transitions are loaded by the page
+ * details modal.
  *
  * Each source is loaded on its own: an unconfigured source is reported as such, a failing one
  * only returns its error.
  */
 final readonly class PageInsightsService
 {
-    public const DAYS = 28;
     private const MATOMO_LIFETIME = 3600;
     // Search Console only adds data once a day
     private const GSC_LIFETIME = 21600;
@@ -80,15 +82,32 @@ final readonly class PageInsightsService
     }
 
     /**
-     * @return array{url: string, matomo: array<string, mixed>, gsc: array<string, mixed>}
+     * @param string $period one of PagePeriod::KEYS
+     * @return array{url: string, period: string, compare: bool, matomo: array<string, mixed>, gsc: array<string, mixed>}
      */
-    public function insights(string $site, string $url): array
+    public function insights(string $site, string $url, string $period = PagePeriod::DEFAULT, bool $compare = true): array
     {
+        $period = PagePeriod::normalize($period);
         return [
             'url' => $url,
-            'matomo' => $this->matomoConfigured($site) ? self::guarded(fn(): array => $this->matomoMetrics($site, $url)) : ['configured' => false],
-            'gsc' => $this->gscConfigured($site) ? self::guarded(fn(): array => $this->gscMetrics($site, $url)) : ['configured' => false],
+            'period' => $period,
+            'compare' => $compare,
+            'matomo' => $this->matomoConfigured($site) ? self::guarded(fn(): array => $this->matomoMetrics($site, $url, $period, $compare)) : ['configured' => false],
+            'gsc' => $this->gscConfigured($site) ? self::guarded(fn(): array => $this->gscMetrics($site, $url, $period, $compare)) : ['configured' => false],
         ];
+    }
+
+    /**
+     * Search Console period ending with the latest day with data, and the period before if
+     * Search Console still keeps it (16 months).
+     *
+     * @return array{array{startDate: string, endDate: string}, array{startDate: string, endDate: string}|null}
+     */
+    public static function gscRanges(string $anchor, string $period): array
+    {
+        $range = PagePeriod::ending($anchor, $period);
+        $previous = PreviousRange::of($range);
+        return [$range, GscDashboardService::explicitRange($previous['startDate'], $previous['endDate'], new \DateTimeImmutable('today', new \DateTimeZone('UTC')))];
     }
 
     /**
@@ -97,49 +116,41 @@ final readonly class PageInsightsService
      *
      * @return array{array{startDate: string, endDate: string}, array{startDate: string, endDate: string}}
      */
-    public static function matomoRanges(): array
+    public static function matomoRanges(string $period = PagePeriod::DEFAULT): array
     {
-        $end = new \DateTimeImmutable('yesterday');
-        $start = $end->modify('-' . (self::DAYS - 1) . ' days');
-        return [
-            ['startDate' => $start->format('Y-m-d'), 'endDate' => $end->format('Y-m-d')],
-            [
-                'startDate' => $start->modify('-' . self::DAYS . ' days')->format('Y-m-d'),
-                'endDate' => $start->modify('-1 day')->format('Y-m-d'),
-            ],
-        ];
+        $range = PagePeriod::ending((new \DateTimeImmutable('yesterday'))->format('Y-m-d'), $period);
+        return [$range, PreviousRange::of($range)];
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function matomoMetrics(string $site, string $url): array
+    private function matomoMetrics(string $site, string $url, string $period, bool $compare): array
     {
-        [$range, $compareRange] = self::matomoRanges();
-        return $this->cache->remember([$site, 'page', 'matomo', 2, $url, $range], function () use ($site, $url, $range, $compareRange): array {
+        [$range, $compareRange] = self::matomoRanges($period);
+        return $this->cache->remember([$site, 'page', 'matomo', 3, $url, $range, $compare], function () use ($site, $url, $range, $compareRange, $compare): array {
             $call = static fn(array $r): array => ['Actions.getPageUrl', [
                 'pageUrl' => $url,
                 'period' => 'range',
                 'date' => $r['startDate'] . ',' . $r['endDate'],
             ]];
-            [$main, $compare] = $this->matomo->bulk($site, [$call($range), $call($compareRange)]);
-            return MatomoNormalizer::pageMetrics($main) + [
-                'compare' => MatomoNormalizer::pageMetrics($compare),
-                'range' => $range,
+            $results = $this->matomo->bulk($site, $compare ? [$call($range), $call($compareRange)] : [$call($range)]);
+            return MatomoNormalizer::pageMetrics($results[0]) + ['range' => $range] + ($compare ? [
+                'compare' => MatomoNormalizer::pageMetrics($results[1] ?? []),
                 'compareRange' => $compareRange,
-            ];
+            ] : []);
         }, self::MATOMO_LIFETIME);
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function gscMetrics(string $site, string $url): array
+    private function gscMetrics(string $site, string $url, string $period, bool $compare): array
     {
         $anchor = $this->gsc->latestDataDate($site);
-        return $this->cache->remember([$site, 'page', 'gsc', 6, $url, $anchor], function () use ($site, $url, $anchor): array {
-            $range = GscDashboardService::dateRange($anchor, 'range', 'last' . self::DAYS);
-            $compareRange = GscDashboardService::compareRange($anchor, 'range', 'last' . self::DAYS, 'previous');
+        [$range, $compareRange] = self::gscRanges($anchor, $period);
+        $compare = $compare && $compareRange !== null;
+        return $this->cache->remember([$site, 'page', 'gsc', 8, $url, $range, $compare], function () use ($site, $url, $anchor, $range, $compareRange, $compare): array {
             $body = static fn(array $dimensions, int $rowLimit, ?array $r = null): array => ($r ?? $range) + [
                 'dimensions' => $dimensions,
                 'type' => 'web',
@@ -148,16 +159,14 @@ final readonly class PageInsightsService
                 ]]],
                 'rowLimit' => $rowLimit,
             ];
-            $r = $this->client->searchAnalyticsMany($site, [
-                'kpis' => $body([], 1),
-                'compareKpis' => $body([], 1, $compareRange),
-            ]);
+            $r = $this->client->searchAnalyticsMany($site, ['kpis' => $body([], 1)] + ($compare ? ['compareKpis' => $body([], 1, $compareRange)] : []));
             return GscNormalizer::kpisFromRows($r['kpis']['rows'] ?? []) + [
-                'compare' => GscNormalizer::kpisFromRows($r['compareKpis']['rows'] ?? []),
                 'range' => $range,
-                'compareRange' => $compareRange,
                 'dataDate' => $anchor,
-            ];
+            ] + ($compare ? [
+                'compare' => GscNormalizer::kpisFromRows($r['compareKpis']['rows'] ?? []),
+                'compareRange' => $compareRange,
+            ] : []);
         }, self::GSC_LIFETIME);
     }
 
