@@ -194,9 +194,9 @@ export class SiGsc extends SiElement {
               @row-click=${(e) => { this.detailPage = e.detail.key === this.detailPage ? '' : e.detail.key; }}></si-table>`}
         </div>
       </div>
-      ${d && this.detailPage ? html`<div class="mb"><si-page-detail .site=${this.site} url=${this.detailPage}
+      ${d && this.detailPage ? html`<si-page-detail .site=${this.site} url=${this.detailPage} primary="gsc"
         start=${d.range.startDate} end=${d.range.endDate} search-type=${this.range.searchType}
-        @close=${() => { this.detailPage = ''; }}></si-page-detail></div>` : nothing}
+        @close=${() => { this.detailPage = ''; }}></si-page-detail>` : nothing}
       <div class="grid cols-2">
         <si-gsc-cannibalization .site=${this.site} .range=${this.range}></si-gsc-cannibalization>
         ${this.renderBrandSplit(d)}

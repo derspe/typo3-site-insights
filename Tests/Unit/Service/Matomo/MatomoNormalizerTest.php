@@ -60,6 +60,17 @@ final class MatomoNormalizerTest extends TestCase
     }
 
     #[Test]
+    public function engagementIsWeightedOverAllRowsOfThePage(): void
+    {
+        self::assertSame(['avgTimeOnPage' => 70, 'bounceRate' => 0.4], MatomoNormalizer::pageEngagement([
+            ['nb_hits' => 30, 'avg_time_on_page' => 90, 'entry_nb_visits' => 8, 'entry_bounce_count' => 4],
+            ['nb_hits' => 10, 'avg_time_on_page' => 10, 'entry_nb_visits' => 2, 'entry_bounce_count' => 0],
+        ]));
+        self::assertSame(['avgTimeOnPage' => 12, 'bounceRate' => 0.45], MatomoNormalizer::pageEngagement([['nb_hits' => 1, 'avg_time_on_page' => 12, 'bounce_rate' => '45%']]));
+        self::assertSame(['avgTimeOnPage' => null, 'bounceRate' => null], MatomoNormalizer::pageEngagement([]));
+    }
+
+    #[Test]
     public function transitionsAreSortedAndEmptyRowsDropped(): void
     {
         $result = MatomoNormalizer::transitions([
@@ -77,8 +88,8 @@ final class MatomoNormalizerTest extends TestCase
 
         self::assertSame([100, 40, 30, 2], [$result['pageviews'], $result['entries'], $result['exits'], $result['loops']]);
         self::assertSame(['a.example/y', 'a.example/x'], array_column($result['previousPages'], 'label'));
-        self::assertSame([['label' => 'Others', 'count' => 3]], $result['followingPages']);
-        self::assertSame([['label' => 'From search engines', 'count' => 40, 'details' => [['label' => 'Google', 'count' => 38], ['label' => 'Bing', 'count' => 2]]]], $result['referrers']);
+        self::assertSame([['label' => 'Others', 'count' => 3, 'others' => true]], $result['followingPages']);
+        self::assertSame([['label' => 'From search engines', 'kind' => 'search', 'count' => 40, 'details' => [['label' => 'Google', 'count' => 38], ['label' => 'Bing', 'count' => 2]]]], $result['referrers']);
         self::assertSame([], $result['downloads']);
         self::assertSame(0, MatomoNormalizer::transitions('error')['pageviews']);
     }

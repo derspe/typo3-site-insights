@@ -37,6 +37,7 @@ final class TransitionsServiceTest extends UnitTestCase
         $this->http->queue(
             FakeHttp::json(['https://www.alpha.example', 'https://alpha.example']),
             FakeHttp::json(['pageMetrics' => ['pageviews' => 10, 'entries' => 4, 'exits' => 3, 'loops' => 0]]),
+            FakeHttp::json([['nb_hits' => 10, 'avg_time_on_page' => 95, 'entry_nb_visits' => 4, 'entry_bounce_count' => 1]]),
         );
 
         $result = $this->service()->forUrl('alpha', 'https://alpha.example/news/a', '2026-10-01', '2026-10-28');
@@ -47,6 +48,9 @@ final class TransitionsServiceTest extends UnitTestCase
         self::assertSame((string)TransitionsService::LIMIT, $form['limitBeforeGrouping']);
         self::assertFalse($result['noData']);
         self::assertSame(10, $result['pageviews']);
+        self::assertSame(['Actions.getPageUrl', 'https://alpha.example/news/a'], [$this->http->formFields(2)['method'], $this->http->formFields(2)['pageUrl']]);
+        self::assertArrayNotHasKey('limitBeforeGrouping', $this->http->formFields(2));
+        self::assertSame([95, 0.25], [$result['avgTimeOnPage'], $result['bounceRate']]);
     }
 
     #[Test]
@@ -55,7 +59,9 @@ final class TransitionsServiceTest extends UnitTestCase
         $this->http->queue(
             FakeHttp::json(['https://www.alpha.example', 'https://alpha.example']),
             FakeHttp::json(['pageMetrics' => []]),
+            FakeHttp::json([]),
             FakeHttp::json(['pageMetrics' => []]),
+            FakeHttp::json(['result' => 'error', 'message' => 'no report']),
         );
         $service = $this->service();
 
@@ -63,8 +69,8 @@ final class TransitionsServiceTest extends UnitTestCase
         $service->forUrl('alpha', '/news/b', '2026-10-28', '2026-10-28');
 
         self::assertSame(['https://www.alpha.example/news/a?x=1', 'day', '2026-10-28'], [$this->http->formFields(1)['pageUrl'], $this->http->formFields(1)['period'], $this->http->formFields(1)['date']]);
-        self::assertSame('https://www.alpha.example/news/b', $this->http->formFields(2)['pageUrl']);
-        self::assertCount(3, $this->http->history, 'site URLs are cached');
+        self::assertSame('https://www.alpha.example/news/b', $this->http->formFields(3)['pageUrl']);
+        self::assertCount(5, $this->http->history, 'site URLs are cached');
     }
 
     #[Test]
@@ -117,7 +123,7 @@ final class TransitionsServiceTest extends UnitTestCase
     #[Test]
     public function aYearOfSearchConsoleStartsAtTheEarliestDayMatomoAllows(): void
     {
-        $this->http->queue(FakeHttp::json(['https://alpha.example']), FakeHttp::json(['pageMetrics' => ['pageviews' => 1]]));
+        $this->http->queue(FakeHttp::json(['https://alpha.example']), FakeHttp::json(['pageMetrics' => ['pageviews' => 1]]), FakeHttp::json([]));
         $client = new MatomoClient($this->settings(), $this->http->factory());
         $dashboard = new MatomoDashboardService($client, $this->settings(), $this->cache(), $this->service());
         $today = new \DateTimeImmutable('today');

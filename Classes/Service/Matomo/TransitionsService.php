@@ -9,7 +9,7 @@ use Derspe\SiteInsights\Service\ApiCache;
 
 /**
  * Matomo Transitions of one page: entries from outside, previous and following pages,
- * outlinks, downloads and exits.
+ * outlinks, downloads and exits, plus its average time on page and bounce rate.
  *
  * Matomo does not archive transitions but computes them from the raw log data on every
  * request, so the results are cached for a day.
@@ -33,7 +33,7 @@ final readonly class TransitionsService
     {
         $url = $this->matomoUrl($site, $url);
         $range = ['startDate' => $startDate, 'endDate' => $endDate];
-        return $this->cache->remember([$site, 'matomo', 'transitions', 1, $url, $range, $segment], function () use ($site, $url, $range, $segment): array {
+        return $this->cache->remember([$site, 'matomo', 'transitions', 2, $url, $range, $segment], function () use ($site, $url, $range, $segment): array {
             $params = [
                 'pageUrl' => $url,
                 'period' => $range['startDate'] === $range['endDate'] ? 'day' : 'range',
@@ -52,8 +52,27 @@ final readonly class TransitionsService
                 }
                 throw $e;
             }
-            return ['url' => $url, 'range' => $range, 'noData' => false] + MatomoNormalizer::transitions($data);
+            return ['url' => $url, 'range' => $range, 'noData' => false]
+                + MatomoNormalizer::transitions($data)
+                + $this->engagement($site, $params);
         }, self::LIFETIME);
+    }
+
+    /**
+     * Time on page and bounce rate come from the archived page report; without them the
+     * transitions are still shown.
+     *
+     * @param array<string, scalar> $params
+     * @return array{avgTimeOnPage: int|null, bounceRate: float|null}
+     */
+    private function engagement(string $site, array $params): array
+    {
+        unset($params['limitBeforeGrouping']);
+        try {
+            return MatomoNormalizer::pageEngagement($this->client->call($site, 'Actions.getPageUrl', $params));
+        } catch (ApiException) {
+            return ['avgTimeOnPage' => null, 'bounceRate' => null];
+        }
     }
 
     /**

@@ -234,9 +234,9 @@ export class SiMatomo extends SiElement {
           ]}></si-table>`}
         </div>
       </div>
-      ${d && this.detailPage ? html`<div class="mt"><si-page-detail .site=${this.site} url=${this.detailPage.url}
+      ${d && this.detailPage ? html`<si-page-detail .site=${this.site} url=${this.detailPage.url} primary="matomo"
         start=${d.dateRange.start} end=${d.dateRange.end} segment=${this.range.segment}
-        @close=${() => { this.detailPage = null; }}></si-page-detail></div>` : nothing}`;
+        @close=${() => { this.detailPage = null; }}></si-page-detail>` : nothing}`;
   }
 
   renderGoalKpis(d, loading) {

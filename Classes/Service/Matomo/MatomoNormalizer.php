@@ -10,6 +10,9 @@ namespace Derspe\SiteInsights\Service\Matomo;
  */
 final class MatomoNormalizer
 {
+    // Short names of the Matomo referrer types
+    private const REFERRER_KINDS = ['direct', 'search', 'website', 'campaign', 'social', 'ai'];
+
     private static function formatHour(string|int $key): string
     {
         $key = (string)$key;
@@ -92,8 +95,10 @@ final class MatomoNormalizer
         $referrers = [];
         foreach (is_array($data['referrers'] ?? null) ? $data['referrers'] : [] as $row) {
             if (is_array($row) && (int)($row['visits'] ?? 0) > 0) {
+                $kind = (string)($row['shortName'] ?? '');
                 $referrers[] = [
                     'label' => (string)($row['label'] ?? ''),
+                    'kind' => in_array($kind, self::REFERRER_KINDS, true) ? $kind : 'other',
                     'count' => (int)$row['visits'],
                     'details' => self::transitionRows($row['details'] ?? null),
                 ];
@@ -116,7 +121,9 @@ final class MatomoNormalizer
     }
 
     /**
-     * @return list<array{label: string, count: int}>
+     * Rows Matomo grouped beyond the limit are labelled "Others".
+     *
+     * @return list<array{label: string, count: int, others?: true}>
      */
     private static function transitionRows(mixed $rows): array
     {
@@ -124,7 +131,8 @@ final class MatomoNormalizer
         foreach (is_array($rows) ? $rows : [] as $row) {
             $count = is_array($row) ? (int)($row['referrals'] ?? $row['nb_actions'] ?? 0) : 0;
             if ($count > 0) {
-                $result[] = ['label' => (string)($row['label'] ?? ''), 'count' => $count];
+                $label = (string)($row['label'] ?? '');
+                $result[] = ['label' => $label, 'count' => $count] + (preg_match('#^(https?://)?Others$#', $label) === 1 ? ['others' => true] : []);
             }
         }
         usort($result, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
@@ -147,6 +155,37 @@ final class MatomoNormalizer
             $metrics['entries'] += (int)($row['entry_nb_visits'] ?? 0);
         }
         return $metrics;
+    }
+
+    /**
+     * Average time on page and bounce rate of one page (Actions.getPageUrl, may return several
+     * rows, e.g. with and without trailing slash).
+     *
+     * @return array{avgTimeOnPage: int|null, bounceRate: float|null}
+     */
+    public static function pageEngagement(mixed $data): array
+    {
+        $hits = 0;
+        $time = 0.0;
+        $entries = 0;
+        $bounces = 0;
+        $fallback = null;
+        foreach (is_array($data) && array_is_list($data) ? $data : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $rowHits = (int)($row['nb_hits'] ?? 0);
+            $hits += $rowHits;
+            $time += (float)($row['avg_time_on_page'] ?? 0) * $rowHits;
+            $entries += (int)($row['entry_nb_visits'] ?? 0);
+            $bounces += (int)($row['entry_bounce_count'] ?? 0);
+            // Processed metric ("45%") when the raw counts are missing
+            $fallback ??= isset($row['bounce_rate']) ? (float)rtrim((string)$row['bounce_rate'], '%') / 100 : null;
+        }
+        return [
+            'avgTimeOnPage' => $hits > 0 ? (int)round($time / $hits) : null,
+            'bounceRate' => $entries > 0 ? $bounces / $entries : $fallback,
+        ];
     }
 
     /**

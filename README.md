@@ -31,8 +31,9 @@ service, no long-running processes. It works on ordinary shared hosting.
 **Page details**
 
 - A click on a page in the top pages of Search Console or Matomo opens its details for
-  the period of the report: Search Console figures and top queries, and the visitor
-  paths from Matomo Transitions – entries from outside (search engines, websites,
+  the period of the report as a modal: Search Console figures and top queries, the
+  average time on page and bounce rate from Matomo, and the visitor paths from Matomo
+  Transitions as a flow – entries from outside (search engines, websites,
   campaigns, direct), previous and following pages, site searches, outlinks, downloads
   and exits
 - Matomo computes transitions from its raw log data on every request, so they are only

@@ -765,17 +765,8 @@
 			<trans-unit id="transitions.after" resname="transitions.after">
 				<source>After</source>
 			</trans-unit>
-			<trans-unit id="transitions.referrers" resname="transitions.referrers">
-				<source>Entries from outside</source>
-			</trans-unit>
-			<trans-unit id="transitions.previousPages" resname="transitions.previousPages">
-				<source>Internal pages</source>
-			</trans-unit>
 			<trans-unit id="transitions.previousSearches" resname="transitions.previousSearches">
 				<source>Site search</source>
-			</trans-unit>
-			<trans-unit id="transitions.followingPages" resname="transitions.followingPages">
-				<source>Internal pages</source>
 			</trans-unit>
 			<trans-unit id="transitions.followingSearches" resname="transitions.followingSearches">
 				<source>Site search</source>
@@ -821,6 +812,36 @@
 			</trans-unit>
 			<trans-unit id="pageDetail.hint.matomo" resname="pageDetail.hint.matomo">
 				<source>Click a page to see its visitor paths.</source>
+			</trans-unit>
+			<trans-unit id="transitions.others" resname="transitions.others">
+				<source>Others</source>
+			</trans-unit>
+			<trans-unit id="transitions.otherPages" resname="transitions.otherPages">
+				<source>Other pages</source>
+			</trans-unit>
+			<trans-unit id="transitions.exits.hint" resname="transitions.exits.hint">
+				<source>Left the website without a further click; outlinks and downloads are shown on their own</source>
+			</trans-unit>
+			<trans-unit id="transitions.exitRate" resname="transitions.exitRate">
+				<source>Exit rate</source>
+			</trans-unit>
+			<trans-unit id="transitions.legend.external" resname="transitions.legend.external">
+				<source>From outside</source>
+			</trans-unit>
+			<trans-unit id="transitions.legend.internal" resname="transitions.legend.internal">
+				<source>Within the website</source>
+			</trans-unit>
+			<trans-unit id="transitions.legend.leaving" resname="transitions.legend.leaving">
+				<source>Leaving</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.back" resname="pageDetail.back">
+				<source>Back</source>
+			</trans-unit>
+			<trans-unit id="transitions.avgTimeOnPage" resname="transitions.avgTimeOnPage">
+				<source>Avg. time on page</source>
+			</trans-unit>
+			<trans-unit id="transitions.bounceRate.hint" resname="transitions.bounceRate.hint">
+				<source>Share of the visits starting on this page that viewed only this page</source>
 			</trans-unit>
 		</body>
 	</file>
