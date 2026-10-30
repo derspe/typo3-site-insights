@@ -177,6 +177,80 @@ final class MatomoNormalizer
     }
 
     /**
+     * Visit shares per device class from DevicesDetection.getType. Matomo translates the
+     * labels, so the rows are mapped by the device type in their segment ("deviceType==smartphone").
+     *
+     * @return array{visits: int, shares: array{mobile: float, desktop: float, tablet: float, other: float}}
+     */
+    public static function deviceShares(mixed $data): array
+    {
+        $counts = ['mobile' => 0, 'desktop' => 0, 'tablet' => 0, 'other' => 0];
+        foreach (is_array($data) && array_is_list($data) ? $data : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $type = preg_match('/deviceType==([^;,]+)/', (string)($row['segment'] ?? ''), $m) === 1 ? strtolower(urldecode($m[1])) : '';
+            $class = match ($type) {
+                'smartphone', 'phablet' => 'mobile',
+                'desktop' => 'desktop',
+                'tablet' => 'tablet',
+                default => 'other',
+            };
+            $counts[$class] += (int)($row['nb_visits'] ?? 0);
+        }
+        $visits = array_sum($counts);
+        return [
+            'visits' => $visits,
+            'shares' => array_map(static fn(int $count): float => $visits > 0 ? round($count / $visits, 4) : 0.0, $counts),
+        ];
+    }
+
+    /**
+     * Event categories with their actions (Events.getCategory with secondaryDimension=eventAction
+     * and expanded=1), most frequent first.
+     *
+     * @return list<array{label: string, count: int, actions: list<array{label: string, count: int}>}>
+     */
+    public static function eventCategories(mixed $data): array
+    {
+        $categories = [];
+        foreach (is_array($data) && array_is_list($data) ? $data : [] as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $actions = [];
+            foreach (is_array($row['subtable'] ?? null) ? $row['subtable'] : [] as $action) {
+                if (is_array($action)) {
+                    $actions[] = ['label' => (string)($action['label'] ?? ''), 'count' => (int)($action['nb_events'] ?? 0)];
+                }
+            }
+            usort($actions, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+            $categories[] = ['label' => (string)($row['label'] ?? ''), 'count' => (int)($row['nb_events'] ?? 0), 'actions' => $actions];
+        }
+        usort($categories, static fn(array $a, array $b): int => $b['count'] <=> $a['count']);
+        return $categories;
+    }
+
+    /**
+     * Events per period from a multi-period Events.getCategory result ({"2026-10-01": [rows], ...},
+     * weeks keyed "2026-09-28,2026-10-04"); the date is the start of the period.
+     *
+     * @return list<array{date: string, value: int}>
+     */
+    public static function eventSeries(mixed $data): array
+    {
+        $series = [];
+        foreach (is_array($data) && !array_is_list($data) ? $data : [] as $key => $rows) {
+            $value = 0;
+            foreach (is_array($rows) ? $rows : [] as $row) {
+                $value += is_array($row) ? (int)($row['nb_events'] ?? 0) : 0;
+            }
+            $series[] = ['date' => explode(',', (string)$key)[0], 'value' => $value];
+        }
+        return $series;
+    }
+
+    /**
      * Average time on page, bounce rate, pageviews, entries and exits of one page from the
      * archived page report (Actions.getPageUrl, may return several rows, e.g. with and without
      * trailing slash). Goals are summed per goal over the rows: "entry" counts conversions of

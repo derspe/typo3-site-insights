@@ -191,4 +191,39 @@ final class MatomoNormalizerTest extends TestCase
         // Rows of pages without entries carry no entry metrics
         self::assertSame(['pageviews' => 2, 'entries' => 0], MatomoNormalizer::pageMetrics([['nb_hits' => 2]]));
     }
+
+    #[Test]
+    public function deviceSharesMapUrlEncodedSegmentValuesAndIgnoreLabels(): void
+    {
+        $result = MatomoNormalizer::deviceShares([
+            ['label' => 'Peripheriegeräte', 'nb_visits' => 1, 'segment' => 'deviceType==peripheral'],
+            ['label' => 'Feature Phone', 'nb_visits' => 1, 'segment' => 'deviceType==feature+phone'],
+            ['label' => 'Smartphone', 'nb_visits' => 2, 'segment' => 'deviceType==smartphone'],
+        ]);
+        self::assertSame(4, $result['visits']);
+        self::assertSame(['mobile' => 0.5, 'desktop' => 0.0, 'tablet' => 0.0, 'other' => 0.5], $result['shares']);
+        self::assertSame(['visits' => 0, 'shares' => ['mobile' => 0.0, 'desktop' => 0.0, 'tablet' => 0.0, 'other' => 0.0]], MatomoNormalizer::deviceShares('error'));
+    }
+
+    #[Test]
+    public function eventCategoriesAreSortedByCountWithTheirActions(): void
+    {
+        self::assertSame([
+            ['label' => 'B', 'count' => 5, 'actions' => [['label' => 'y', 'count' => 4], ['label' => 'x', 'count' => 1]]],
+            ['label' => 'A', 'count' => 2, 'actions' => []],
+        ], MatomoNormalizer::eventCategories([
+            ['label' => 'A', 'nb_events' => 2],
+            ['label' => 'B', 'nb_events' => 5, 'subtable' => [['label' => 'x', 'nb_events' => 1], ['label' => 'y', 'nb_events' => 4]]],
+        ]));
+        self::assertSame([], MatomoNormalizer::eventCategories(null));
+    }
+
+    #[Test]
+    public function eventSeriesSumsTheEventsPerPeriod(): void
+    {
+        self::assertSame(
+            [['date' => '2026-09-28', 'value' => 3], ['date' => '2026-10-05', 'value' => 0]],
+            MatomoNormalizer::eventSeries(['2026-09-28,2026-10-04' => [['nb_events' => 1], ['nb_events' => 2]], '2026-10-05,2026-10-11' => []]),
+        );
+    }
 }
