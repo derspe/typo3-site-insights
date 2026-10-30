@@ -9,61 +9,10 @@
  * The first two load their data themselves from "endpoint" with "params"; a change of either reloads.
  */
 import { css, html, nothing, svg } from 'lit';
-import { SiElement, delta, errorState, fmt, getMeta, icon, periodControls, periodStart, skeleton, t } from '@derspe/site-insights/core.js';
+import { SiElement, delta, fmt, getMeta, icon, periodControls, periodStart, skeleton, t } from '@derspe/site-insights/core.js';
+import { SiLoading, softError } from '@derspe/site-insights/page-loading.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
-
-/**
- * While other params load, the data shown so far stays (dimmed), so the modal keeps its height;
- * only another URL starts empty.
- */
-class SiLoading extends SiElement {
-  static properties = {
-    endpoint: { type: String },
-    params: { attribute: false },
-    data: { state: true },
-    error: { state: true },
-    reloading: { type: Boolean, reflect: true },
-  };
-
-  constructor() {
-    super();
-    this.endpoint = '';
-    this.params = {};
-    this.data = null;
-    this.error = null;
-    this.reloading = false;
-    this.requestKey = '';
-    this.dataUrl = null;
-  }
-
-  willUpdate(changed) {
-    if (!(changed.has('site') || changed.has('endpoint') || changed.has('params')) || !this.site || !this.endpoint) {
-      return;
-    }
-    const key = JSON.stringify([this.site, this.endpoint, this.params]);
-    if (key === this.requestKey) {
-      return;
-    }
-    this.requestKey = key;
-    if (this.params?.url !== this.dataUrl) {
-      this.data = null;
-    }
-    this.reloading = this.data !== null;
-    this.error = null;
-    this.api(this.endpoint, { params: this.params })
-      .then((data) => { if (key === this.requestKey) { this.data = data; this.dataUrl = this.params?.url; } })
-      .catch((error) => { if (key === this.requestKey) { this.data = null; this.error = error; } })
-      .finally(() => { if (key === this.requestKey) { this.reloading = false; } });
-  }
-}
-
-/**
- * A source that is not set up is no error here, only a note.
- */
-function softError(error) {
-  return error.status === 503 ? html`<div class="dimmed">${error.message}</div>` : errorState(error);
-}
 
 /**
  * Matomo page labels have no protocol ("example.com/news/a"); internal pages are shown by their path.
