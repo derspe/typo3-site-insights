@@ -520,7 +520,14 @@ class SiPageDetail extends SiElement {
       const params = { url: this.url, start: ranges.matomo[0], end: ranges.matomo[1], segment: this.segment, compare };
       sections.push(html`<section>
         <div class="section-head">${icon('mouse', 15, 'var(--si-indigo-6)')}${t('pageDetail.engagement')}</div>
-        <div class="tiles">
+        <div class="tiles" @si-tile-expand=${(e) => {
+          // One open details box at a time
+          for (const tile of e.currentTarget.children) {
+            if (tile !== e.target) {
+              tile.expanded = false;
+            }
+          }
+        }}>
           <si-page-devices .site=${this.site} endpoint="matomo/page-devices" .params=${params}></si-page-devices>
           <si-page-events .site=${this.site} endpoint="matomo/page-events" .params=${params}></si-page-events>
           <si-page-goals .site=${this.site} endpoint="matomo/page-goals" .params=${params}></si-page-goals>

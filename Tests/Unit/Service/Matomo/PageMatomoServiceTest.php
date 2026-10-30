@@ -197,7 +197,7 @@ final class PageMatomoServiceTest extends UnitTestCase
     }
 
     #[Test]
-    public function eventSeriesIsWeeklyAbove92DaysAndAlignsTheComparison(): void
+    public function eventSeriesIsWeeklyAbove92DaysAndTheComparisonOnlyCountsTheTotal(): void
     {
         $this->http->queue(
             self::report(100),
@@ -206,7 +206,6 @@ final class PageMatomoServiceTest extends UnitTestCase
                 [['label' => 'A', 'nb_events' => 9, 'subtable' => []]],
                 ['2026-09-28,2026-10-04' => [['nb_events' => 4], ['nb_events' => 1]], '2026-10-05,2026-10-11' => []],
                 [['label' => 'A', 'nb_events' => 3, 'subtable' => []]],
-                ['2026-06-29,2026-07-05' => [['nb_events' => 2]], '2026-07-06,2026-07-12' => [['nb_events' => 1]]],
             ]),
             self::report(60),
         );
@@ -214,10 +213,11 @@ final class PageMatomoServiceTest extends UnitTestCase
         $result = $this->service()->events('alpha', self::URL, ['startDate' => '2026-09-28', 'endDate' => '2027-01-26'], '', ['startDate' => '2026-06-29', 'endDate' => '2026-09-27']);
 
         self::assertSame('week', $result['period']);
-        self::assertSame([['date' => '2026-09-28', 'value' => 5, 'compare' => 2], ['date' => '2026-10-05', 'value' => 0, 'compare' => 1]], $result['series']);
+        self::assertSame([['date' => '2026-09-28', 'value' => 5], ['date' => '2026-10-05', 'value' => 0]], $result['series']);
         self::assertSame(['total' => 3, 'pageviews' => 60, 'per100' => 5.0], $result['compare']);
         self::assertSame('week', $this->bulkCall(2, 1)['period']);
-        self::assertSame('2026-06-29,2026-09-27', $this->bulkCall(2, 3)['date']);
+        self::assertSame('2026-06-29,2026-09-27', $this->bulkCall(2, 2)['date']);
+        self::assertCount(3, $this->http->formFields(3)['urls']);
     }
 
     #[Test]

@@ -78,7 +78,7 @@ final readonly class PageMatomoService
         $url = $this->transitions->matomoUrl($site, $url);
         $days = (int)(new \DateTimeImmutable($range['startDate']))->diff(new \DateTimeImmutable($range['endDate']))->days + 1;
         $period = $days > TransitionsService::WEEKLY_FROM ? 'week' : 'day';
-        return $this->cache->remember([$site, 'matomo', 'pageEvents', 1, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange, $period): array {
+        return $this->cache->remember([$site, 'matomo', 'pageEvents', 2, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange, $period): array {
             $pageviews = $this->transitions->pageReport($site, $url, $range, $segment)['pageviews'];
             if (!$this->devices($site, $url, $range, $segment, null)['available']) {
                 return [
@@ -91,9 +91,9 @@ final readonly class PageMatomoService
             // on 2026-10-30) matches the events that happened on the URL.
             $eventSegment = self::pageSegment('eventUrl', $url, $segment);
             $calls = [self::categories($range, $eventSegment), self::series($range, $eventSegment, $period)];
+            // The period before only gives the totals; the chart shows this period alone
             if ($compareRange !== null) {
                 $calls[] = self::categories($compareRange, $eventSegment);
-                $calls[] = self::series($compareRange, $eventSegment, $period);
             }
             $results = $this->client->bulk($site, $calls);
             $categories = MatomoNormalizer::eventCategories($results[0]);
@@ -110,11 +110,6 @@ final readonly class PageMatomoService
                 'range' => $range,
             ];
             if ($compareRange !== null) {
-                foreach (MatomoNormalizer::eventSeries($results[3] ?? []) as $i => $point) {
-                    if (isset($result['series'][$i])) {
-                        $result['series'][$i]['compare'] = $point['value'];
-                    }
-                }
                 $compareTotal = array_sum(array_column(MatomoNormalizer::eventCategories($results[2] ?? []), 'count'));
                 $comparePageviews = $this->transitions->pageReport($site, $url, $compareRange, $segment)['pageviews'];
                 $result['compare'] = ['total' => $compareTotal, 'pageviews' => $comparePageviews, 'per100' => self::per100($compareTotal, $comparePageviews)];

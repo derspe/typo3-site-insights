@@ -37,6 +37,16 @@ const tileStyles = [
   `,
 ];
 
+/**
+ * Opens or closes the details of a tile; an opened tile asks the tile row to close the others.
+ */
+function expand(tile) {
+  tile.expanded = !tile.expanded;
+  if (tile.expanded) {
+    tile.dispatchEvent(new CustomEvent('si-tile-expand', { bubbles: true, composed: true }));
+  }
+}
+
 function toggle(expanded, onClick) {
   return html`<button type="button" class="toggle" aria-expanded=${expanded ? 'true' : 'false'} @click=${onClick}>
     <span class="chevron">${icon('chevronDown', 14)}</span>${t(expanded ? 'pageDetail.hideDetails' : 'pageDetail.showDetails')}</button>`;
@@ -127,6 +137,7 @@ class SiPageEvents extends SiLoading {
   static styles = [
     ...tileStyles,
     css`
+      .chart { margin-bottom: 8px; }
       .per100 { margin-bottom: 6px; }
       .tree { display: flex; flex-direction: column; }
       .row { display: flex; align-items: center; gap: 4px; width: 100%; padding: 3px 0; border: 0; border-bottom: 1px solid var(--si-border);
@@ -192,20 +203,17 @@ class SiPageEvents extends SiLoading {
       return hint('pageDetail.segmentsUnavailable');
     }
     const c = d.compare;
-    const label = t('pageDetail.events');
-    const series = [{ key: 'value', label, color: 'indigo' }];
-    if (d.compareRange) {
-      series.push({ key: 'compare', label: `${label} ${t('compare.previousPeriod')}`, color: 'indigo', shade: 3 });
-    }
+    // Chart first, like the other tiles; the change against the period before stands next to the figures
+    const series = [{ key: 'value', label: t('pageDetail.events'), color: 'indigo' }];
     return html`
+      <si-chart class="chart" type="bar" height="80" .data=${d.series} .series=${series}></si-chart>
+      ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.events.perWeek')}</div>` : nothing}
       <div class="figure"><span class="value">${fmt.int(d.total)}</span>${c ? delta(d.total, c.total) : nothing}</div>
       <div class="figure per100 dimmed">
         <span><b class="num">${d.per100 == null ? '–' : fmt.dec(d.per100, 1)}</b> ${t('pageDetail.events.per100')}</span>
         ${c ? delta(d.per100, c.per100) : nothing}
       </div>
-      <si-chart type="area" height="80" .data=${d.series} .series=${series}></si-chart>
-      ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.events.perWeek')}</div>` : nothing}
-      ${toggle(this.expanded, () => { this.expanded = !this.expanded; })}`;
+      ${toggle(this.expanded, () => expand(this))}`;
   }
 
   tree(categories) {
@@ -353,7 +361,7 @@ class SiPageGoals extends SiLoading {
         <div class="figure"><span class="value">${fmt.int(d.totals.onTheWay)}</span>
           <span class="dimmed">${t('pageDetail.goals.onTheWay')}</span>${c ? delta(d.totals.onTheWay, c.onTheWay) : nothing}</div>
       </div>
-      ${d.goals.length > 0 ? toggle(this.expanded, () => { this.expanded = !this.expanded; }) : nothing}`;
+      ${d.goals.length > 0 ? toggle(this.expanded, () => expand(this)) : nothing}`;
   }
 
   table(d) {
