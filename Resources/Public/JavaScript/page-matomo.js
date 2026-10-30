@@ -57,11 +57,13 @@ class SiPageDevices extends SiLoading {
     ...tileStyles,
     css`
       .bar { display: flex; overflow: hidden; border-radius: 3px; background: var(--si-hover); }
+      /* Same height as the tiles with a chart: the site bar sits at the bottom, the rows share the rest */
+      .tile { display: flex; flex-direction: column; }
+      ul { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; margin: 10px 0; padding: 0; list-style: none; }
       .bar.page { height: 14px; }
       .bar.site { flex: 1; height: 6px; }
       .bar span { height: 100%; }
-      .site-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--si-border); }
-      ul { margin: 10px 0 0; padding: 0; list-style: none; }
+      .site-row { display: flex; align-items: center; gap: 8px; padding-top: 8px; border-top: 1px solid var(--si-border); }
       li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
       .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
       .share { margin-left: auto; color: var(--si-text-strong); }
@@ -212,7 +214,7 @@ class SiPageEvents extends SiLoading {
         <span><b class="num">${d.per100 == null ? '–' : fmt.dec(d.per100, 1)}</b> ${t('pageDetail.events.per100')}</span>
         ${c ? delta(d.per100, c.per100) : nothing}
       </div>
-      <si-chart type="area" height="60" .data=${d.series} .series=${series}></si-chart>
+      <si-chart type="area" height="80" .data=${d.series} .series=${series}></si-chart>
       ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.events.perWeek')}</div>` : nothing}
       ${toggle(this.expanded, () => { this.expanded = !this.expanded; })}`;
   }
@@ -355,7 +357,7 @@ class SiPageGoals extends SiLoading {
       series.push({ key: 'compare', label: t('compare.previousPeriod'), color: 'gray', shade: 3 });
     }
     return html`
-      ${d.series.length > 0 ? html`<si-chart type="area" height="150" .data=${d.series} .series=${series}></si-chart>
+      ${d.series.length > 0 ? html`<si-chart type="area" height="80" .data=${d.series} .series=${series}></si-chart>
         <div class="legend xs dimmed">${series.map((x) => html`<span><span class="dot" style="background:var(--si-${x.color}-${x.shade ?? 6})"></span>${x.label}</span>`)}</div>
         ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.goals.perWeek')}</div>` : nothing}` : nothing}
       <div title=${t('pageDetail.goals.hint')}>

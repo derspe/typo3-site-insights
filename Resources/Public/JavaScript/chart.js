@@ -144,7 +144,8 @@ export class SiChart extends SiElement {
       beginAtZero: !this.reversed,
       grid: { color: gridColor, drawTicks: false, tickBorderDash: [5, 5], drawOnChartArea: position === 'left' },
       border: { display: false, dash: [5, 5] },
-      ticks: { color: textColor, font: { size: 11 }, padding: 6, maxTicksLimit: 6, callback: (v) => fmt.int(v) },
+      // Labels are whole numbers, so are the ticks (small counts would otherwise read "0, 1, 1, 2")
+      ticks: { color: textColor, font: { size: 11 }, padding: 6, maxTicksLimit: 6, precision: 0, callback: (v) => fmt.int(v) },
       title: title ? { display: true, text: title, color: textColor, font: { size: 11 } } : { display: false },
     });
 
