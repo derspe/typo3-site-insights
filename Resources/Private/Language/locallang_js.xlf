@@ -840,6 +840,9 @@
 			<trans-unit id="pageDetail.perWeek" resname="pageDetail.perWeek">
 				<source>Pageviews per week</source>
 			</trans-unit>
+			<trans-unit id="pageDetail.events.perWeek" resname="pageDetail.events.perWeek">
+				<source>Events per week</source>
+			</trans-unit>
 			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
 				<source>No meta description</source>
 			</trans-unit>

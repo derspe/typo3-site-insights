@@ -201,7 +201,7 @@ class SiPageEvents extends SiLoading {
         ${c ? delta(d.per100, c.per100) : nothing}
       </div>
       <si-chart type="area" height="60" .data=${d.series} .series=${series}></si-chart>
-      ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.perWeek')}</div>` : nothing}
+      ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.events.perWeek')}</div>` : nothing}
       ${toggle(this.expanded, () => { this.expanded = !this.expanded; })}`;
   }
 
