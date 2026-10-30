@@ -8,7 +8,8 @@ use Derspe\SiteInsights\Service\ApiCache;
 
 /**
  * Matomo figures of one page that are not part of the transitions: device classes and
- * events triggered on the page. The URL is the one returned by TransitionsService::matomoUrl.
+ * events triggered on the page. URLs and paths are mapped to the Matomo site with
+ * TransitionsService::matomoUrl.
  */
 final readonly class PageMatomoService
 {
@@ -30,6 +31,7 @@ final readonly class PageMatomoService
      */
     public function devices(string $site, string $url, array $range, string $segment, ?array $compareRange): array
     {
+        $url = $this->transitions->matomoUrl($site, $url);
         return $this->cache->remember([$site, 'matomo', 'pageDevices', 1, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange): array {
             $pageSegment = self::pageSegment('pageUrl', $url, $segment);
             $calls = [
@@ -67,6 +69,7 @@ final readonly class PageMatomoService
      */
     public function events(string $site, string $url, array $range, string $segment, ?array $compareRange): array
     {
+        $url = $this->transitions->matomoUrl($site, $url);
         $days = (int)(new \DateTimeImmutable($range['startDate']))->diff(new \DateTimeImmutable($range['endDate']))->days + 1;
         $period = $days > TransitionsService::WEEKLY_FROM ? 'week' : 'day';
         return $this->cache->remember([$site, 'matomo', 'pageEvents', 1, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange, $period): array {

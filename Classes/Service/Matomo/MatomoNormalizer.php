@@ -191,7 +191,7 @@ final class MatomoNormalizer
             }
             $type = preg_match('/deviceType==([^;,]+)/', (string)($row['segment'] ?? ''), $m) === 1 ? strtolower(urldecode($m[1])) : '';
             $class = match ($type) {
-                'smartphone', 'phablet' => 'mobile',
+                'smartphone', 'phablet', 'feature phone' => 'mobile',
                 'desktop' => 'desktop',
                 'tablet' => 'tablet',
                 default => 'other',

@@ -26,6 +26,8 @@ final class PageMatomoServiceTest extends UnitTestCase
         $settings->set('alpha', 'matomo_url', 'https://matomo.example.com');
         $settings->set('alpha', 'matomo_token', 'tok');
         $settings->set('alpha', 'matomo_site_id', '3');
+        // The first call of every service method maps the URL
+        $this->http->queue(FakeHttp::json(['https://alpha.example']));
     }
 
     private function service(): PageMatomoService
@@ -55,7 +57,7 @@ final class PageMatomoServiceTest extends UnitTestCase
      */
     private function bulkCall(int $request, int $index): array
     {
-        parse_str($this->http->formFields($request)['urls'][$index], $call);
+        parse_str($this->http->formFields($request + 1)['urls'][$index], $call);
         return $call;
     }
 
@@ -122,7 +124,7 @@ final class PageMatomoServiceTest extends UnitTestCase
 
         self::assertFalse($devices['available']);
         self::assertFalse($events['available']);
-        self::assertCount(2, $this->http->history);
+        self::assertCount(3, $this->http->history);
     }
 
     #[Test]
@@ -176,7 +178,7 @@ final class PageMatomoServiceTest extends UnitTestCase
         }
         self::assertSame(['eventAction', '1', 'range'], [$this->bulkCall(2, 0)['secondaryDimension'], $this->bulkCall(2, 0)['expanded'], $this->bulkCall(2, 0)['period']]);
         self::assertSame(['day', '2026-10-01,2026-10-28'], [$this->bulkCall(2, 1)['period'], $this->bulkCall(2, 1)['date']]);
-        self::assertStringNotContainsString('pageUrl==', (string)$this->http->formFields(2)['urls'][0] . $this->http->formFields(2)['urls'][1]);
+        self::assertStringNotContainsString('pageUrl==', (string)$this->http->formFields(3)['urls'][0] . $this->http->formFields(3)['urls'][1]);
     }
 
     #[Test]
@@ -201,5 +203,16 @@ final class PageMatomoServiceTest extends UnitTestCase
         self::assertSame(['total' => 3, 'pageviews' => 60, 'per100' => 5.0], $result['compare']);
         self::assertSame('week', $this->bulkCall(2, 1)['period']);
         self::assertSame('2026-06-29,2026-09-27', $this->bulkCall(2, 3)['date']);
+    }
+
+    #[Test]
+    public function pathsAreMappedToTheMatomoSiteUrl(): void
+    {
+        $this->http->queue(FakeHttp::json([self::types(1), self::types(1)]), self::report(1));
+
+        $this->service()->devices('alpha', '/news/a', self::RANGE, '', null);
+
+        self::assertSame('SitesManager.getSiteUrlsFromId', $this->http->formFields(0)['method']);
+        self::assertSame('pageUrl==https%3A%2F%2Falpha.example%2Fnews%2Fa', $this->bulkCall(0, 0)['segment']);
     }
 }

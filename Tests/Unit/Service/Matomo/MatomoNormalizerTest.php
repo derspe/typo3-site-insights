@@ -201,7 +201,7 @@ final class MatomoNormalizerTest extends TestCase
             ['label' => 'Smartphone', 'nb_visits' => 2, 'segment' => 'deviceType==smartphone'],
         ]);
         self::assertSame(4, $result['visits']);
-        self::assertSame(['mobile' => 0.5, 'desktop' => 0.0, 'tablet' => 0.0, 'other' => 0.5], $result['shares']);
+        self::assertSame(['mobile' => 0.75, 'desktop' => 0.0, 'tablet' => 0.0, 'other' => 0.25], $result['shares']);
         self::assertSame(['visits' => 0, 'shares' => ['mobile' => 0.0, 'desktop' => 0.0, 'tablet' => 0.0, 'other' => 0.0]], MatomoNormalizer::deviceShares('error'));
     }
 
