@@ -100,6 +100,20 @@ final class PageMatomoServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function aCompareWithoutVisitsHasNoShareToCompareWith(): void
+    {
+        $this->http->queue(
+            FakeHttp::json([self::types(3, 1), self::types(8, 8), []]),
+            self::report(4),
+        );
+
+        $result = $this->service()->devices('alpha', self::URL, self::RANGE, '', ['startDate' => '2026-09-03', 'endDate' => '2026-09-30']);
+
+        self::assertArrayNotHasKey('compare', $result);
+        self::assertSame(['mobile' => 0.75, 'desktop' => 0.25, 'tablet' => 0.0, 'other' => 0.0], $result['page']);
+    }
+
+    #[Test]
     public function segmentsEncodeTheUrlAndKeepTheUserSegmentLast(): void
     {
         $this->http->queue(FakeHttp::json([self::types(1), self::types(1)]), self::report(1));

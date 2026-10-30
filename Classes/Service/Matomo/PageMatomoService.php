@@ -23,7 +23,8 @@ final readonly class PageMatomoService
     ) {}
 
     /**
-     * Device shares of the visits that viewed the page, and of all visits for comparison.
+     * Device shares of the visits that viewed the page, and of all visits for comparison; the
+     * compare shares are left out when the compare period has no visits of the page.
      * Not available when Matomo cannot segment by the page although it has pageviews.
      *
      * @param array{startDate: string, endDate: string} $range
@@ -33,7 +34,7 @@ final readonly class PageMatomoService
     public function devices(string $site, string $url, array $range, string $segment, ?array $compareRange): array
     {
         $url = $this->transitions->matomoUrl($site, $url);
-        return $this->cache->remember([$site, 'matomo', 'pageDevices', 1, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange): array {
+        return $this->cache->remember([$site, 'matomo', 'pageDevices', 2, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange): array {
             $pageSegment = self::pageSegment('pageUrl', $url, $segment);
             $calls = [
                 self::call('DevicesDetection.getType', $range, $pageSegment),
@@ -52,7 +53,11 @@ final readonly class PageMatomoService
                 'site' => MatomoNormalizer::deviceShares($results[1])['shares'],
             ];
             if ($compareRange !== null) {
-                $result['compare'] = MatomoNormalizer::deviceShares($results[2] ?? [])['shares'];
+                // Shares of a period without visits are all 0: a change against them would be made up
+                $compare = MatomoNormalizer::deviceShares($results[2] ?? []);
+                if ($compare['visits'] > 0) {
+                    $result['compare'] = $compare['shares'];
+                }
                 $result['compareRange'] = $compareRange;
             }
             return $result;
