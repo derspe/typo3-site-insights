@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Derspe\SiteInsights\Service\Matomo;
 
+use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\ApiCache;
 
 /**
@@ -112,6 +113,85 @@ final readonly class PageMatomoService
                 $compareTotal = array_sum(array_column(MatomoNormalizer::eventCategories($results[2] ?? []), 'count'));
                 $comparePageviews = $this->transitions->pageReport($site, $url, $compareRange, $segment)['pageviews'];
                 $result['compare'] = ['total' => $compareTotal, 'pageviews' => $comparePageviews, 'per100' => self::per100($compareTotal, $comparePageviews)];
+                $result['compareRange'] = $compareRange;
+            }
+            return $result;
+        }, self::LIFETIME);
+    }
+
+    /**
+     * Event names per action of one event category of the page. The category must be one
+     * Matomo returned for the page in events().
+     *
+     * @param array{startDate: string, endDate: string} $range
+     * @return array{category: string, actions: list<array{label: string, count: int, names: list<array{label: string, count: int}>}>}
+     * @throws ApiException 400 for a category the page has no events for
+     */
+    public function eventNames(string $site, string $url, array $range, string $segment, string $category): array
+    {
+        $url = $this->transitions->matomoUrl($site, $url);
+        $known = array_column($this->events($site, $url, $range, $segment, null)['categories'], 'label');
+        if (!in_array($category, $known, true)) {
+            throw new ApiException('Unknown event category', 400);
+        }
+        return $this->cache->remember([$site, 'matomo', 'pageEventNames', 1, $url, $range, $segment, $category], function () use ($site, $url, $range, $segment, $category): array {
+            $eventSegment = self::pageSegment('eventUrl', $url, '') . ';eventCategory==' . rawurlencode($category) . ($segment !== '' ? ';' . $segment : '');
+            $call = self::call('Events.getAction', $range, $eventSegment);
+            $call[1] += ['secondaryDimension' => 'eventName', 'expanded' => 1];
+            $actions = [];
+            foreach (MatomoNormalizer::eventCategories($this->client->bulk($site, [$call])[0] ?? []) as $action) {
+                // The normalizer reads the subtable of a category row, here it holds the names of an action
+                $actions[] = ['label' => $action['label'], 'count' => $action['count'], 'names' => $action['actions']];
+            }
+            return ['category' => $category, 'actions' => $actions];
+        }, self::LIFETIME);
+    }
+
+    /**
+     * Goals defined in Matomo with the conversions entering on the page and the ones of visits
+     * that viewed the page on their way (unique conversions minus the entry ones).
+     *
+     * @param array{startDate: string, endDate: string} $range
+     * @param array{startDate: string, endDate: string}|null $compareRange
+     * @return array<string, mixed>
+     */
+    public function goals(string $site, string $url, array $range, string $segment, ?array $compareRange): array
+    {
+        $url = $this->transitions->matomoUrl($site, $url);
+        return $this->cache->remember([$site, 'matomo', 'pageGoals', 1, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange): array {
+            $defined = [];
+            $rows = $this->cache->remember([$site, 'matomo', 'goalDefinitions', 1], fn(): mixed => $this->client->call($site, 'Goals.getGoals'), self::LIFETIME);
+            foreach (is_array($rows) && array_is_list($rows) ? $rows : [] as $row) {
+                if (is_array($row) && isset($row['idgoal'])) {
+                    $defined[] = ['id' => (int)$row['idgoal'], 'name' => (string)($row['name'] ?? '')];
+                }
+            }
+            $byId = static function (array $report): array {
+                $figures = [];
+                foreach ($report['goals'] as $goal) {
+                    $figures[$goal['id']] = ['entry' => $goal['entry'], 'onTheWay' => $goal['onTheWay']];
+                }
+                return $figures;
+            };
+            $empty = ['entry' => 0, 'onTheWay' => 0];
+            $page = $byId($this->transitions->pageReport($site, $url, $range, $segment));
+            $compare = $compareRange !== null ? $byId($this->transitions->pageReport($site, $url, $compareRange, $segment)) : null;
+            $goals = [];
+            $totals = $compareTotals = $empty;
+            foreach ($defined as $goal) {
+                $figures = $page[$goal['id']] ?? $empty;
+                $totals = ['entry' => $totals['entry'] + $figures['entry'], 'onTheWay' => $totals['onTheWay'] + $figures['onTheWay']];
+                $goal += $figures;
+                if ($compare !== null) {
+                    $compareFigures = $compare[$goal['id']] ?? $empty;
+                    $goal['compare'] = $compareFigures;
+                    $compareTotals = ['entry' => $compareTotals['entry'] + $compareFigures['entry'], 'onTheWay' => $compareTotals['onTheWay'] + $compareFigures['onTheWay']];
+                }
+                $goals[] = $goal;
+            }
+            $result = ['defined' => $defined !== [], 'goals' => $goals, 'totals' => $totals];
+            if ($compare !== null) {
+                $result['compareTotals'] = $compareTotals;
                 $result['compareRange'] = $compareRange;
             }
             return $result;

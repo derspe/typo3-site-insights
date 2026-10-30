@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Derspe\SiteInsights\Tests\Unit\Service\Matomo;
 
+use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\PageMatomoService;
 use Derspe\SiteInsights\Service\Matomo\TransitionsService;
@@ -214,5 +215,111 @@ final class PageMatomoServiceTest extends UnitTestCase
 
         self::assertSame('SitesManager.getSiteUrlsFromId', $this->http->formFields(0)['method']);
         self::assertSame('pageUrl==https%3A%2F%2Falpha.example%2Fnews%2Fa', $this->bulkCall(0, 0)['segment']);
+    }
+
+    /**
+     * Queues what events() needs to list the categories of the page (Amazon: 5 events).
+     */
+    private function queueCategories(): void
+    {
+        $this->http->queue(
+            self::report(20),
+            FakeHttp::json([self::types(10), self::types(10)]),
+            FakeHttp::json([
+                [['label' => 'Amazon', 'nb_events' => 6, 'subtable' => [['label' => 'Direkt-Klick', 'nb_events' => 6]]]],
+                ['2026-10-01' => [['nb_events' => 6]]],
+            ]),
+        );
+    }
+
+    #[Test]
+    public function eventNamesRejectACategoryMatomoDidNotReturn(): void
+    {
+        $this->queueCategories();
+
+        try {
+            $this->service()->eventNames('alpha', self::URL, self::RANGE, '', 'Tool');
+            self::fail('Expected an ApiException');
+        } catch (ApiException $e) {
+            self::assertSame(400, $e->status);
+        }
+    }
+
+    #[Test]
+    public function eventNamesFilterByCategoryInsideThePageSegment(): void
+    {
+        $this->queueCategories();
+        $this->http->queue(FakeHttp::json([[
+            ['label' => 'Direkt-Klick', 'nb_events' => 6, 'subtable' => [
+                ['label' => 'B0DJ3284BS', 'nb_events' => 3],
+                ['label' => 'B0G4NBBZLG', 'nb_events' => 3],
+            ]],
+        ]]));
+
+        $result = $this->service()->eventNames('alpha', self::URL, self::RANGE, '', 'Amazon');
+
+        self::assertSame('Amazon', $result['category']);
+        self::assertSame(
+            [['label' => 'Direkt-Klick', 'count' => 6, 'names' => [['label' => 'B0DJ3284BS', 'count' => 3], ['label' => 'B0G4NBBZLG', 'count' => 3]]]],
+            $result['actions'],
+        );
+        $call = $this->bulkCall(3, 0);
+        self::assertSame('Events.getAction', $call['method']);
+        self::assertSame('eventUrl==https%3A%2F%2Falpha.example%2Fa;eventCategory==Amazon', $call['segment']);
+        self::assertSame(['eventName', '1'], [$call['secondaryDimension'], $call['expanded']]);
+    }
+
+    #[Test]
+    public function goalsListEveryDefinedGoalWithEntryAndOnTheWay(): void
+    {
+        $this->http->queue(
+            FakeHttp::json([
+                ['idsite' => 2, 'idgoal' => 4, 'name' => 'Amazon Link CE'],
+                ['idsite' => 2, 'idgoal' => 5, 'name' => 'Amazon RTE-Link DB'],
+            ]),
+            FakeHttp::json([[
+                'nb_hits' => 9,
+                'goals' => ['idgoal=5' => ['nb_conversions_entry' => 3, 'nb_conversions_page_uniq' => 3]],
+            ]]),
+        );
+
+        $result = $this->service()->goals('alpha', self::URL, self::RANGE, '', null);
+
+        self::assertTrue($result['defined']);
+        self::assertSame([
+            ['id' => 4, 'name' => 'Amazon Link CE', 'entry' => 0, 'onTheWay' => 0],
+            ['id' => 5, 'name' => 'Amazon RTE-Link DB', 'entry' => 3, 'onTheWay' => 0],
+        ], $result['goals']);
+        self::assertSame(['entry' => 3, 'onTheWay' => 0], $result['totals']);
+        self::assertArrayNotHasKey('compare', $result['goals'][0]);
+    }
+
+    #[Test]
+    public function goalsCanBeCompared(): void
+    {
+        $this->http->queue(
+            FakeHttp::json([['idgoal' => 4, 'name' => 'A']]),
+            FakeHttp::json([['nb_hits' => 9, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 2, 'nb_conversions_page_uniq' => 5]]]]),
+            FakeHttp::json([['nb_hits' => 4, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 1, 'nb_conversions_page_uniq' => 1]]]]),
+        );
+        $compare = ['startDate' => '2026-09-03', 'endDate' => '2026-09-30'];
+
+        $result = $this->service()->goals('alpha', self::URL, self::RANGE, '', $compare);
+
+        self::assertSame(['entry' => 2, 'onTheWay' => 3], $result['totals']);
+        self::assertSame(['entry' => 1, 'onTheWay' => 0], $result['goals'][0]['compare']);
+        self::assertSame(['entry' => 1, 'onTheWay' => 0], $result['compareTotals']);
+        self::assertSame($compare, $result['compareRange']);
+    }
+
+    #[Test]
+    public function goalsWithoutDefinedGoalsAreFlagged(): void
+    {
+        $this->http->queue(FakeHttp::json([]), self::report(5));
+
+        $result = $this->service()->goals('alpha', self::URL, self::RANGE, '', null);
+
+        self::assertFalse($result['defined']);
+        self::assertSame([], $result['goals']);
     }
 }
