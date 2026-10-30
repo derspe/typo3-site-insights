@@ -787,7 +787,7 @@
 				<source>Matomo is not set up for this site.</source>
 			</trans-unit>
 			<trans-unit id="transitions.hint" resname="transitions.hint">
-				<source>{start} – {end} · Shares refer to the pageviews of the page. Matomo computes transitions from its raw data, they are cached for a day.</source>
+				<source>{start} – {end} · Shares refer to the pageviews of the page.</source>
 			</trans-unit>
 			<trans-unit id="pageDetail.queries" resname="pageDetail.queries">
 				<source>Search queries (Google)</source>

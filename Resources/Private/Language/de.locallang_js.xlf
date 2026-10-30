@@ -1048,8 +1048,8 @@
 				<target>Matomo ist für diese Site nicht eingerichtet.</target>
 			</trans-unit>
 			<trans-unit id="transitions.hint" resname="transitions.hint">
-				<source>{start} – {end} · Shares refer to the pageviews of the page. Matomo computes transitions from its raw data, they are cached for a day.</source>
-				<target>{start} – {end} · Anteile bezogen auf die Seitenaufrufe. Matomo berechnet die Übergänge aus seinen Rohdaten, sie werden einen Tag zwischengespeichert.</target>
+				<source>{start} – {end} · Shares refer to the pageviews of the page.</source>
+				<target>{start} – {end} · Anteile bezogen auf die Seitenaufrufe.</target>
 			</trans-unit>
 			<trans-unit id="pageDetail.queries" resname="pageDetail.queries">
 				<source>Search queries (Google)</source>
