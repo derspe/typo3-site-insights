@@ -314,6 +314,10 @@ class SiPageGoals extends SiLoading {
       th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--si-dimmed); }
       td .xs { margin-left: 6px; }
       .foot { margin-top: 6px; }
+      si-chart { margin-bottom: 6px; }
+      .bar { display: flex; height: 8px; overflow: hidden; border-radius: 3px; background: var(--si-hover); }
+      .bar span { height: 100%; }
+      td.bar-cell { width: 40%; vertical-align: middle; }
     `,
   ];
 
@@ -341,7 +345,17 @@ class SiPageGoals extends SiLoading {
       return hint('pageDetail.noGoals');
     }
     const c = d.compareTotals;
+    // Chart first, like the bar of the devices tile; entry on top of the lighter "on the way"
+    const series = [
+      { key: 'onTheWay', label: t('pageDetail.goals.onTheWay'), color: 'green', shade: 3 },
+      { key: 'entry', label: t('pageDetail.goals.entry'), color: 'green' },
+    ];
+    if (d.compareRange) {
+      series.push({ key: 'compare', label: t('compare.previousPeriod'), color: 'gray', shade: 3 });
+    }
     return html`
+      ${d.series.length > 0 ? html`<si-chart type="area" height="80" legend .data=${d.series} .series=${series}></si-chart>
+        ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.goals.perWeek')}</div>` : nothing}` : nothing}
       <div title=${t('pageDetail.goals.hint')}>
         <div class="figure"><span class="value">${fmt.int(d.totals.entry)}</span>
           <span class="dimmed">${t('pageDetail.goals.entry')}</span>${c ? delta(d.totals.entry, c.entry) : nothing}</div>
@@ -354,15 +368,21 @@ class SiPageGoals extends SiLoading {
   table(d) {
     const goals = [...d.goals].sort((a, b) => (b.entry + b.onTheWay) - (a.entry + a.onTheWay));
     const cell = (value, before) => html`<td class="num">${fmt.int(value)}${before == null ? nothing : delta(value, before)}</td>`;
+    const max = Math.max(1, ...goals.map((g) => g.entry + g.onTheWay));
+    const bar = (g) => html`<div class="bar">
+      <span style="width:${(g.entry / max) * 100}%;background:var(--si-green-6)"></span>
+      <span style="width:${(g.onTheWay / max) * 100}%;background:var(--si-green-3)"></span>
+    </div>`;
     return html`
       <table>
         <thead><tr>
           <th>${t('pageDetail.goals')}</th>
+          <th></th>
           <th class="num">${t('pageDetail.goals.entry')}</th>
           <th class="num">${t('pageDetail.goals.onTheWay')}</th>
         </tr></thead>
         <tbody>${goals.map((g) => html`<tr>
-          <td>${g.name}</td>${cell(g.entry, g.compare?.entry)}${cell(g.onTheWay, g.compare?.onTheWay)}
+          <td>${g.name}</td><td class="bar-cell">${g.entry + g.onTheWay > 0 ? bar(g) : nothing}</td>${cell(g.entry, g.compare?.entry)}${cell(g.onTheWay, g.compare?.onTheWay)}
         </tr>`)}</tbody>
       </table>
       <div class="xs dimmed foot">${t('pageDetail.goals.hint')}</div>`;

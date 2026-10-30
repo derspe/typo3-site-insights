@@ -73,6 +73,22 @@ final class MatomoNormalizerTest extends TestCase
     }
 
     #[Test]
+    public function pageGoalSeriesSumsEntryAndOnTheWayOfAllGoalsPerPeriod(): void
+    {
+        self::assertSame([
+            ['date' => '2026-10-01', 'entry' => 3, 'onTheWay' => 4],
+            ['date' => '2026-10-02', 'entry' => 0, 'onTheWay' => 0],
+        ], MatomoNormalizer::pageGoalSeries([
+            '2026-10-01' => [['nb_hits' => 5, 'goals' => [
+                'idgoal=4' => ['nb_conversions_entry' => 1, 'nb_conversions_page_uniq' => 4],
+                'idgoal=5' => ['nb_conversions_entry' => 2, 'nb_conversions_page_uniq' => 3],
+            ]]],
+            '2026-10-02' => [],
+        ]));
+        self::assertSame([], MatomoNormalizer::pageGoalSeries([]));
+    }
+
+    #[Test]
     public function engagementIsWeightedOverAllRowsOfThePage(): void
     {
         self::assertSame(['avgTimeOnPage' => 70, 'bounceRate' => 0.4, 'pageviews' => 40, 'entries' => 10, 'exits' => 7, 'goals' => []], MatomoNormalizer::pageEngagement([

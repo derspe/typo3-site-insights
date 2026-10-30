@@ -1123,6 +1123,10 @@
 				<source>Events per week</source>
 				<target>Ereignisse pro Woche</target>
 			</trans-unit>
+			<trans-unit id="pageDetail.goals.perWeek" resname="pageDetail.goals.perWeek">
+				<source>Conversions per week</source>
+				<target>Abschlüsse pro Woche</target>
+			</trans-unit>
 			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
 				<source>No meta description</source>
 				<target>Keine Meta-Description hinterlegt</target>

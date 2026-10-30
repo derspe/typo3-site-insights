@@ -251,6 +251,26 @@ final class MatomoNormalizer
     }
 
     /**
+     * Conversions of all goals per period from a multi-period Actions.getPageUrl result, as entry
+     * page and on the way (see pageEngagement); the date is the start of the period.
+     *
+     * @return list<array{date: string, entry: int, onTheWay: int}>
+     */
+    public static function pageGoalSeries(mixed $data): array
+    {
+        $series = [];
+        foreach (is_array($data) && !array_is_list($data) ? $data : [] as $key => $rows) {
+            $goals = self::pageEngagement($rows)['goals'];
+            $series[] = [
+                'date' => explode(',', (string)$key)[0],
+                'entry' => array_sum(array_column($goals, 'entry')),
+                'onTheWay' => array_sum(array_column($goals, 'onTheWay')),
+            ];
+        }
+        return $series;
+    }
+
+    /**
      * Average time on page, bounce rate, pageviews, entries and exits of one page from the
      * archived page report (Actions.getPageUrl, may return several rows, e.g. with and without
      * trailing slash). Goals are summed per goal over the rows: "entry" counts conversions of
