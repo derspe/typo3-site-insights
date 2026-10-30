@@ -314,7 +314,8 @@ class SiPageGoals extends SiLoading {
       th { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--si-dimmed); }
       td .xs { margin-left: 6px; }
       .foot { margin-top: 6px; }
-      si-chart { margin-bottom: 6px; }
+      .legend { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 2px 0 6px; }
+      .legend .dot { display: inline-block; width: 8px; height: 8px; margin-right: 4px; border-radius: 50%; }
       .bar { display: flex; height: 8px; overflow: hidden; border-radius: 3px; background: var(--si-hover); }
       .bar span { height: 100%; }
       td.bar-cell { width: 40%; vertical-align: middle; }
@@ -354,7 +355,8 @@ class SiPageGoals extends SiLoading {
       series.push({ key: 'compare', label: t('compare.previousPeriod'), color: 'gray', shade: 3 });
     }
     return html`
-      ${d.series.length > 0 ? html`<si-chart type="area" height="80" legend .data=${d.series} .series=${series}></si-chart>
+      ${d.series.length > 0 ? html`<si-chart type="area" height="60" .data=${d.series} .series=${series}></si-chart>
+        <div class="legend xs dimmed">${series.map((x) => html`<span><span class="dot" style="background:var(--si-${x.color}-${x.shade ?? 6})"></span>${x.label}</span>`)}</div>
         ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.goals.perWeek')}</div>` : nothing}` : nothing}
       <div title=${t('pageDetail.goals.hint')}>
         <div class="figure"><span class="value">${fmt.int(d.totals.entry)}</span>
