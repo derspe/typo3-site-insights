@@ -179,9 +179,11 @@ final class MatomoNormalizer
     /**
      * Average time on page, bounce rate, pageviews, entries and exits of one page from the
      * archived page report (Actions.getPageUrl, may return several rows, e.g. with and without
-     * trailing slash).
+     * trailing slash). Goals are summed per goal over the rows: "entry" counts conversions of
+     * visits that entered on the page, "onTheWay" those of visits that viewed it on the way
+     * to the conversion (unique page conversions minus entries).
      *
-     * @return array{avgTimeOnPage: int|null, bounceRate: float|null, pageviews: int, entries: int, exits: int}
+     * @return array{avgTimeOnPage: int|null, bounceRate: float|null, pageviews: int, entries: int, exits: int, goals: list<array{id: int, entry: int, onTheWay: int}>}
      */
     public static function pageEngagement(mixed $data): array
     {
@@ -191,9 +193,18 @@ final class MatomoNormalizer
         $exits = 0;
         $bounces = 0;
         $fallback = null;
+        $goalSums = [];
         foreach (is_array($data) && array_is_list($data) ? $data : [] as $row) {
             if (!is_array($row)) {
                 continue;
+            }
+            foreach (is_array($row['goals'] ?? null) ? $row['goals'] : [] as $key => $goal) {
+                if (!is_array($goal) || preg_match('/^idgoal=(\d+)$/', (string)$key, $m) !== 1) {
+                    continue;
+                }
+                $id = (int)$m[1];
+                $goalSums[$id]['entry'] = ($goalSums[$id]['entry'] ?? 0) + (int)($goal['nb_conversions_entry'] ?? 0);
+                $goalSums[$id]['unique'] = ($goalSums[$id]['unique'] ?? 0) + (int)($goal['nb_conversions_page_uniq'] ?? 0);
             }
             $rowHits = (int)($row['nb_hits'] ?? 0);
             $hits += $rowHits;
@@ -204,12 +215,18 @@ final class MatomoNormalizer
             // Processed metric ("45%") when the raw counts are missing
             $fallback ??= isset($row['bounce_rate']) ? (float)rtrim((string)$row['bounce_rate'], '%') / 100 : null;
         }
+        ksort($goalSums);
+        $goals = [];
+        foreach ($goalSums as $id => $sum) {
+            $goals[] = ['id' => $id, 'entry' => $sum['entry'], 'onTheWay' => max(0, $sum['unique'] - $sum['entry'])];
+        }
         return [
             'avgTimeOnPage' => $hits > 0 ? (int)round($time / $hits) : null,
             'bounceRate' => $entries > 0 ? (float)($bounces / $entries) : $fallback,
             'pageviews' => $hits,
             'entries' => $entries,
             'exits' => $exits,
+            'goals' => $goals,
         ];
     }
 

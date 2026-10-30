@@ -54,6 +54,24 @@ final class TransitionsServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function thePageReportIsSharedByTransitionsAndCached(): void
+    {
+        $this->http->queue(
+            FakeHttp::json(['https://alpha.example']),
+            FakeHttp::json(['pageMetrics' => ['pageviews' => 10, 'entries' => 4, 'exits' => 3, 'loops' => 0]]),
+            FakeHttp::json([['nb_hits' => 10, 'avg_time_on_page' => 95, 'entry_nb_visits' => 4, 'entry_bounce_count' => 1]]),
+        );
+        $range = ['startDate' => '2026-10-01', 'endDate' => '2026-10-28'];
+
+        $this->service()->forUrl('alpha', 'https://alpha.example/a', '2026-10-01', '2026-10-28');
+        $report = $this->service()->pageReport('alpha', 'https://alpha.example/a', $range, '');
+
+        self::assertSame(10, $report['pageviews']);
+        $methods = array_map(fn(int $i): string => (string)$this->http->formFields($i)['method'], array_keys($this->http->history));
+        self::assertSame(1, count(array_filter($methods, static fn(string $m): bool => $m === 'Actions.getPageUrl')));
+    }
+
+    #[Test]
     public function theFiguresOfThePageReportCanBeCompared(): void
     {
         $this->http->queue(
@@ -66,7 +84,7 @@ final class TransitionsServiceTest extends UnitTestCase
         $result = $this->service()->forUrl('alpha', 'https://alpha.example/a', '2026-10-08', '2026-10-14', '', ['startDate' => '2026-10-01', 'endDate' => '2026-10-07']);
 
         self::assertSame(12, $result['engagement']['pageviews']);
-        self::assertSame(['avgTimeOnPage' => 40, 'bounceRate' => 1.0, 'pageviews' => 8, 'entries' => 2, 'exits' => 1], $result['compare']);
+        self::assertSame(['avgTimeOnPage' => 40, 'bounceRate' => 1.0, 'pageviews' => 8, 'entries' => 2, 'exits' => 1, 'goals' => []], $result['compare']);
         self::assertSame(['Actions.getPageUrl', 'range', '2026-10-01,2026-10-07'], [$this->http->formFields(3)['method'], $this->http->formFields(3)['period'], $this->http->formFields(3)['date']]);
     }
 

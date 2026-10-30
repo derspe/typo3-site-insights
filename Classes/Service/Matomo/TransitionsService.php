@@ -55,17 +55,13 @@ final readonly class TransitionsService
                 }
                 throw $e;
             }
-            $engagement = $this->engagement($site, self::params($url, $range, $segment));
+            $engagement = $this->pageReport($site, $url, $range, $segment);
             return ['url' => $url, 'range' => $range, 'noData' => false]
                 + MatomoNormalizer::transitions($data)
                 + ['avgTimeOnPage' => $engagement['avgTimeOnPage'], 'bounceRate' => $engagement['bounceRate'], 'engagement' => $engagement];
         }, self::LIFETIME);
         if ($compareRange !== null && $result['noData'] === false) {
-            $result['compare'] = $this->cache->remember(
-                [$site, 'matomo', 'engagement', 1, $url, $compareRange, $segment],
-                fn(): array => $this->engagement($site, self::params($url, $compareRange, $segment)),
-                self::LIFETIME
-            );
+            $result['compare'] = $this->pageReport($site, $url, $compareRange, $segment);
             $result['compareRange'] = $compareRange;
         }
         return $result;
@@ -118,26 +114,28 @@ final readonly class TransitionsService
     }
 
     /**
-     * Time on page and bounce rate come from the archived page report; without them the
-     * transitions are still shown.
+     * Figures of the archived page report (time on page, bounce rate, goals ...) of an
+     * already mapped URL; without the report the transitions are still shown.
      *
-     * @param array<string, scalar> $params
-     * @return array{avgTimeOnPage: int|null, bounceRate: float|null, pageviews: int, entries: int, exits: int}
+     * @param array{startDate: string, endDate: string} $range
+     * @return array{avgTimeOnPage: int|null, bounceRate: float|null, pageviews: int, entries: int, exits: int, goals: list<array{id: int, entry: int, onTheWay: int}>}
      */
-    private function engagement(string $site, array $params): array
+    public function pageReport(string $site, string $url, array $range, string $segment): array
     {
-        try {
-            return MatomoNormalizer::pageEngagement($this->client->call($site, 'Actions.getPageUrl', $params));
-        } catch (ApiException) {
-            return MatomoNormalizer::pageEngagement([]);
-        }
+        return $this->cache->remember([$site, 'matomo', 'engagement', 2, $url, $range, $segment], function () use ($site, $url, $range, $segment): array {
+            try {
+                return MatomoNormalizer::pageEngagement($this->client->call($site, 'Actions.getPageUrl', self::params($url, $range, $segment)));
+            } catch (ApiException) {
+                return MatomoNormalizer::pageEngagement([]);
+            }
+        }, self::LIFETIME);
     }
 
     /**
      * Matomo finds a page by its full URL. Paths and URLs of a host Matomo does not know
      * (e.g. a development environment) get the main URL of the Matomo site.
      */
-    private function matomoUrl(string $site, string $url): string
+    public function matomoUrl(string $site, string $url): string
     {
         $parts = parse_url($url);
         $host = strtolower((string)($parts['host'] ?? ''));

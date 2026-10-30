@@ -75,12 +75,26 @@ final class MatomoNormalizerTest extends TestCase
     #[Test]
     public function engagementIsWeightedOverAllRowsOfThePage(): void
     {
-        self::assertSame(['avgTimeOnPage' => 70, 'bounceRate' => 0.4, 'pageviews' => 40, 'entries' => 10, 'exits' => 7], MatomoNormalizer::pageEngagement([
+        self::assertSame(['avgTimeOnPage' => 70, 'bounceRate' => 0.4, 'pageviews' => 40, 'entries' => 10, 'exits' => 7, 'goals' => []], MatomoNormalizer::pageEngagement([
             ['nb_hits' => 30, 'avg_time_on_page' => 90, 'entry_nb_visits' => 8, 'entry_bounce_count' => 4, 'exit_nb_visits' => 5],
             ['nb_hits' => 10, 'avg_time_on_page' => 10, 'entry_nb_visits' => 2, 'entry_bounce_count' => 0, 'exit_nb_visits' => 2],
         ]));
         self::assertSame([12, 0.45], array_values(array_slice(MatomoNormalizer::pageEngagement([['nb_hits' => 1, 'avg_time_on_page' => 12, 'bounce_rate' => '45%']]), 0, 2)));
-        self::assertSame(['avgTimeOnPage' => null, 'bounceRate' => null, 'pageviews' => 0, 'entries' => 0, 'exits' => 0], MatomoNormalizer::pageEngagement([]));
+        self::assertSame(['avgTimeOnPage' => null, 'bounceRate' => null, 'pageviews' => 0, 'entries' => 0, 'exits' => 0, 'goals' => []], MatomoNormalizer::pageEngagement([]));
+    }
+
+    #[Test]
+    public function pageEngagementSumsGoalsPerGoalAcrossRows(): void
+    {
+        $result = MatomoNormalizer::pageEngagement([
+            ['nb_hits' => 5, 'goals' => [
+                'idgoal=5' => ['nb_conversions_entry' => 3, 'nb_conversions_page_uniq' => 3],
+                'idgoal=4' => ['nb_conversions_entry' => 1, 'nb_conversions_page_uniq' => 4],
+            ]],
+            ['nb_hits' => 2, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 1, 'nb_conversions_page_uniq' => 1]]],
+        ]);
+
+        self::assertSame([['id' => 4, 'entry' => 2, 'onTheWay' => 3], ['id' => 5, 'entry' => 3, 'onTheWay' => 0]], $result['goals']);
     }
 
     #[Test]
