@@ -60,7 +60,7 @@ class SiPageDevices extends SiLoading {
       .bar.page { height: 14px; }
       .bar.site { flex: 1; height: 6px; }
       .bar span { height: 100%; }
-      .site { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--si-border); }
+      .site-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--si-border); }
       ul { margin: 10px 0 0; padding: 0; list-style: none; }
       li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
       .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
@@ -98,7 +98,7 @@ class SiPageDevices extends SiLoading {
           ${d.compare ? html`<span class="pp num xs fw6">${this.change(d.page[k], d.compare[k])}</span>` : nothing}
         </li>`)}
       </ul>
-      <div class="site"><span class="xs dimmed">${t('pageDetail.devices.site')}</span>${this.bar(d.site, 'site', kinds)}</div>`;
+      <div class="site-row"><span class="xs dimmed">${t('pageDetail.devices.site')}</span>${this.bar(d.site, 'site', kinds)}</div>`;
   }
 
   bar(shares, kind, kinds) {
