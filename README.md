@@ -37,6 +37,12 @@ service, no long-running processes. It works on ordinary shared hosting.
   average time on page and bounce rate, then a chart of its pageviews over time (per
   week for more than 90 days), then the Search Console figures and top queries.
   The page module and the news folders open the same modal
+- Between the pageviews chart and the queries three tiles show devices, events and goals
+  of the page from Matomo: the shares of mobile, desktop and tablet next to those of the
+  whole site, the events with events per 100 pageviews and a small chart (expandable to a
+  tree category → action → name), and the goal conversions as entry page and on the way
+  (expandable per goal). With a compare period they show their change; device and event
+  tiles need a Matomo that processes segments on request
 - Next to the title the period can be changed (7, 28 or 90 days, 6 months, a year, each
   ending with the last day of the report) and the figures can be compared with the
   period before: Search Console figures and the time on page, bounce rate, entries and

@@ -3,6 +3,7 @@
  * <si-transitions>: Matomo transitions as a flow – where visitors came from and where they went next.
  * <si-page-queries>: Search Console figures and top queries.
  * <si-page-views>: Matomo pageviews of the page over time.
+ * Devices, events and goals of the page come as tiles from page-matomo.js.
  * <si-page-snippet>: title, description and URL of the page or news record as the head of the modal.
  * <si-page-detail>: modal of the backend module with both, for a page clicked in a report.
  *
@@ -13,6 +14,7 @@ import { SiElement, delta, fmt, getMeta, icon, periodControls, periodStart, skel
 import { SiLoading, softError } from '@derspe/site-insights/page-loading.js';
 import '@derspe/site-insights/table.js';
 import '@derspe/site-insights/chart.js';
+import '@derspe/site-insights/page-matomo.js';
 
 /**
  * Matomo page labels have no protocol ("example.com/news/a"); internal pages are shown by their path.
@@ -442,8 +444,10 @@ class SiPageDetail extends SiElement {
       .head si-page-snippet { flex: 1 1 0; max-width: 600px; min-width: 0; }
       .head .side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-left: auto; flex: none; }
       .head .actions { display: flex; gap: 4px; margin-right: -6px; }
+      .tiles { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
       @media (max-width: 760px) {
         .head { flex-wrap: wrap; }
+        .tiles { grid-template-columns: minmax(0, 1fr); }
         .head si-page-snippet { flex: 1 1 240px; }
       }
     `,
@@ -511,6 +515,15 @@ class SiPageDetail extends SiElement {
         <div class="section-head">${icon('chartLine', 15, 'var(--si-indigo-6)')}${t('pageDetail.pageviews')}</div>
         <si-page-views .site=${this.site} endpoint="matomo/page-series"
           .params=${{ url: this.url, start: ranges.matomo[0], end: ranges.matomo[1], segment: this.segment, compare }}></si-page-views>
+      </section>`);
+      const params = { url: this.url, start: ranges.matomo[0], end: ranges.matomo[1], segment: this.segment, compare };
+      sections.push(html`<section>
+        <div class="section-head">${icon('mouse', 15, 'var(--si-indigo-6)')}${t('pageDetail.engagement')}</div>
+        <div class="tiles">
+          <si-page-devices .site=${this.site} endpoint="matomo/page-devices" .params=${params}></si-page-devices>
+          <si-page-events .site=${this.site} endpoint="matomo/page-events" .params=${params}></si-page-events>
+          <si-page-goals .site=${this.site} endpoint="matomo/page-goals" .params=${params}></si-page-goals>
+        </div>
       </section>`);
     }
     if (sources.gsc !== false && !this.noGsc) {

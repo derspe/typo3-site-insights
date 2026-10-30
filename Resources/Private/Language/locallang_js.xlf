@@ -843,6 +843,60 @@
 			<trans-unit id="pageDetail.noDescription" resname="pageDetail.noDescription">
 				<source>No meta description</source>
 			</trans-unit>
+			<trans-unit id="pageDetail.engagement" resname="pageDetail.engagement">
+				<source>Devices, events and goals</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.devices" resname="pageDetail.devices">
+				<source>Devices</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.devices.site" resname="pageDetail.devices.site">
+				<source>Whole site</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.devices.mobile" resname="pageDetail.devices.mobile">
+				<source>Mobile</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.devices.desktop" resname="pageDetail.devices.desktop">
+				<source>Desktop</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.devices.tablet" resname="pageDetail.devices.tablet">
+				<source>Tablet</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.devices.other" resname="pageDetail.devices.other">
+				<source>Other</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.events" resname="pageDetail.events">
+				<source>Events</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.events.per100" resname="pageDetail.events.per100">
+				<source>per 100 pageviews</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.goals" resname="pageDetail.goals">
+				<source>Goals</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.goals.entry" resname="pageDetail.goals.entry">
+				<source>As entry page</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.goals.onTheWay" resname="pageDetail.goals.onTheWay">
+				<source>On the way</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.goals.hint" resname="pageDetail.goals.hint">
+				<source>Conversions of visits that started on this page, or that viewed it before converting</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.showDetails" resname="pageDetail.showDetails">
+				<source>Show details</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.hideDetails" resname="pageDetail.hideDetails">
+				<source>Hide details</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.noEvents" resname="pageDetail.noEvents">
+				<source>No events on this page in the period.</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.noGoals" resname="pageDetail.noGoals">
+				<source>No goals are defined in Matomo.</source>
+			</trans-unit>
+			<trans-unit id="pageDetail.segmentsUnavailable" resname="pageDetail.segmentsUnavailable">
+				<source>Not available: this Matomo does not process segments on request.</source>
+			</trans-unit>
 			<trans-unit id="transitions.avgTimeOnPage" resname="transitions.avgTimeOnPage">
 				<source>Avg. time on page</source>
 			</trans-unit>
