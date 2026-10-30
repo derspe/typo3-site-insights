@@ -201,6 +201,7 @@ class SiPageEvents extends SiLoading {
         ${c ? delta(d.per100, c.per100) : nothing}
       </div>
       <si-chart type="area" height="60" .data=${d.series} .series=${series}></si-chart>
+      ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.perWeek')}</div>` : nothing}
       ${toggle(this.expanded, () => { this.expanded = !this.expanded; })}`;
   }
 
@@ -242,21 +243,29 @@ class SiPageEvents extends SiLoading {
   }
 
   /**
-   * Opens or closes a category; the first opening loads its event names.
+   * Opens or closes a category; opening loads its event names unless they are there already.
    */
   toggleNode(key, category) {
+    const opening = !this.open.has(key);
     this.toggleKey(key);
-    if (this.names.has(category)) {
+    // A failed request stays visible while the category is open and is repeated on the next opening
+    if (!opening || (this.names.has(category) && !this.names.get(category).error)) {
       return;
+    }
+    if (this.names.has(category)) {
+      const names = new Map(this.names);
+      names.delete(category);
+      this.names = names;
     }
     const requestKey = this.requestKey;
     const { url, start, end, segment } = this.params;
     this.api('matomo/page-event-names', { params: { url, start, end, segment, category } })
       .then((data) => data, (error) => ({ actions: [], error }))
       .then((result) => {
-        if (requestKey === this.requestKey) {
-          this.names = new Map(this.names).set(category, result);
+        if (requestKey !== this.requestKey) {
+          return;
         }
+        this.names = new Map(this.names).set(category, result);
       });
   }
 
