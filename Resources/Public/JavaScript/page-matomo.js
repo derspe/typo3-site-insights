@@ -9,7 +9,7 @@
  * of the grid around the tiles, so expanded details span the whole row below the tiles.
  */
 import { css, html, nothing } from 'lit';
-import { SiElement, delta, deltaText, fmt, icon, skeleton, t } from '@derspe/site-insights/core.js';
+import { SiElement, delta, fmt, icon, skeleton, t } from '@derspe/site-insights/core.js';
 import { SiLoading, softError } from '@derspe/site-insights/page-loading.js';
 import '@derspe/site-insights/chart.js';
 
@@ -67,7 +67,7 @@ class SiPageDevices extends SiLoading {
       li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
       .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
       .share { margin-left: auto; color: var(--si-text-strong); }
-      .pp { min-width: 44px; }
+      .before { min-width: 40px; text-align: right; }
     `,
   ];
 
@@ -97,7 +97,7 @@ class SiPageDevices extends SiLoading {
         ${kinds.map((k) => html`<li>
           <span class="dot" style="background:var(--si-${DEVICES[k]}-6)"></span>${t(`pageDetail.devices.${k}`)}
           <span class="share num">${fmt.pct(d.page[k], 0)}</span>
-          ${d.compare ? html`<span class="pp num xs fw6">${this.change(d.page[k], d.compare[k])}</span>` : nothing}
+          ${d.compare ? html`<span class="before num dimmed" title=${t('compare.previousPeriod')}>(${fmt.pct(d.compare[k] ?? 0, 0)})</span>` : nothing}
         </li>`)}
       </ul>
       <div class="site-row"><span class="xs dimmed">${t('pageDetail.devices.site')}</span>${this.bar(d.site, 'site', kinds)}</div>`;
@@ -108,17 +108,6 @@ class SiPageDevices extends SiLoading {
       ${kinds.filter((k) => shares[k] > 0).map((k) => html`<span style="width:${shares[k] * 100}%;background:var(--si-${DEVICES[k]}-6)"
         title="${t(`pageDetail.devices.${k}`)}: ${fmt.pct(shares[k], 1)}"></span>`)}
     </div>`;
-  }
-
-  /**
-   * Change of a share in percentage points.
-   */
-  change(share, before) {
-    const points = Math.round((share - (before ?? 0)) * 100);
-    if (points === 0) {
-      return html`<span class="dimmed">±0 Pp</span>`;
-    }
-    return deltaText(`${points > 0 ? '+' : ''}${fmt.int(points)} Pp`, points > 0);
   }
 }
 
