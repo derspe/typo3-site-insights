@@ -295,7 +295,7 @@ final class PageMatomoServiceTest extends UnitTestCase
                 'nb_hits' => 9,
                 'goals' => ['idgoal=5' => ['nb_conversions_entry' => 3, 'nb_conversions_page_uniq' => 3]],
             ]]),
-            FakeHttp::json([[]]),
+            FakeHttp::json([]),
         );
 
         $result = $this->service()->goals('alpha', self::URL, self::RANGE, '', null);
@@ -317,14 +317,8 @@ final class PageMatomoServiceTest extends UnitTestCase
             FakeHttp::json([['nb_hits' => 9, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 2, 'nb_conversions_page_uniq' => 5]]]]),
             FakeHttp::json([['nb_hits' => 4, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 1, 'nb_conversions_page_uniq' => 1]]]]),
             FakeHttp::json([
-                [
-                    '2026-10-01' => [['nb_hits' => 5, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 2, 'nb_conversions_page_uniq' => 5]]]],
-                    '2026-10-02' => [],
-                ],
-                [
-                    '2026-09-03' => [],
-                    '2026-09-04' => [['nb_hits' => 4, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 1, 'nb_conversions_page_uniq' => 2]]]],
-                ],
+                '2026-10-01' => [['nb_hits' => 5, 'goals' => ['idgoal=4' => ['nb_conversions_entry' => 2, 'nb_conversions_page_uniq' => 5]]]],
+                '2026-10-02' => [],
             ]),
         );
         $compare = ['startDate' => '2026-09-03', 'endDate' => '2026-09-30'];
@@ -335,11 +329,10 @@ final class PageMatomoServiceTest extends UnitTestCase
         self::assertSame(['entry' => 1, 'onTheWay' => 0], $result['goals'][0]['compare']);
         self::assertSame(['entry' => 1, 'onTheWay' => 0], $result['compareTotals']);
         self::assertSame($compare, $result['compareRange']);
-        // The compare line shows all conversions of the period before, aligned by position
         self::assertSame('day', $result['period']);
         self::assertSame([
-            ['date' => '2026-10-01', 'entry' => 2, 'onTheWay' => 3, 'compare' => 0],
-            ['date' => '2026-10-02', 'entry' => 0, 'onTheWay' => 0, 'compare' => 2],
+            ['date' => '2026-10-01', 'entry' => 2, 'onTheWay' => 3],
+            ['date' => '2026-10-02', 'entry' => 0, 'onTheWay' => 0],
         ], $result['series']);
     }
 
@@ -349,7 +342,7 @@ final class PageMatomoServiceTest extends UnitTestCase
         $this->http->queue(
             FakeHttp::json([['idgoal' => 4, 'name' => 'A']]),
             self::report(5),
-            FakeHttp::json([[]]),
+            FakeHttp::json([]),
         );
         $range = ['startDate' => '2026-06-01', 'endDate' => '2026-10-28'];
 
@@ -362,7 +355,7 @@ final class PageMatomoServiceTest extends UnitTestCase
             'period' => 'week',
             'date' => '2026-06-01,2026-10-28',
             'segment' => 'browserCode==FF',
-        ], array_intersect_key($this->bulkCall(2, 0), array_flip(['method', 'pageUrl', 'period', 'date', 'segment'])));
+        ], array_intersect_key($this->http->formFields(3), array_flip(['method', 'pageUrl', 'period', 'date', 'segment'])));
     }
 
     #[Test]

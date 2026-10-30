@@ -348,16 +348,14 @@ class SiPageGoals extends SiLoading {
       return hint('pageDetail.noGoals');
     }
     const c = d.compareTotals;
-    // Chart first, like the bar of the devices tile; entry on top of the lighter "on the way"
+    // Chart first, like the bar of the devices tile: conversions per day as entry plus "on the way" on top;
+    // the change against the period before stands next to the figures below
     const series = [
-      { key: 'onTheWay', label: t('pageDetail.goals.onTheWay'), color: 'green', shade: 3 },
       { key: 'entry', label: t('pageDetail.goals.entry'), color: 'green' },
+      { key: 'onTheWay', label: t('pageDetail.goals.onTheWay'), color: 'green', shade: 3 },
     ];
-    if (d.compareRange) {
-      series.push({ key: 'compare', label: t('compare.previousPeriod'), color: 'gray', shade: 3 });
-    }
     return html`
-      ${d.series.length > 0 ? html`<si-chart type="area" height="80" .data=${d.series} .series=${series}></si-chart>
+      ${d.series.length > 0 ? html`<si-chart type="bar" stacked height="80" .data=${d.series} .series=${series}></si-chart>
         <div class="legend xs dimmed">${series.map((x) => html`<span><span class="dot" style="background:var(--si-${x.color}-${x.shade ?? 6})"></span>${x.label}</span>`)}</div>
         ${d.period === 'week' ? html`<div class="xs dimmed">${t('pageDetail.goals.perWeek')}</div>` : nothing}` : nothing}
       <div title=${t('pageDetail.goals.hint')}>

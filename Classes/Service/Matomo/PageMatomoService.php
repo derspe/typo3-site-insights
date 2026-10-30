@@ -165,7 +165,7 @@ final readonly class PageMatomoService
         $url = $this->transitions->matomoUrl($site, $url);
         $days = (int)(new \DateTimeImmutable($range['startDate']))->diff(new \DateTimeImmutable($range['endDate']))->days + 1;
         $period = $days > TransitionsService::WEEKLY_FROM ? 'week' : 'day';
-        return $this->cache->remember([$site, 'matomo', 'pageGoals', 2, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange, $period): array {
+        return $this->cache->remember([$site, 'matomo', 'pageGoals', 3, $url, $range, $segment, $compareRange], function () use ($site, $url, $range, $segment, $compareRange, $period): array {
             $defined = [];
             $rows = $this->cache->remember([$site, 'matomo', 'goalDefinitions', 1], fn(): mixed => $this->client->call($site, 'Goals.getGoals'), self::LIFETIME);
             foreach (is_array($rows) && array_is_list($rows) ? $rows : [] as $row) {
@@ -198,7 +198,7 @@ final readonly class PageMatomoService
             }
             $result = ['defined' => $defined !== [], 'goals' => $goals, 'totals' => $totals, 'period' => $period, 'series' => []];
             if ($defined !== []) {
-                $result['series'] = $this->goalSeries($site, $url, $range, $segment, $compareRange, $period);
+                $result['series'] = $this->goalSeries($site, $url, $range, $segment, $period);
             }
             if ($compare !== null) {
                 $result['compareTotals'] = $compareTotals;
@@ -210,30 +210,18 @@ final readonly class PageMatomoService
 
     /**
      * Conversions per day or week from the page report of each period (the report the pageviews
-     * chart uses, no page segment); "compare" holds all conversions of the period before,
-     * aligned by position.
+     * chart uses, no page segment).
      *
      * @param array{startDate: string, endDate: string} $range
-     * @param array{startDate: string, endDate: string}|null $compareRange
-     * @return list<array{date: string, entry: int, onTheWay: int, compare?: int}>
+     * @return list<array{date: string, entry: int, onTheWay: int}>
      */
-    private function goalSeries(string $site, string $url, array $range, string $segment, ?array $compareRange, string $period): array
+    private function goalSeries(string $site, string $url, array $range, string $segment, string $period): array
     {
-        $call = static fn(array $r): array => ['Actions.getPageUrl', [
+        return MatomoNormalizer::pageGoalSeries($this->client->call($site, 'Actions.getPageUrl', [
             'pageUrl' => $url,
             'period' => $period,
-            'date' => $r['startDate'] . ',' . $r['endDate'],
-        ] + ($segment !== '' ? ['segment' => $segment] : [])];
-        $results = $this->client->bulk($site, $compareRange !== null ? [$call($range), $call($compareRange)] : [$call($range)]);
-        $series = MatomoNormalizer::pageGoalSeries($results[0] ?? []);
-        if ($compareRange !== null) {
-            foreach (MatomoNormalizer::pageGoalSeries($results[1] ?? []) as $i => $point) {
-                if (isset($series[$i])) {
-                    $series[$i]['compare'] = $point['entry'] + $point['onTheWay'];
-                }
-            }
-        }
-        return $series;
+            'date' => $range['startDate'] . ',' . $range['endDate'],
+        ] + ($segment !== '' ? ['segment' => $segment] : [])));
     }
 
     /**

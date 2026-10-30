@@ -3,6 +3,7 @@
  * styled like Mantine charts (thin lines, dashed grid, legend on top).
  *
  * series: [{ key, label, color: 'blue', shade?: 3|6, axis?: 'right' }]
+ * stacked: bars of all series on top of each other (first series at the bottom)
  * data:   [{ <xKey>: 'x label', <key>: number, ... }]
  */
 import { css, html } from 'lit';
@@ -30,6 +31,7 @@ export class SiChart extends SiElement {
     yLabel: { type: String, attribute: 'y-label' },
     rightLabel: { type: String, attribute: 'right-label' },
     xFormat: { type: String, attribute: 'x-format' },
+    stacked: { type: Boolean },
   };
 
   static styles = [
@@ -58,6 +60,7 @@ export class SiChart extends SiElement {
     this.yLabel = '';
     this.rightLabel = '';
     this.xFormat = 'date';
+    this.stacked = false;
     this.chart = null;
     this.schemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
     this.onSchemeChange = () => this.rebuild();
@@ -182,11 +185,12 @@ export class SiChart extends SiElement {
         },
         scales: {
           x: {
+            stacked: this.stacked,
             grid: { display: false },
             border: { color: gridColor },
             ticks: { color: textColor, font: { size: 11 }, maxRotation: 0, autoSkip: true, autoSkipPadding: 16 },
           },
-          y: axis('left', this.yLabel),
+          y: { ...axis('left', this.yLabel), stacked: this.stacked },
           ...(hasRight ? { right: axis('right', this.rightLabel) } : {}),
         },
       },
