@@ -7,6 +7,7 @@ namespace Derspe\SiteInsights\Tests\Unit\Service\Matomo;
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Matomo\PageMatomoService;
 use Derspe\SiteInsights\Service\Matomo\TransitionsService;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
@@ -166,7 +167,7 @@ final class TransitionsServiceTest extends UnitTestCase
     public function dashboardValidatesUrlAndRangeBeforeAnyRequest(): void
     {
         $client = new MatomoClient($this->settings(), $this->http->factory());
-        $dashboard = new MatomoDashboardService($client, $this->settings(), $this->cache(), $this->service());
+        $dashboard = new MatomoDashboardService($client, $this->settings(), $this->cache(), $this->service(), new PageMatomoService($client, $this->cache(), $this->service()));
         $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
         foreach ([
             ['url' => 'javascript:alert(1)', 'start' => $today, 'end' => $today],
@@ -188,7 +189,7 @@ final class TransitionsServiceTest extends UnitTestCase
     {
         $this->http->queue(FakeHttp::json(['https://alpha.example']), FakeHttp::json(['pageMetrics' => ['pageviews' => 1]]), FakeHttp::json([]));
         $client = new MatomoClient($this->settings(), $this->http->factory());
-        $dashboard = new MatomoDashboardService($client, $this->settings(), $this->cache(), $this->service());
+        $dashboard = new MatomoDashboardService($client, $this->settings(), $this->cache(), $this->service(), new PageMatomoService($client, $this->cache(), $this->service()));
         $today = new \DateTimeImmutable('today');
         $earliest = $today->modify('-' . MatomoDashboardService::CUSTOM_MAX_MONTHS . ' months')->format('Y-m-d');
 

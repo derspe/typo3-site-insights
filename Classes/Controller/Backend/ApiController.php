@@ -126,6 +126,10 @@ final readonly class ApiController
             $endpoint === 'matomo/goals' => $this->matomo->goals($site),
             $endpoint === 'matomo/transitions' => $this->matomo->transitions($site, $query),
             $endpoint === 'matomo/page-series' => $this->matomo->pageSeries($site, $query),
+            $endpoint === 'matomo/page-devices' => $this->matomo->pageDevices($site, $query),
+            $endpoint === 'matomo/page-events' => $this->matomo->pageEvents($site, $query),
+            $endpoint === 'matomo/page-event-names' => $this->matomo->pageEventNames($site, $query),
+            $endpoint === 'matomo/page-goals' => $this->matomo->pageGoals($site, $query),
             $endpoint === 'matomo/dashboard' => $this->matomo->dashboard(
                 $site,
                 (string)($query['period'] ?? 'range'),

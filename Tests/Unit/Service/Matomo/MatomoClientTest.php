@@ -7,6 +7,7 @@ namespace Derspe\SiteInsights\Tests\Unit\Service\Matomo;
 use Derspe\SiteInsights\Http\ApiException;
 use Derspe\SiteInsights\Service\Matomo\MatomoClient;
 use Derspe\SiteInsights\Service\Matomo\MatomoDashboardService;
+use Derspe\SiteInsights\Service\Matomo\PageMatomoService;
 use Derspe\SiteInsights\Service\Matomo\TransitionsService;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\FakeHttp;
 use Derspe\SiteInsights\Tests\Unit\Fixtures\UnitTestCase;
@@ -34,7 +35,7 @@ final class MatomoClientTest extends UnitTestCase
 
     private function dashboardService(): MatomoDashboardService
     {
-        return new MatomoDashboardService($this->client(), $this->settings(), $this->cache(), new TransitionsService($this->client(), $this->cache()));
+        return new MatomoDashboardService($this->client(), $this->settings(), $this->cache(), new TransitionsService($this->client(), $this->cache()), new PageMatomoService($this->client(), $this->cache(), new TransitionsService($this->client(), $this->cache())));
     }
 
     #[Test]

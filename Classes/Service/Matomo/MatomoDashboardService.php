@@ -24,6 +24,7 @@ final readonly class MatomoDashboardService
         private SiteSettings $settings,
         private ApiCache $cache,
         private TransitionsService $transitions,
+        private PageMatomoService $pages,
     ) {}
 
     /**
@@ -108,6 +109,58 @@ final readonly class MatomoDashboardService
     {
         [$url, $range, $segment, $compareRange] = $this->pageQuery($site, $q);
         return $this->transitions->series($site, $url, $range, $segment, $compareRange);
+    }
+
+    /**
+     * Device types, browsers and operating systems of one page, parameters as for transitions.
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function pageDevices(string $site, array $q): array
+    {
+        [$url, $range, $segment, $compareRange] = $this->pageQuery($site, $q);
+        return $this->pages->devices($site, $url, $range, $segment, $compareRange);
+    }
+
+    /**
+     * Events of one page by category, parameters as for transitions.
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function pageEvents(string $site, array $q): array
+    {
+        [$url, $range, $segment, $compareRange] = $this->pageQuery($site, $q);
+        return $this->pages->events($site, $url, $range, $segment, $compareRange);
+    }
+
+    /**
+     * Event names of one category on one page; "category" is required, a compare range is ignored.
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function pageEventNames(string $site, array $q): array
+    {
+        [$url, $range, $segment] = $this->pageQuery($site, $q);
+        $category = $q['category'] ?? null;
+        if (!is_string($category) || $category === '' || mb_strlen($category) > 255) {
+            throw new ApiException('Parameter "category" must be a non-empty string of at most 255 characters', 400);
+        }
+        return $this->pages->eventNames($site, $url, $range, $segment, $category);
+    }
+
+    /**
+     * Goal conversions of one page, parameters as for transitions.
+     *
+     * @param array<string, mixed> $q
+     * @return array<string, mixed>
+     */
+    public function pageGoals(string $site, array $q): array
+    {
+        [$url, $range, $segment, $compareRange] = $this->pageQuery($site, $q);
+        return $this->pages->goals($site, $url, $range, $segment, $compareRange);
     }
 
     /**
