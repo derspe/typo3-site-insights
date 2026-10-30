@@ -445,9 +445,10 @@ class SiPageDetail extends SiElement {
       .head .side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-left: auto; flex: none; }
       .head .actions { display: flex; gap: 4px; margin-right: -6px; }
       .tiles { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .tiles:has(> si-page-events[empty]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       @media (max-width: 760px) {
         .head { flex-wrap: wrap; }
-        .tiles { grid-template-columns: minmax(0, 1fr); }
+        .tiles, .tiles:has(> si-page-events[empty]) { grid-template-columns: minmax(0, 1fr); }
         .head si-page-snippet { flex: 1 1 240px; }
       }
     `,

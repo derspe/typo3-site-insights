@@ -58,9 +58,9 @@ class SiPageDevices extends SiLoading {
     css`
       .bar { display: flex; overflow: hidden; border-radius: 3px; background: var(--si-hover); }
       .bar.page { height: 14px; }
-      .bar.site { height: 6px; margin-top: 2px; }
+      .bar.site { flex: 1; height: 6px; }
       .bar span { height: 100%; }
-      .site-label { margin-top: 8px; }
+      .site { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--si-border); }
       ul { margin: 10px 0 0; padding: 0; list-style: none; }
       li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
       .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
@@ -88,17 +88,17 @@ class SiPageDevices extends SiLoading {
       return hint('empty.noData');
     }
     const kinds = Object.keys(DEVICES).filter((k) => d.page[k] > 0 || d.site[k] > 0);
+    // The site bar comes last and apart, so the shares listed below the page bar are read as those of the page
     return html`
       ${this.bar(d.page, 'page', kinds)}
-      <div class="xs dimmed site-label">${t('pageDetail.devices.site')}</div>
-      ${this.bar(d.site, 'site', kinds)}
       <ul>
         ${kinds.map((k) => html`<li>
           <span class="dot" style="background:var(--si-${DEVICES[k]}-6)"></span>${t(`pageDetail.devices.${k}`)}
           <span class="share num">${fmt.pct(d.page[k], 0)}</span>
           ${d.compare ? html`<span class="pp num xs fw6">${this.change(d.page[k], d.compare[k])}</span>` : nothing}
         </li>`)}
-      </ul>`;
+      </ul>
+      <div class="site"><span class="xs dimmed">${t('pageDetail.devices.site')}</span>${this.bar(d.site, 'site', kinds)}</div>`;
   }
 
   bar(shares, kind, kinds) {
@@ -167,7 +167,22 @@ class SiPageEvents extends SiLoading {
     }
   }
 
+  /**
+   * A page without events gets no tile at all; "empty" lets the tile row close the gap.
+   */
+  isEmpty() {
+    const d = this.data;
+    return !this.error && !!d && d.available !== false && !d.total;
+  }
+
+  updated() {
+    this.toggleAttribute('empty', this.isEmpty());
+  }
+
   render() {
+    if (this.isEmpty()) {
+      return nothing;
+    }
     const d = this.data;
     const details = this.expanded && d?.available !== false && d?.total > 0;
     return html`<div class="tile"><div class="label">${t('pageDetail.events')}</div>${this.content()}</div>
@@ -184,9 +199,6 @@ class SiPageEvents extends SiLoading {
     }
     if (d.available === false) {
       return hint('pageDetail.segmentsUnavailable');
-    }
-    if (!d.total) {
-      return hint('pageDetail.noEvents');
     }
     const c = d.compare;
     const label = t('pageDetail.events');

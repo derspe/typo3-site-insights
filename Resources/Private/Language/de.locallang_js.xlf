@@ -1187,10 +1187,6 @@
 				<source>Hide details</source>
 				<target>Details ausblenden</target>
 			</trans-unit>
-			<trans-unit id="pageDetail.noEvents" resname="pageDetail.noEvents">
-				<source>No events on this page in the period.</source>
-				<target>Keine Ereignisse auf dieser Seite im Zeitraum.</target>
-			</trans-unit>
 			<trans-unit id="pageDetail.noGoals" resname="pageDetail.noGoals">
 				<source>No goals are defined in Matomo.</source>
 				<target>In Matomo sind keine Ziele angelegt.</target>

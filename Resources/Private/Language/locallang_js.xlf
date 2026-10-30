@@ -891,9 +891,6 @@
 			<trans-unit id="pageDetail.hideDetails" resname="pageDetail.hideDetails">
 				<source>Hide details</source>
 			</trans-unit>
-			<trans-unit id="pageDetail.noEvents" resname="pageDetail.noEvents">
-				<source>No events on this page in the period.</source>
-			</trans-unit>
 			<trans-unit id="pageDetail.noGoals" resname="pageDetail.noGoals">
 				<source>No goals are defined in Matomo.</source>
 			</trans-unit>
