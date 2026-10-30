@@ -185,6 +185,24 @@ final class TransitionsServiceTest extends UnitTestCase
     }
 
     #[Test]
+    public function eventNamesNeedACategoryOfReasonableLengthBeforeAnyRequest(): void
+    {
+        $client = new MatomoClient($this->settings(), $this->http->factory());
+        $dashboard = new MatomoDashboardService($client, $this->settings(), $this->cache(), $this->service(), new PageMatomoService($client, $this->cache(), $this->service()));
+        $today = (new \DateTimeImmutable('today'))->format('Y-m-d');
+        $page = ['url' => '/x', 'start' => $today, 'end' => $today];
+        foreach ([$page, $page + ['category' => ''], $page + ['category' => str_repeat('a', 256)], $page + ['category' => ['a']]] as $query) {
+            try {
+                $dashboard->pageEventNames('alpha', $query);
+                self::fail('Exception expected');
+            } catch (ApiException $e) {
+                self::assertSame(400, $e->status);
+            }
+        }
+        self::assertSame([], $this->http->history);
+    }
+
+    #[Test]
     public function aYearOfSearchConsoleStartsAtTheEarliestDayMatomoAllows(): void
     {
         $this->http->queue(FakeHttp::json(['https://alpha.example']), FakeHttp::json(['pageMetrics' => ['pageviews' => 1]]), FakeHttp::json([]));

@@ -128,7 +128,7 @@ final readonly class TransitionsService
             } catch (ApiException) {
                 return MatomoNormalizer::pageEngagement([]);
             }
-        }, self::LIFETIME);
+        }, self::SERIES_LIFETIME);
     }
 
     /**
